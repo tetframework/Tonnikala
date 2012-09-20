@@ -1,4 +1,10 @@
-import re
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+
+__docformat__ = "epytext"
+
+"""XML parser"""
+
 from cStringIO import StringIO
 from xml import sax
 from htmllib import HTMLParser
@@ -6,7 +12,7 @@ from xml.dom import minidom as dom
 
 impl = dom.getDOMImplementation(' ')
 
-class _Parser(sax.ContentHandler):
+class Parser(sax.ContentHandler):
     def __init__(self, filename, source):
         self._filename = filename
         self._source = source

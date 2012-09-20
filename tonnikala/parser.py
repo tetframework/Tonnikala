@@ -67,7 +67,8 @@ class _Parser(sax.ContentHandler):
         self._els[-1].appendChild(node)
 
     def skippedEntity(self, name):
-        content = unicode(HTMLParser.entitydefs.get(name)
+        # Encoding?
+        content = unicode(HTMLParser.entitydefs.get(name))
         if not content:
             raise RuntimeError("Unknown HTML entity &%s;" % name)
 

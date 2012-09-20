@@ -1,7 +1,12 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
+__docformat__ = "epytext"
+
 from tonnikala.exceptions import ParseError
 from tonnikala.ir.nodes import ExpressionNode
 
-from jslex import JsLexer
+from tonnikala.languages.jslex import JsLexer
 import re
 
 class JavascriptExpressionNode(ExpressionNode):

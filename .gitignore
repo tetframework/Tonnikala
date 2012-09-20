@@ -1,1 +1,3 @@
 Tonnikala.egg-info/
+*.pyc
+venv

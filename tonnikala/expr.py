@@ -8,7 +8,7 @@ __docformat__ = "epytext"
 import re
 
 from tonnikala.ir.nodes import TextNode, ComplexExprNode
-from tonnikala.languages import javascript
+from tonnikala.languages import javascript, python
 from tonnikala.exceptions import ParseError 
 
 _dollar_strip_re = re.compile(r"\$([a-zA-Z_{])|(\$\$)|\$", re.DOTALL)
@@ -40,7 +40,7 @@ _expr_find_code = re.compile(r"""
 def create_text_node(text):
     return TextNode(text)
 
-def handle_text_node(text, expr_parser=javascript.parse_expression):
+def handle_text_node(text, expr_parser=python.parse_expression):
     try:
         return create_text_node(_strip_dollars_fast(text))
 

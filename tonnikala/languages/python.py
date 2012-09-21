@@ -6,6 +6,7 @@ __docformat__ = "epytext"
 from tonnikala.exceptions import ParseError
 from tonnikala.ir.nodes import ExpressionNode
 from tokenize import generate_tokens
+from cStringIO import StringIO
 import re
 
 class PythonExpressionNode(ExpressionNode):
@@ -17,11 +18,15 @@ class TokenReadLine(object):
     def __init__(self, string, pos):
         self.string = string
         self.pos = pos
-        self.lines = string[pos:].splitlines(True)
-        self.lineiter = iter(self.lines)
+        self.io = StringIO(string)
+        self.io.seek(pos)
+        self.length = 0
 
-    def __call__(self):
-        return next(self.lineiter)
+    def get_readline(self):
+        return self.io.readline
+
+    def get_distance(self):
+        return self.io.tell() - self.pos
 
 def parse_expression(text, start_pos=0):
     nodes = []
@@ -34,20 +39,37 @@ def parse_expression(text, start_pos=0):
     braces = 0
     length = 2
     valid  = False
-    tokens = generate_tokens(TokenReadLine(text, start_pos + 2))
+    io = TokenReadLine(text, start_pos + 2)
+    readline = io.get_readline()
+    tokens = generate_tokens(readline)
+    binary = False
+
     for type, content, start, end, line in tokens:
+        if content in [ 'b', 'B' ]:
+            binary = True
+            binary_pos = end
+
+        elif binary and content[-1:] in '"\'':
+            binary = False
+
+            if binary_pos == start and line[binary_pos - 1] in 'bB':
+                nodes.pop()
+                nodes.append((type, line[binary_pos - 1] + content))
+
+        else:
+            binary = False        
+
         if content == '}':
             if braces <= 0:
-                length += 1
+                length += io.get_distance() - len(line) + end[1]
                 valid = True
                 break
 
             braces -= 1
 
-        if content == '{':
+        elif content == '{':
             braces += 1
-        
-        length += len(content)
+
         nodes.append((type, content))
 
     if not valid:

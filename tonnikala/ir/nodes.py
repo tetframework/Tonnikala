@@ -49,6 +49,11 @@ class Element(BaseNode):
 
     def set_attribute(self, name, value):
         self.attributes[name] = value
-    
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(%s)' % str(self)
+
     def __str__(self):
-        return ',\n'.join(repr(i) for i in self.children)
+        attrs = str(self.attributes)
+        children = str(self.children)
+        return ', '.join([self.name, attrs, children])

@@ -4,12 +4,12 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __docformat__ = "epytext"
 
 from tonnikala.exceptions import ParseError
-from tonnikala.ir.nodes import ExpressionNode
+from tonnikala.ir.nodes import Expression
 from tokenize import generate_tokens
 from cStringIO import StringIO
 import re
 
-class PythonExpressionNode(ExpressionNode):
+class PythonExpression(Expression):
     pass
 
 identifier_match = re.compile(r'[a-zA-Z_][a-zA-Z_$0-9]*')
@@ -34,7 +34,7 @@ def parse_expression(text, start_pos=0):
     if text[start_pos + 1] != '{':
         m = identifier_match.match(text, start_pos + 1)
         identifier = m.group(0)
-        return PythonExpressionNode('$' + identifier, [('id', identifier)])
+        return PythonExpression('$' + identifier, [('id', identifier)])
 
     braces = 0
     length = 2
@@ -75,4 +75,4 @@ def parse_expression(text, start_pos=0):
     if not valid:
         raise ParseError("Not finished python expression", charpos=length)
 
-    return PythonExpressionNode(text[start_pos:start_pos + length], nodes)
+    return PythonExpression(text[start_pos:start_pos + length], nodes)

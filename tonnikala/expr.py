@@ -7,7 +7,7 @@ __docformat__ = "epytext"
 
 import re
 
-from tonnikala.ir.nodes import TextNode, ComplexExprNode
+from tonnikala.ir.nodes import Text, ComplexExpression
 from tonnikala.languages import javascript, python
 from tonnikala.exceptions import ParseError 
 
@@ -38,7 +38,7 @@ _expr_find_code = re.compile(r"""
 
 
 def create_text_node(text):
-    return TextNode(text)
+    return Text(text)
 
 def handle_text_node(text, expr_parser=python.parse_expression):
     try:
@@ -81,4 +81,4 @@ def handle_text_node(text, expr_parser=python.parse_expression):
     if len(nodes) == 1:
         return nodes[0]
 
-    return ComplexExprNode(nodes)
+    return ComplexExpression(nodes)

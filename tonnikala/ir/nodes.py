@@ -6,7 +6,7 @@ __docformat__ = "epytext"
 
 class BaseNode(object):
     def __repr__(self):
-        return self.__class__.__name__ + '(%r)' % str(self)
+        return self.__class__.__name__ + '(%s)' % str(self)
 
 
 class Text(BaseNode):

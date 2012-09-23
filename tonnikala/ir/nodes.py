@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
-
+import re
 __docformat__ = "epytext"
 
 
@@ -36,12 +36,9 @@ class Expression(BaseNode):
     def __str__(self):
         return self.string
 
-
-class Element(BaseNode):
-    def __init__(self, name):
-        self.name       = name
+class ContainerNode(BaseNode):
+    def __init__(self):
         self.attributes = {}
-        self.guard      = None
         self.children   = []
 
     def add_child(self, child):
@@ -53,7 +50,41 @@ class Element(BaseNode):
     def __repr__(self):
         return self.__class__.__name__ + '(%s)' % str(self)
 
+class Element(ContainerNode):
+    def __init__(self, name):
+        super(Element, self).__init__()
+        self.name       = name
+        self.guard      = None
+
     def __str__(self):
         attrs = str(self.attributes)
         children = str(self.children)
+        
         return ', '.join([self.name, attrs, children])
+
+class For(ContainerNode):
+    IN_RE = re.compile('\s+in\s+')
+
+    def __init__(self, expression):
+        super(For, self).__init__()
+
+        self.expression = expression
+        self.parts = self.IN_RE.split(self.expression, 1)
+
+        if len(self.parts) != 2:
+            raise ValueError("for does not have proper format: var[, var...] in expression")
+
+    def __str__(self):
+        children = str(self.children)
+        return ', '.join([("(%s in %s)" % tuple(self.parts)), children])
+
+class If(ContainerNode):
+    def __init__(self, expression):
+        super(If, self).__init__()
+
+        self.expression = expression
+
+    def __str__(self):
+        children = str(self.children)
+        return ', '.join([("(%s)" % self.expression), children])
+

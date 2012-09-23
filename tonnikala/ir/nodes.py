@@ -36,6 +36,7 @@ class Expression(BaseNode):
     def __str__(self):
         return self.string
 
+
 class ContainerNode(BaseNode):
     def __init__(self):
         self.attributes = {}
@@ -50,6 +51,7 @@ class ContainerNode(BaseNode):
     def __repr__(self):
         return self.__class__.__name__ + '(%s)' % str(self)
 
+
 class Element(ContainerNode):
     def __init__(self, name):
         super(Element, self).__init__()
@@ -61,6 +63,7 @@ class Element(ContainerNode):
         children = str(self.children)
         
         return ', '.join([self.name, attrs, children])
+
 
 class For(ContainerNode):
     IN_RE = re.compile('\s+in\s+')
@@ -77,6 +80,27 @@ class For(ContainerNode):
     def __str__(self):
         children = str(self.children)
         return ', '.join([("(%s in %s)" % tuple(self.parts)), children])
+
+
+class Define(ContainerNode):
+    def __init__(self, funcspec):
+        super(Define, self).__init__()
+
+        self.funcspec = funcspec
+
+    def __str__(self):
+        return ', '.join([self.funcspec, unicode(self.children)])
+
+class Import(BaseNode):
+    def __init__(self, href, alias):
+        super(Import, self).__init__()
+
+        self.href = href
+        self.alias = alias
+
+    def __str__(self):
+        return ', '.join([self.href, self.alias])
+
 
 class If(ContainerNode):
     def __init__(self, expression):

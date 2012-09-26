@@ -31,7 +31,7 @@ class IRGenerator(object):
 
     def generate_attributes(self, dom_node, ir_node):
         attrs = dict(dom_node.attributes)
-        for name, attr in attrs.iteritems():
+        for name, attr in attrs.items():
             ir_node.set_attribute(name, handle_text_node(attr.nodeValue))
 
 

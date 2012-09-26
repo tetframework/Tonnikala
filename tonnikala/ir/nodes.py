@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
+
 import re
+
 __docformat__ = "epytext"
+
+try:
+    unicode
+except:
+    unicode = str
 
 
 class BaseNode(object):

@@ -6,7 +6,7 @@ __docformat__ = "epytext"
 from tonnikala.exceptions import ParseError
 from tonnikala.ir.nodes import Expression
 from tokenize import generate_tokens
-from cStringIO import StringIO
+from io import StringIO
 import re
 
 class PythonExpression(Expression):

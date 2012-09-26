@@ -5,9 +5,15 @@ __docformat__ = "epytext"
 
 """XML parser"""
 
-from cStringIO import StringIO
+try: # py3
+    from io import StringIO
+    from html.entities import entitydefs
+except ImportError:
+    from StringIO import StringIO
+    from htmllib import HTMLParser
+    entitydefs = HTMLParser.entitydefs
+
 from xml import sax
-from htmllib import HTMLParser
 from xml.dom import minidom as dom
 
 impl = dom.getDOMImplementation(' ')
@@ -40,7 +46,7 @@ class Parser(sax.ContentHandler):
 
     def _checkAndClearChrs(self):
         if self._chrs:
-            node = self._doc.createTextNode(u''.join(self._chrs[1]))
+            node = self._doc.createTextNode(''.join(self._chrs[1]))
             node.lineno = self._chrs[0]
             self._els[-1].appendChild(node)
 
@@ -74,23 +80,23 @@ class Parser(sax.ContentHandler):
 
     def skippedEntity(self, name):
         # Encoding?
-        content = unicode(HTMLParser.entitydefs.get(name))
+        content = unicode(entitydefs.get(name))
         if not content:
             raise RuntimeError("Unknown HTML entity &%s;" % name)
 
         return self.characters(content)
 
     def startElementNS(self, name, qname, attrs): # pragma no cover
-        raise NotImplementedError, 'startElementNS'
+        raise NotImplementedError('startElementNS')
 
     def endElementNS(self, name, qname):# pragma no cover
-        raise NotImplementedError, 'startElementNS'
+        raise NotImplementedError('startElementNS')
 
     def startPrefixMapping(self, prefix, uri):# pragma no cover
-        raise NotImplementedError, 'startPrefixMapping'
+        raise NotImplementedError('startPrefixMapping')
 
     def endPrefixMapping(self, prefix):# pragma no cover
-        raise NotImplementedError, 'endPrefixMapping'
+        raise NotImplementedError('endPrefixMapping')
 
     # LexicalHandler implementation
     def comment(self, text):

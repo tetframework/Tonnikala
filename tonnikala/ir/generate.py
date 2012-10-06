@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from tonnikala.ir.nodes import Element, Text, If, For, Define, Import
+from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText
 from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
 from xml.dom.minidom    import Node
 from tonnikala.ir.tree  import IRTree
@@ -10,10 +10,30 @@ __docformat__ = "epytext"
 
 """Generates IR nodes from XML parsetree"""
 
+html5_empty_tags = frozenset('''
+    br
+    hr
+    input
+    area
+    base
+    br
+    col
+    hr
+    img
+    meta
+    param
+    command
+    keygen
+    source
+'''.split())
+
+
+
 class IRGenerator(object):
     def __init__(self, document):
         self.dom_document = document
         self.tree = IRTree()
+        self.empty_elements = html5_empty_tags
 
     def child_iter(self, node):
         if not node.firstChild:
@@ -150,3 +170,84 @@ class IRGenerator(object):
         self.add_children(self.child_iter(self.dom_document), self.tree)        
         return self.tree
 
+    def render_constant_attributes(self, element):
+        cattr = element.get_constant_attributes()
+        code = []
+        for name, value in cattr.items():
+            code.append(' %s="%s"' % (name, value.escaped()))
+
+        return ''.join(code)
+
+    def flatten_element_nodes_on(self, node):
+        new_children = []
+        recurse = False
+        for i in node.children:
+            if not isinstance(i, Element):
+                new_children.append(i)
+
+            else:
+                pre_text_node = '<%s' % i.name
+                if i.attributes:
+                    pre_text_node += self.render_constant_attributes(i)
+
+                new_children.append(EscapedText(pre_text_node))
+                if i.mutable_attributes:
+                    for n, v in i.mutable_attributes.items():
+                        new_children.append(MutableAttribute(n, v))
+
+                if not i.children:
+                    if i.name in self.empty_elements:
+                        new_children.append(EscapedText('/>'))
+                        continue
+
+                new_children.append(EscapedText('>'))
+                merged = i.children
+                for j in merged:
+                    new_children.append(j)
+                    if isinstance(j, Element):
+                        recurse = True
+
+                new_children.append(EscapedText('</%s>' % i.name))
+
+        node.children = new_children
+
+        if recurse:
+            self.flatten_element_nodes_on(node)
+
+        for i in node.children:
+            if hasattr(i, 'children') and i.children:
+                self.flatten_element_nodes_on(i)
+
+    def flatten_element_nodes(self, tree):
+        root = tree.root
+        self.flatten_element_nodes_on(root)
+        return tree
+
+    def _merge_text_nodes_on(self, node):
+        """Merges all consecutive non-translatable text nodes into one"""
+
+        if not isinstance(node, ContainerNode) or not node.children:
+            return
+
+        new_children = []
+        text_run = []
+        for i in node.children:
+            if isinstance(i, Text) and not i.translatable:
+                text_run.append(i.escaped())
+            else:
+                if text_run:
+                    new_children.append(EscapedText(''.join(text_run)))
+
+                new_children.append(i)
+
+        if text_run:
+            new_children.append(EscapedText(''.join(text_run)))
+
+        node.children = new_children
+        for i in node.children:
+            self._merge_text_nodes_on(i)
+
+    def merge_text_nodes(self, tree):
+        root = tree.root
+        self._merge_text_nodes_on(root)
+        return tree

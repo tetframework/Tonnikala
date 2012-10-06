@@ -104,7 +104,7 @@ class ImportNode(PythonNode):
 
     def generate(self):
         yield self.generate_indented_code(
-           "%s = __tonnikala__.import_defs('%s')" % (self.alias, self.href))
+           "%s = __tonnikala___import_defs('%s')" % (self.alias, self.href))
         
 
 class ForNode(ComplexNode):
@@ -114,7 +114,7 @@ class ForNode(ComplexNode):
         self.expression = expression
 
     def generate_contents(self):
-        yield self.generate_indented_code("for (%s in %s):" % (self.vars, self.expression))
+        yield self.generate_indented_code("for %s in %s:" % (self.vars, self.expression))
         for i in self.indented_children():
             yield i
 
@@ -133,8 +133,12 @@ class DefineNode(ComplexNode):
 
     def generate(self):
         yield self.generate_indented_code("def %s:" % self.funcspec)
+        yield self.generate_indented_code("    __output = __tonnikala__Rope()")
+
         for i in self.indented_children():
             yield i
+
+        yield self.generate_indented_code("    return __output")
 
 class ComplexExprNode(ComplexNode):
     def generate(self):
@@ -147,13 +151,17 @@ class RootNode(ComplexNode):
         self.set_indent_level(0)
 
     def generate(self):
+        yield 'from tonnikala.runtime.python import *\n'
         yield 'class __Template(object):\n'
         yield '    def render(__self, __context):\n'
-        yield '        return "".join(__self.do_render(__context)\n'
-        yield '    def do_render(__self, __context, __output):\n'
+        yield '        return "".join(__self.do_render(__context))\n'
+        yield '    def do_render(__self, __context):\n'
+        yield '        __output = __tonnikala__Rope()\n'
 
         for i in self.indented_children(increment=2):
             yield i
+
+        yield '    return __output\n'
 
 class Generator(object):
     def __init__(self, ir_tree):
@@ -161,32 +169,34 @@ class Generator(object):
 
     def add_children(self, ir_node, target):
         for i in ir_node.children:
-            if isinstance(i, nodes.Text):
-                target.add_child(OutputNode(i.string))
+            if   isinstance(i, nodes.Text):
+                new_node = (OutputNode(i.escaped()))
 
             elif isinstance(i, nodes.If):
-                target.add_child(IfNode(i.expression))
+                new_node = (IfNode(i.expression))
 
             elif isinstance(i, nodes.For):
-                target.add_child(ForNode(i.parts[0], i.parts[1]))
+                new_node = (ForNode(i.parts[0], i.parts[1]))
 
             elif isinstance(i, nodes.Define):
-                target.add_child(DefineNode(i.funcspec))
+                new_node = (DefineNode(i.funcspec))
 
             elif isinstance(i, nodes.ComplexExpression):
-                target.add_child(ComplexExprNode())
+                new_node = (ComplexExprNode())
 
             elif isinstance(i, nodes.Expression):
-                target.add_child(ExpressionNode(i.expression, i.tokens))
+                new_node = (ExpressionNode(i.expression, i.tokens))
 
             elif isinstance(i, nodes.Import):
-                target.add_child(ImportNode(i.href, i.alias))
+                new_node = (ImportNode(i.href, i.alias))
 
             else:
-                print("Unknown node type", i.__class__.__name__)
+                raise ValueError("Unknown node type", i.__class__.__name__)
+
+            target.add_child(new_node)
 
             if isinstance(i, nodes.ContainerNode):
-                self.add_children(i, target)
+                self.add_children(i, new_node)
 
     def generate(self):
         root = self.tree.root

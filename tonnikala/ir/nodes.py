@@ -11,16 +11,39 @@ except:
     unicode = str
 
 
+def escape(string):
+    return string.replace('&', '&amp;')  \
+                 .replace('<', '&lt;')   \
+                 .replace('>', '&gt;')   \
+                 .replace('"', '&quot;') \
+                 .replace("'", '&#39;') 
+
 class BaseNode(object):
     def __repr__(self):
         return self.__class__.__name__ + '(%s)' % str(self)
 
 
 class Text(BaseNode):
+    translatable = False
+
     def __init__(self, string):
         self.string = string
 
     def __str__(self):
+        return self.string
+
+    def escaped(self):
+        return escape(self.string)
+
+
+class EscapedText(Text):
+    def __init__(self, string):
+        super(EscapedText, self).__init__(string)
+
+    def __str__(self):
+        return self.string
+    
+    def escaped(self):
         return self.string
 
 
@@ -49,6 +72,16 @@ class ContainerNode(BaseNode):
         return self.__class__.__name__ + '(%s)' % str(self)
 
 
+class MutableAttribute(BaseNode):
+    def __init__(self, name, value):
+        super(MutableAttribute, self).__init__()
+        self.name = name
+        self.value = value
+
+    def __str__(self):
+        return str({ self.name: self.value })
+
+
 class ComplexExpression(ContainerNode):
     def __init__(self):
         super(ComplexExpression, self).__init__()
@@ -63,6 +96,8 @@ class Element(ContainerNode):
         super(Element, self).__init__()
         self.name       = name
         self.guard      = None
+        self.constant_attributes = {}
+        self.mutable_attributes  = {}
 
     def __str__(self):
         attrs = str(self.attributes)
@@ -70,6 +105,19 @@ class Element(ContainerNode):
         
         return ', '.join([self.name, attrs, children])
 
+    def set_attribute(self, name, value):
+        if isinstance(value, Text):
+            self.constant_attributes[name] = value
+        else:
+            self.mutable_attributes[name] = value
+
+        self.attributes[name] = value
+
+    def get_constant_attributes(self):
+        return self.constant_attributes    
+
+    def get_mutable_attributes(self):
+        return self.mutable_attributes    
 
 class For(ContainerNode):
     IN_RE = re.compile('\s+in\s+')
@@ -117,4 +165,3 @@ class If(ContainerNode):
     def __str__(self):
         children = str(self.children)
         return ', '.join([("(%s)" % self.expression), children])
-

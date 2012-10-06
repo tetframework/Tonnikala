@@ -18,6 +18,8 @@ y = x.parse()
 
 generator = IRGenerator(y)
 z = generator.generate_tree()
+z = generator.flatten_element_nodes(z)
+z = generator.merge_text_nodes(z)
 
 print(repr(z))
 

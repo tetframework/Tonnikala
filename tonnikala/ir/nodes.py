@@ -24,24 +24,14 @@ class Text(BaseNode):
         return self.string
 
 
-class ComplexExpression(BaseNode):
-    def __init__(self, parts):
-        self.parts = parts
-
-    def __repr__(self):
-        return self.__class__.__name__ + '(%s)' % ', '.join(repr(i) for i in self.parts)
-
-    def __str__(self):
-        return ''.join(str(i) for i in self.parts)
-
-
 class Expression(BaseNode):
-    def __init__(self, string, tokens):
-        self.string = string
+    def __init__(self, full_string, expression, tokens):
+        self.string = full_string
+        self.expression = expression
         self.tokens = tokens
 
     def __str__(self):
-        return self.string
+        return self.expression
 
 
 class ContainerNode(BaseNode):
@@ -57,6 +47,15 @@ class ContainerNode(BaseNode):
 
     def __repr__(self):
         return self.__class__.__name__ + '(%s)' % str(self)
+
+
+class ComplexExpression(ContainerNode):
+    def __init__(self):
+        super(ComplexExpression, self).__init__()
+        pass
+
+    def __str__(self):
+        return str(self.children)
 
 
 class Element(ContainerNode):

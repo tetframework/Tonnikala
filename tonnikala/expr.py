@@ -81,4 +81,8 @@ def handle_text_node(text, expr_parser=python.parse_expression):
     if len(nodes) == 1:
         return nodes[0]
 
-    return ComplexExpression(nodes)
+    node = ComplexExpression()
+    for i in nodes:
+        node.add_child(i)
+
+    return node

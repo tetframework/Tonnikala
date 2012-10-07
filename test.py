@@ -12,8 +12,19 @@ print(repr(expr.handle_text_node('asdfasdf${1 / 0} /} }', expr_parser=javascript
 print(repr(expr.handle_text_node('asdfasdf${1 + / 0} /} }', expr_parser=javascript.parse_expression)))
 
 
-input = path.join(path.dirname(__file__), 'not_found.html')
-x = parser.Parser(input, open(input).read())
+template = """<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+        xmlns:py="http://genshi.edgewall.org/"
+        xmlns:fb="http://www.facebook.com/2008/fbml" py:foo="barf">
+        <py:import href="includes.html" alias="includes"/>
+        <body>
+        <py:def function="the_body"><ul><li py:for="i in ['1', '2', '3']">$i</li></ul></py:def>
+        <py:def function="output_body(body_func)"><div>${the_body()}</div></py:def>
+        ${output_body(the_body)}
+        </body>
+</html>"""
+
+x = parser.Parser("<string>", template)
 y = x.parse()
 
 generator = IRGenerator(y)
@@ -23,5 +34,20 @@ z = generator.merge_text_nodes(z)
 
 print(repr(z))
 
-print(PythonGenerator(z).generate())
+x = PythonGenerator(z).generate()
 
+print(x)
+
+
+from tonnikala.runtime import python
+
+glob = {
+    '__tonnikala_runtime__': python,
+    'literal':               lambda x: x
+}
+
+exec x in glob, glob
+template = glob['__Template']
+output = template().render({})
+
+print(output)

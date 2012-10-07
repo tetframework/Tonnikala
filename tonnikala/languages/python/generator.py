@@ -38,7 +38,7 @@ class PythonNode(object):
         return self.get_indent() + code + '\n'
 
     def generate_yield(self, code):
-        return self.generate_indented_code('__output(%s)' % code)
+        return self.generate_indented_code('__output__(%s)' % code)
 
     def gen_name(self):
         global name_counter
@@ -104,7 +104,7 @@ class ImportNode(PythonNode):
 
     def generate(self):
         yield self.generate_indented_code(
-           "%s = __tonnikala___import_defs('%s')" % (self.alias, self.href))
+           "%s = __self.__tonnikala__.import_defs('%s')" % (self.alias, self.href))
         
 
 class ForNode(ComplexNode):
@@ -133,12 +133,12 @@ class DefineNode(ComplexNode):
 
     def generate(self):
         yield self.generate_indented_code("def %s:" % self.funcspec)
-        yield self.generate_indented_code("    __output = __tonnikala__Rope()")
+        yield self.generate_indented_code("    __output__ = __self.__tonnikala__.Rope()")
 
         for i in self.indented_children():
             yield i
 
-        yield self.generate_indented_code("    return __output")
+        yield self.generate_indented_code("    return __output__")
 
 class ComplexExprNode(ComplexNode):
     def generate(self):
@@ -151,17 +151,17 @@ class RootNode(ComplexNode):
         self.set_indent_level(0)
 
     def generate(self):
-        yield 'from tonnikala.runtime.python import *\n'
         yield 'class __Template(object):\n'
+        yield '    __tonnikala__ = __tonnikala_runtime__\n'
         yield '    def render(__self, __context):\n'
-        yield '        return "".join(__self.do_render(__context))\n'
+        yield '        return __self.do_render(__context).join()\n'
         yield '    def do_render(__self, __context):\n'
-        yield '        __output = __tonnikala__Rope()\n'
+        yield '        __output__ = __self.__tonnikala__.Rope()\n'
 
         for i in self.indented_children(increment=2):
             yield i
 
-        yield '    return __output\n'
+        yield '        return __output__\n'
 
 class Generator(object):
     def __init__(self, ir_tree):

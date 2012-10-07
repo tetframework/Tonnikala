@@ -237,6 +237,7 @@ class IRGenerator(object):
             else:
                 if text_run:
                     new_children.append(EscapedText(''.join(text_run)))
+                    text_run = []
 
                 new_children.append(i)
 

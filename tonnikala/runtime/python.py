@@ -1,4 +1,4 @@
-from tonnikala.rope import Rope as __tonnikala__Rope
+from tonnikala.rope import Rope
 
-def __tonnikala__import_defs(href):
+def import_defs(href):
     return {}

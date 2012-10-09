@@ -16,6 +16,7 @@ setup(
     author_email='',
     #url='',
     install_requires="""
+        six
     """.split(),
     setup_requires=[],
     include_package_data=True,

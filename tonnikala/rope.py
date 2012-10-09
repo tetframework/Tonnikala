@@ -13,7 +13,7 @@ class Rope(object):
     def __init__(self, initial=None):
         self._buffer = []
         if initial:
-            self.buffer.append(initial)
+            self._buffer.append(initial)
 
     def __call__(self, obj):
         self._buffer.append(obj)

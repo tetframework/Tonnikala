@@ -1,27 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
-
-python3 = False
-try:
-    unicode
-    strtype = unicode
-except:
-    strtype = str
-    python3 = True
+from six import text_type, PY3
 
 class Rope(object):
     def __init__(self, initial=None):
         self._buffer = []
         if initial:
-            self.buffer.append(initial)
+            self._buffer.append(initial)
 
     def __call__(self, obj):
         self._buffer.append(obj)
 
     def join(self):
-        return u''.join(strtype(i) for i in self._buffer)
+        return ''.join(text_type(i) for i in self._buffer)
 
-    if python3:
+    if PY3:
         __str__ = join
 
     else:

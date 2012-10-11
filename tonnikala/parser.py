@@ -5,13 +5,10 @@ __docformat__ = "epytext"
 
 """XML parser"""
 
-try: # py3
-    from io import StringIO
-    from html.entities import entitydefs
-except ImportError:
-    from StringIO import StringIO
-    from htmllib import HTMLParser
-    entitydefs = HTMLParser.entitydefs
+from six import StringIO
+from six.moves import html_entities
+
+entitydefs = html_entities.entitydefs
 
 from xml import sax
 from xml.dom import minidom as dom

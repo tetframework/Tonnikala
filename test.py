@@ -45,7 +45,7 @@ glob = {
     'literal':               lambda x: x
 }
 
-exec x in glob, glob
+exec(x, glob, glob)
 template = glob['__Template']
 output = template().render({})
 

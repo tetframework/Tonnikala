@@ -6,6 +6,7 @@ from tonnikala import parser
 from os import path
 from tonnikala.ir.generate import IRGenerator
 from tonnikala.languages.python.generator import Generator as PythonGenerator
+from tonnikala.languages.javascript.generator import Generator as JavascriptGenerator
 
 print(repr(expr.handle_text_node('${a\n+\n"}"}')))
 print(repr(expr.handle_text_node('asdfasdf${1 / 0} /} }', expr_parser=javascript.parse_expression)))
@@ -35,9 +36,7 @@ z = generator.merge_text_nodes(z)
 print(repr(z))
 
 x = PythonGenerator(z).generate()
-
 print(x)
-
 
 from tonnikala.runtime import python
 
@@ -51,3 +50,7 @@ template = glob['__Template']
 output = template().render({})
 
 print(output)
+
+x = JavascriptGenerator(z).generate()
+print(x)
+

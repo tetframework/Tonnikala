@@ -71,6 +71,11 @@ class ContainerNode(BaseNode):
     def __repr__(self):
         return self.__class__.__name__ + '(%s)' % str(self)
 
+    def __str__(self):
+        return str(self.children)
+
+class Root(ContainerNode):
+    pass
 
 class MutableAttribute(BaseNode):
     def __init__(self, name, value):
@@ -80,7 +85,6 @@ class MutableAttribute(BaseNode):
 
     def __str__(self):
         return str({ self.name: self.value })
-
 
 class ComplexExpression(ContainerNode):
     def __init__(self):

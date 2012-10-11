@@ -1,23 +1,9 @@
 from tonnikala.ir import nodes
-
-try:
-    str = unicode
-except:
-    pass
+from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 
 name_counter = 0
 
-class PythonNode(object):
-    def __init__(self):
-        self.indent_level = None
-        self.children = []
-
-    def set_indent_level(self, indent_level):
-        self.indent_level = indent_level
-
-    def get_indent(self):
-        return ' ' * 4 * self.indent_level
-
+class PythonNode(LanguageNode):
     def make_string(self, text):
         if isinstance(text, bytes):
             text = text.decode('UTF-8')
@@ -27,15 +13,6 @@ class PythonNode(object):
             rv = rv[1:]
 
         return rv
-
-    def add_child(self, node):
-        if not isinstance(self, ComplexNode):
-            raise NotImplementedError("Cannot add children to a node of type %s" % self.__class__.__name__)
-
-        self.children.append(node)
-
-    def generate_indented_code(self, code):
-        return self.get_indent() + code + '\n'
 
     def generate_yield(self, code):
         return self.generate_indented_code('__output__(%s)' % code)
@@ -57,17 +34,18 @@ class PythonNode(object):
         yield self.generate_indented_code('%s()' % name)
 
 
-class OutputNode(PythonNode):
+class PyOutputNode(PythonNode):
     def __init__(self, text):
-        super(OutputNode, self).__init__()
+        super(PyOutputNode, self).__init__()
         self.text = text
 
     def generate(self):
         yield self.generate_yield(self.make_string(self.text))
 
-class ExpressionNode(PythonNode):
+
+class PyExpressionNode(PythonNode):
     def __init__(self, expression, tokens):
-        super(ExpressionNode, self).__init__()
+        super(PyExpressionNode, self).__init__()
         self.expr = expression
         self.tokens = tokens
 
@@ -75,20 +53,12 @@ class ExpressionNode(PythonNode):
         yield self.generate_yield('(%s)' % self.expr)
 
 
-class ComplexNode(PythonNode):
-    def __init__(self):
-        super(ComplexNode, self).__init__()
+class PyComplexNode(ComplexNode, PythonNode):
+    pass
 
-    def indented_children(self, increment=1):
-        child_indent = self.indent_level + increment
-        for i in self.children:
-            i.set_indent_level(child_indent)
-            for j in i.generate():
-                yield j
-
-class IfNode(ComplexNode):
+class PyIfNode(PyComplexNode):
     def __init__(self, expression):
-        super(IfNode, self).__init__()
+        super(PyIfNode, self).__init__()
         self.expression = expression
 
     def generate(self):
@@ -96,9 +66,9 @@ class IfNode(ComplexNode):
         for i in self.indented_children():
             yield i
 
-class ImportNode(PythonNode):
+class PyImportNode(PythonNode):
     def __init__(self, href, alias):
-        super(ImportNode, self).__init__()
+        super(PyImportNode, self).__init__()
         self.href = href
         self.alias = alias
 
@@ -107,9 +77,9 @@ class ImportNode(PythonNode):
            "%s = __self.__tonnikala__.import_defs('%s')" % (self.alias, self.href))
         
 
-class ForNode(ComplexNode):
+class PyForNode(PyComplexNode):
     def __init__(self, vars, expression):
-        super(ComplexNode, self).__init__()
+        super(PyForNode, self).__init__()
         self.vars = vars
         self.expression = expression
 
@@ -122,9 +92,9 @@ class ForNode(ComplexNode):
         for i in self.generate_varscope(self.generate_contents):
             yield i
 
-class DefineNode(ComplexNode):
+class PyDefineNode(PyComplexNode):
     def __init__(self, funcspec):
-        super(ComplexNode, self).__init__()
+        super(PyDefineNode, self).__init__()
         if '(' not in funcspec:
             funcspec += '()'
 
@@ -140,14 +110,14 @@ class DefineNode(ComplexNode):
 
         yield self.generate_indented_code("    return __output__")
 
-class ComplexExprNode(ComplexNode):
+class PyComplexExprNode(PyComplexNode):
     def generate(self):
         for i in self.indented_children(increment=0):
             yield i
 
-class RootNode(ComplexNode):
+class PyRootNode(PyComplexNode):
     def __init__(self):
-        super(RootNode, self).__init__()
+        super(PyRootNode, self).__init__()
         self.set_indent_level(0)
 
     def generate(self):
@@ -163,44 +133,12 @@ class RootNode(ComplexNode):
 
         yield '        return __output__\n'
 
-class Generator(object):
-    def __init__(self, ir_tree):
-        self.tree = ir_tree
-
-    def add_children(self, ir_node, target):
-        for i in ir_node.children:
-            if   isinstance(i, nodes.Text):
-                new_node = (OutputNode(i.escaped()))
-
-            elif isinstance(i, nodes.If):
-                new_node = (IfNode(i.expression))
-
-            elif isinstance(i, nodes.For):
-                new_node = (ForNode(i.parts[0], i.parts[1]))
-
-            elif isinstance(i, nodes.Define):
-                new_node = (DefineNode(i.funcspec))
-
-            elif isinstance(i, nodes.ComplexExpression):
-                new_node = (ComplexExprNode())
-
-            elif isinstance(i, nodes.Expression):
-                new_node = (ExpressionNode(i.expression, i.tokens))
-
-            elif isinstance(i, nodes.Import):
-                new_node = (ImportNode(i.href, i.alias))
-
-            else:
-                raise ValueError("Unknown node type", i.__class__.__name__)
-
-            target.add_child(new_node)
-
-            if isinstance(i, nodes.ContainerNode):
-                self.add_children(i, new_node)
-
-    def generate(self):
-        root = self.tree.root
-        self.root_node = RootNode()
-        self.add_children(self.tree.root, self.root_node)
-        x = list(self.root_node.generate())
-        return ''.join(self.root_node.generate())
+class Generator(BaseGenerator):
+    OutputNode      = PyOutputNode
+    IfNode          = PyIfNode
+    ForNode         = PyForNode
+    DefineNode      = PyDefineNode
+    ComplexExprNode = PyComplexExprNode
+    ExpressionNode  = PyExpressionNode
+    ImportNode      = PyImportNode
+    RootNode        = PyRootNode

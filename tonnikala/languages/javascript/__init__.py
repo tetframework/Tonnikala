@@ -6,7 +6,7 @@ __docformat__ = "epytext"
 from tonnikala.exceptions import ParseError
 from tonnikala.ir.nodes import Expression
 
-from tonnikala.languages.jslex import JsLexer
+from tonnikala.languages.javascript.jslex import JsLexer
 import re
 
 class JavascriptExpression(Expression):

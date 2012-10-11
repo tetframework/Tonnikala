@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText
+from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root
 from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
 from xml.dom.minidom    import Node
 from tonnikala.ir.tree  import IRTree
@@ -167,7 +167,9 @@ class IRGenerator(object):
 
 
     def generate_tree(self):
-        self.add_children(self.child_iter(self.dom_document), self.tree)        
+        root = Root()
+        self.tree.add_child(root)
+        self.add_children(self.child_iter(self.dom_document), root)
         return self.tree
 
     def render_constant_attributes(self, element):

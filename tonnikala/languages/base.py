@@ -36,7 +36,7 @@ class ComplexNode(LanguageNode):
             for j in i.generate():
                 yield j
 
-def unimplemented(self):
+def unimplemented(self, *a, **kw):
     raise NotImplementedError("Error: unimplemented")
 
 class BaseGenerator(object):

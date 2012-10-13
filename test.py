@@ -19,7 +19,7 @@ template = """<!DOCTYPE html>
         xmlns:fb="http://www.facebook.com/2008/fbml" py:foo="barf">
         <py:import href="includes.html" alias="includes"/>
         <body>
-        <py:def function="the_body"><ul><li py:for="i in ['1', '2', '3']">$i</li></ul></py:def>
+        <py:def function="the_body"><ul><li py:for="i in ['1', '2', '3']">$i ${str(int(i))}</li></ul></py:def>
         <py:def function="output_body(body_func)"><div>${the_body()}</div></py:def>
         ${output_body(the_body)}
         </body>
@@ -46,8 +46,8 @@ glob = {
 }
 
 exec(x, glob, glob)
-template = glob['__Template']
-output = template().render({})
+template = glob['__binder__']
+output = template(dict(foo=1, bar=2)).__main__()
 
 print(output)
 

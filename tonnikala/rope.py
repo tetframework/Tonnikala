@@ -19,3 +19,5 @@ class Rope(object):
 
     else:
         __unicode__ = join
+        def __str__(self):
+            return self.join().encode('UTF-8')

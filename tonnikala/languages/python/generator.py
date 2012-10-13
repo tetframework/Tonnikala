@@ -1,9 +1,16 @@
 from tonnikala.ir import nodes
 from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
+from tonnikala.languages.python.astmangle import get_free_vars
+import ast
 
 name_counter = 0
 
 class PythonNode(LanguageNode):
+    def __init__(self, *a, **kw):
+        super(PythonNode, self).__init__(*a, **kw)
+        self.free_variables = set()
+        self.masked_variables = set()
+
     def make_string(self, text):
         if isinstance(text, bytes):
             text = text.decode('UTF-8')
@@ -33,6 +40,9 @@ class PythonNode(LanguageNode):
         self.indent_level -= 1
         yield self.generate_indented_code('%s()' % name)
 
+    def get_free_variables(self):
+        return set(self.free_variables) - set(self.masked_variables)
+
 
 class PyOutputNode(PythonNode):
     def __init__(self, text):
@@ -48,23 +58,32 @@ class PyExpressionNode(PythonNode):
         super(PyExpressionNode, self).__init__()
         self.expr = expression
         self.tokens = tokens
+        self.free_variables = get_free_vars(self.expr)
 
     def generate(self):
         yield self.generate_yield('(%s)' % self.expr)
 
 
 class PyComplexNode(ComplexNode, PythonNode):
-    pass
+    def get_free_variables(self):
+        rv = set(self.free_variables)
+        for c in self.children:
+            rv.update(c.get_free_variables())
+
+        return rv - self.masked_variables
+
 
 class PyIfNode(PyComplexNode):
     def __init__(self, expression):
         super(PyIfNode, self).__init__()
         self.expression = expression
+        self.free_variables = get_free_vars(self.expression)
 
     def generate(self):
         yield self.generate_indented_code("if (%s):" % self.expression)
         for i in self.indented_children():
             yield i
+
 
 class PyImportNode(PythonNode):
     def __init__(self, href, alias):
@@ -74,7 +93,7 @@ class PyImportNode(PythonNode):
 
     def generate(self):
         yield self.generate_indented_code(
-           "%s = __self.__tonnikala__.import_defs('%s')" % (self.alias, self.href))
+           "%s = __tonnikala__.import_defs('%s')" % (self.alias, self.href))
         
 
 class PyForNode(PyComplexNode):
@@ -82,6 +101,9 @@ class PyForNode(PyComplexNode):
         super(PyForNode, self).__init__()
         self.vars = vars
         self.expression = expression
+        self.free_variables = get_free_vars(expression)
+        self.masked_variables = get_free_vars(vars)
+        self.free_variables -= self.masked_variables
 
     def generate_contents(self):
         yield self.generate_indented_code("for %s in %s:" % (self.vars, self.expression))
@@ -103,17 +125,19 @@ class PyDefineNode(PyComplexNode):
 
     def generate(self):
         yield self.generate_indented_code("def %s:" % self.funcspec)
-        yield self.generate_indented_code("    __output__ = __self.__tonnikala__.Rope()")
+        yield self.generate_indented_code("    __output__ = __tonnikala__.Rope()")
 
         for i in self.indented_children():
             yield i
 
         yield self.generate_indented_code("    return __output__")
 
+
 class PyComplexExprNode(PyComplexNode):
     def generate(self):
         for i in self.indented_children(increment=0):
             yield i
+
 
 class PyRootNode(PyComplexNode):
     def __init__(self):
@@ -121,17 +145,20 @@ class PyRootNode(PyComplexNode):
         self.set_indent_level(0)
 
     def generate(self):
-        yield 'class __Template(object):\n'
+        free_variables = self.get_free_variables()
+        print free_variables
+        yield 'def __binder__(__tonnikala__context__):\n'
         yield '    __tonnikala__ = __tonnikala_runtime__\n'
-        yield '    def render(__self, __context):\n'
-        yield '        return __self.do_render(__context).join()\n'
-        yield '    def do_render(__self, __context):\n'
-        yield '        __output__ = __self.__tonnikala__.Rope()\n'
+        yield '    class __Template__(object):\n'
+        yield '        def __main__(__self__):\n'
+        yield '            __output__ = __tonnikala__.Rope()\n'
 
-        for i in self.indented_children(increment=2):
+        for i in self.indented_children(increment=3):
             yield i
 
-        yield '        return __output__\n'
+        yield '            return __output__\n'
+        yield '    return __Template__()\n'
+
 
 class Generator(BaseGenerator):
     OutputNode      = PyOutputNode

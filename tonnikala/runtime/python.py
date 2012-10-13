@@ -1,4 +1,4 @@
-from tonnikala.rope import Rope
+from .rope import Rope
 
 def import_defs(href):
     return {}

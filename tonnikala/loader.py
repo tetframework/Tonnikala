@@ -7,7 +7,11 @@ from tonnikala.languages.python.generator import Generator as PythonGenerator
 from tonnikala.languages.javascript.generator import Generator as JavascriptGenerator
 from tonnikala.runtime import python
 from tonnikala.parser import Parser
-import __builtin__
+import six
+if six.PY3:
+    import builtins as __builtin__
+else:
+    import __builtin__
 
 class Helpers():
     pass

@@ -41,6 +41,27 @@ def make_buffer(*args):
         rv(i)
     return rv
 
+def output_attrs(values):
+    if not values:
+        return ''
+
+    values = dict(values)
+    rv = Buffer()
+    for k, v in values.items():
+        if isinstance(v, (bool, NoneType)):
+            if v:
+                v = k
+            else:
+                continue
+
+        rv(' ')
+        rv(k)
+        rv('="')
+        rv(escape(v))
+        rv('"')            
+
+    return rv
+
 def output_attr(name, value_func):
     contents = value_func()
     if contents.boolean_value != None:

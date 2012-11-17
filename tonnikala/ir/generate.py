@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root
+from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes
 from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
 from xml.dom.minidom    import Node
 from tonnikala.ir.tree  import IRTree
@@ -50,9 +50,14 @@ class IRGenerator(object):
 
 
     def generate_attributes(self, dom_node, ir_node):
+        attrs_node = self.grab_and_remove_control_attr(dom_node, 'attrs')
+        if attrs_node:
+            ir_node.set_dynamic_attrs(attrs_node)
+
         attrs = dict(dom_node.attributes)
         for name, attr in attrs.items():
             ir_node.set_attribute(name, handle_text_node(attr.nodeValue))
+
 
 
     def is_control_name(self, name, to_match):
@@ -102,7 +107,6 @@ class IRGenerator(object):
             ir_node_stack.append(Define(attr))
 
         # TODO: add all control attrs in order
-
         if not ir_node_stack:
             return True, None, None
 
@@ -129,6 +133,7 @@ class IRGenerator(object):
 
         if generate_element:
             el_ir_node = Element(dom_node.tagName)
+
             el_ir_node = self.map_guards(dom_node, el_ir_node)
             self.generate_attributes(dom_node, el_ir_node)
 
@@ -196,6 +201,9 @@ class IRGenerator(object):
                 if i.mutable_attributes:
                     for n, v in i.mutable_attributes.items():
                         new_children.append(MutableAttribute(n, v))
+
+                if i.dynamic_attrs:
+                    new_children.append(DynamicAttributes(i.dynamic_attrs))
 
                 if not i.children:
                     if i.name in self.empty_elements:

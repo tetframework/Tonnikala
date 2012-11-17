@@ -81,6 +81,9 @@ class BaseGenerator(object):
         elif isinstance(ir_node, nodes.MutableAttribute):
             new_node = self.AttributeNode(ir_node.name, ir_node.value)
 
+        elif isinstance(ir_node, nodes.DynamicAttributes):
+            new_node = self.AttrsNode(ir_node.expression)
+
         else:
             raise ValueError("Unknown node type", ir_node.__class__.__name__)
 

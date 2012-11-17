@@ -4,6 +4,11 @@ from tonnikala.languages.python.astmangle import FreeVarFinder
 import ast
 
 name_counter = 0
+ALWAYS_BUILTINS = '''
+    False
+    True
+    None
+'''.split()
 
 class PythonNode(LanguageNode):
     def __init__(self, *a, **kw):
@@ -132,6 +137,16 @@ class PyAttributeNode(PyComplexNode):
         yield self.generate_yield('__tonnikala__.output_attr("%s", %s)'
             % (self.name, funcname))
 
+class PyAttrsNode(PythonNode):
+    def __init__(self, expression):
+        super(PyAttrsNode, self).__init__()
+        self.expression = expression
+        self.free_variables = FreeVarFinder.for_expression(expression).get_free_variables()
+
+    def generate(self):
+        yield self.generate_yield('__tonnikala__.output_attrs(%s)' 
+            % self.expression)
+
 class PyForNode(PyComplexNode):
     def __init__(self, vars, expression):
         super(PyForNode, self).__init__()
@@ -193,6 +208,7 @@ class PyRootNode(PyComplexNode):
 
     def generate(self):
         free_variables = self.get_free_variables()
+        free_variables.difference_update(ALWAYS_BUILTINS)
         yield 'def __binder__(__tonnikala__context__):\n'
         yield '    __tonnikala__ = __tonnikala_runtime__\n'
 
@@ -220,3 +236,4 @@ class Generator(BaseGenerator):
     ImportNode      = PyImportNode
     RootNode        = PyRootNode
     AttributeNode   = PyAttributeNode
+    AttrsNode       = PyAttrsNode

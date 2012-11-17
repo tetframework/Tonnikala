@@ -1,3 +1,6 @@
 Tonnikala.egg-info/
 *.pyc
 venv
+venv32
+.venv-path
+

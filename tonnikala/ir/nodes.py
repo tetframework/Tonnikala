@@ -82,6 +82,16 @@ class MutableAttribute(ContainerNode):
     def __str__(self):
         return str({ self.name: self.value })
 
+
+class DynamicAttributes(BaseNode):
+    def __init__(self, expression):
+        super(DynamicAttributes, self).__init__()
+        self.expression = expression
+
+    def __str__(self):
+        return str(expression)
+
+
 class ComplexExpression(ContainerNode):
     def __init__(self):
         super(ComplexExpression, self).__init__()
@@ -98,6 +108,7 @@ class Element(ContainerNode):
         self.guard      = None
         self.constant_attributes = {}
         self.mutable_attributes  = {}
+        self.dynamic_attrs       = None
 
     def __str__(self):
         attrs = str(self.attributes)
@@ -112,6 +123,9 @@ class Element(ContainerNode):
             self.mutable_attributes[name] = value
 
         self.attributes[name] = value
+
+    def set_dynamic_attrs(self, expression):
+        self.dynamic_attrs = expression
 
     def get_constant_attributes(self):
         return self.constant_attributes    

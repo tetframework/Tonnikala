@@ -27,6 +27,8 @@ template = """<!DOCTYPE html>
         <input checked="${true}"/>
         <input checked="${false}"/>
         <input checked="${none}"/>
+
+        <input py:attrs="dict(foo=5, bar='6', href='&lt;', checked=True, selected=False, simple=None)"/>
         </body>
 </html>"""
 

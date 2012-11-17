@@ -9,10 +9,13 @@ class Rope(object):
             self._buffer.append(initial)
 
     def __call__(self, obj):
-        self._buffer.append(obj)
+        if isinstance(obj, Rope):
+            self._buffer.extend(obj._buffer)
+        else:
+            self._buffer.append(text_type(obj))
 
     def join(self):
-        return ''.join(text_type(i) for i in self._buffer)
+        return ''.join(self._buffer)
 
     if PY3:
         __str__ = join

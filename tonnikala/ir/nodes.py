@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
-
+from tonnikala.helpers import escape
 import re
 
 __docformat__ = "epytext"
@@ -10,13 +10,6 @@ try:
 except:
     unicode = str
 
-
-def escape(string):
-    return string.replace('&', '&amp;')  \
-                 .replace('<', '&lt;')   \
-                 .replace('>', '&gt;')   \
-                 .replace('"', '&quot;') \
-                 .replace("'", '&#39;') 
 
 class BaseNode(object):
     def __repr__(self):
@@ -74,14 +67,17 @@ class ContainerNode(BaseNode):
     def __str__(self):
         return str(self.children)
 
+
 class Root(ContainerNode):
     pass
 
-class MutableAttribute(BaseNode):
+
+class MutableAttribute(ContainerNode):
     def __init__(self, name, value):
         super(MutableAttribute, self).__init__()
         self.name = name
         self.value = value
+        self.children.append(value)
 
     def __str__(self):
         return str({ self.name: self.value })
@@ -123,6 +119,7 @@ class Element(ContainerNode):
     def get_mutable_attributes(self):
         return self.mutable_attributes    
 
+
 class For(ContainerNode):
     IN_RE = re.compile('\s+in\s+')
 
@@ -148,6 +145,7 @@ class Define(ContainerNode):
 
     def __str__(self):
         return ', '.join([self.funcspec, unicode(self.children)])
+
 
 class Import(BaseNode):
     def __init__(self, href, alias):

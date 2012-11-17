@@ -1,5 +1,4 @@
 import ast
-import pdb
 
 class FreeVarFinder(ast.NodeVisitor):
     """
@@ -8,9 +7,10 @@ class FreeVarFinder(ast.NodeVisitor):
     """
     def __init__(self, masked=[]):
         super(FreeVarFinder, self).__init__()
-        self.masked    = set(masked)
-        self.vars      = set()
-        self.generated = set()
+        self.masked       = set(masked)
+        self.vars         = set()
+        self.generated    = set()
+        self.newly_masked = set()
 
     @classmethod
     def for_ast(cls, ast):
@@ -30,13 +30,12 @@ class FreeVarFinder(ast.NodeVisitor):
 
     def visit_Lambda(self, node):
         args = node.args.args
-        pdb.set_trace()
-        masked = [ getattr(i, 'id', getattr(i, 'arg')) for i in args ]
+        masked = [ getattr(i, 'id', getattr(i, 'arg', None)) for i in args ]
         subscoper = FreeVarFinder(masked)
         subscoper.generic_visit(node)
         self.vars = self.vars.union(subscoper.get_free_variables())
-
         self.do_visit_lambda_defaults(node.args)
+        self.newly_masked = set(masked)
 
     def visit_FunctionDef(self, node):
         self.generated.add(node.name)
@@ -70,3 +69,6 @@ class FreeVarFinder(ast.NodeVisitor):
 
     def get_generated_variables(self):
         return self.generated
+
+    def get_masked_variables(self):
+        return self.newly_masked

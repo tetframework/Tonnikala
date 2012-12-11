@@ -58,25 +58,31 @@ class BaseGenerator(object):
 
     def add_child(self, ir_node, target):
         if   isinstance(ir_node, nodes.Text):
-            new_node = (self.OutputNode(ir_node.escaped()))
+            new_node = self.OutputNode(ir_node.escaped())
 
         elif isinstance(ir_node, nodes.If):
-            new_node = (self.IfNode(ir_node.expression))
+            new_node = self.IfNode(ir_node.expression)
 
         elif isinstance(ir_node, nodes.For):
-            new_node = (self.ForNode(ir_node.parts[0], ir_node.parts[1]))
+            new_node = self.ForNode(ir_node.parts[0], ir_node.parts[1])
 
         elif isinstance(ir_node, nodes.Define):
-            new_node = (self.DefineNode(ir_node.funcspec))
+            new_node = self.DefineNode(ir_node.funcspec)
 
         elif isinstance(ir_node, nodes.ComplexExpression):
-            new_node = (self.ComplexExprNode())
+            new_node = self.ComplexExprNode()
 
         elif isinstance(ir_node, nodes.Expression):
-            new_node = (self.ExpressionNode(ir_node.expression, ir_node.tokens))
+            new_node = self.ExpressionNode(ir_node.expression, ir_node.tokens)
 
         elif isinstance(ir_node, nodes.Import):
-            new_node = (self.ImportNode(ir_node.href, ir_node.alias))
+            new_node = self.ImportNode(ir_node.href, ir_node.alias)
+
+        elif isinstance(ir_node, nodes.MutableAttribute):
+            new_node = self.AttributeNode(ir_node.name, ir_node.value)
+
+        elif isinstance(ir_node, nodes.DynamicAttributes):
+            new_node = self.AttrsNode(ir_node.expression)
 
         else:
             raise ValueError("Unknown node type", ir_node.__class__.__name__)

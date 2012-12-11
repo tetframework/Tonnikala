@@ -4,6 +4,11 @@ from tonnikala.languages.python.astmangle import FreeVarFinder
 import ast
 
 name_counter = 0
+ALWAYS_BUILTINS = '''
+    False
+    True
+    None
+'''.split()
 
 class PythonNode(LanguageNode):
     def __init__(self, *a, **kw):
@@ -23,23 +28,34 @@ class PythonNode(LanguageNode):
         return rv
 
     def generate_yield(self, code, escape=False):
-        func = '__output__' if not escape else '__output__.escape'
-        return self.generate_indented_code('%s(%s)' % (func, code))
+        method = '.escape' if escape else ''
+        return self.generate_indented_code('__output__%s(%s)' % (method, code))
 
     def gen_name(self):
         global name_counter
         name_counter += 1
         return "__tk_%d__" % name_counter
 
-    def generate_varscope(self, generator):
-        name = self.gen_name()
+    def generate_function(self, name, generator, add_buffer=False, buffer_class='__tonnikala__.Buffer'):
         yield self.generate_indented_code('def %s():' % name)
         self.indent_level += 1
+
+        if add_buffer:
+            yield self.generate_indented_code('__output__ = %s()' % buffer_class)
 
         for i in generator():
             yield i
 
+        if add_buffer:
+            yield self.generate_indented_code('return __output__')
+
         self.indent_level -= 1
+        
+    def generate_varscope(self, generator):
+        name = self.gen_name()
+        for i in self.generate_function(name, generator):
+            yield i
+
         yield self.generate_indented_code('%s()' % name)
 
     def get_generated_variables(self):
@@ -66,7 +82,7 @@ class PyExpressionNode(PythonNode):
         self.free_variables = FreeVarFinder.for_expression(self.expr).get_free_variables()
 
     def generate(self):
-        yield self.generate_yield('(%s)' % self.expr, escape=True)
+        yield self.generate_yield('%s' % self.expr, escape=True)
 
 
 class PyComplexNode(ComplexNode, PythonNode):
@@ -104,18 +120,40 @@ class PyImportNode(PythonNode):
            "%s = __tonnikala__.import_defs('%s')" % (self.alias, self.href))
 
 
+class PyAttributeNode(PyComplexNode):
+    def __init__(self, name, value):
+        super(PyAttributeNode, self).__init__()
+        self.name = name
+
+    def generate(self):
+        funcname = self.gen_name()
+        for i in self.generate_function(funcname, lambda: self.indented_children(0), 
+                     add_buffer=True, buffer_class='__tonnikala__.AttrBuffer'):
+            yield i
+
+        yield self.generate_yield('__tonnikala__.output_attr("%s", %s)'
+            % (self.name, funcname))
+
+class PyAttrsNode(PythonNode):
+    def __init__(self, expression):
+        super(PyAttrsNode, self).__init__()
+        self.expression = expression
+        self.free_variables = FreeVarFinder.for_expression(expression).get_free_variables()
+
+    def generate(self):
+        yield self.generate_yield('__tonnikala__.output_attrs(%s)' 
+            % self.expression)
+
 class PyForNode(PyComplexNode):
     def __init__(self, vars, expression):
         super(PyForNode, self).__init__()
         self.vars = vars
         self.expression = expression
-
         self.free_variables = FreeVarFinder.for_expression(expression).get_free_variables()
 
         # evaluate the for target as a tuple!
-        self.masked_variables = FreeVarFinder.for_expression(vars).get_free_variables()
-
-        self.free_variables -= self.masked_variables
+        self.masked_variables  = FreeVarFinder.for_expression(vars).get_free_variables()
+        self.free_variables   -= self.masked_variables
 
         # sic
         self.generated_variables = self.masked_variables
@@ -129,6 +167,7 @@ class PyForNode(PyComplexNode):
         for i in self.generate_varscope(self.generate_contents):
             yield i
 
+
 class PyDefineNode(PyComplexNode):
     def __init__(self, funcspec):
         super(PyDefineNode, self).__init__()
@@ -139,11 +178,13 @@ class PyDefineNode(PyComplexNode):
         self.def_clause = "def %s:" % self.funcspec
         fvf = FreeVarFinder.for_statement(self.def_clause + "pass")
         self.generated_variables = fvf.get_generated_variables()
+        self.masked_variables = fvf.get_masked_variables()
         self.free_variables = fvf.get_free_variables() - fvf.get_generated_variables()
+        print self.generated_variables, self.free_variables
 
     def generate(self):
         yield self.generate_indented_code("def %s:" % self.funcspec)
-        yield self.generate_indented_code("    __output__ = __tonnikala__.Rope()")
+        yield self.generate_indented_code("    __output__ = __tonnikala__.Buffer()")
 
         for i in self.indented_children():
             yield i
@@ -163,6 +204,7 @@ class PyRootNode(PyComplexNode):
 
     def generate(self):
         free_variables = self.get_free_variables()
+        free_variables.difference_update(ALWAYS_BUILTINS)
         yield 'def __binder__(__tonnikala__context__):\n'
         yield '    __tonnikala__ = __tonnikala_runtime__\n'
 
@@ -171,7 +213,7 @@ class PyRootNode(PyComplexNode):
 
         yield '    class __Template__(object):\n'
         yield '        def __main__(__self__):\n'
-        yield '            __output__ = __tonnikala__.Rope()\n'
+        yield '            __output__ = __tonnikala__.Buffer()\n'
 
         for i in self.indented_children(increment=3):
             yield i
@@ -189,3 +231,5 @@ class Generator(BaseGenerator):
     ExpressionNode  = PyExpressionNode
     ImportNode      = PyImportNode
     RootNode        = PyRootNode
+    AttributeNode   = PyAttributeNode
+    AttrsNode       = PyAttrsNode

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
-
+from tonnikala.helpers import escape
 import re
 
 __docformat__ = "epytext"
@@ -10,13 +10,6 @@ try:
 except:
     unicode = str
 
-
-def escape(string):
-    return string.replace('&', '&amp;')  \
-                 .replace('<', '&lt;')   \
-                 .replace('>', '&gt;')   \
-                 .replace('"', '&quot;') \
-                 .replace("'", '&#39;') 
 
 class BaseNode(object):
     def __repr__(self):
@@ -74,17 +67,30 @@ class ContainerNode(BaseNode):
     def __str__(self):
         return str(self.children)
 
+
 class Root(ContainerNode):
     pass
 
-class MutableAttribute(BaseNode):
+
+class MutableAttribute(ContainerNode):
     def __init__(self, name, value):
         super(MutableAttribute, self).__init__()
         self.name = name
         self.value = value
+        self.children.append(value)
 
     def __str__(self):
         return str({ self.name: self.value })
+
+
+class DynamicAttributes(BaseNode):
+    def __init__(self, expression):
+        super(DynamicAttributes, self).__init__()
+        self.expression = expression
+
+    def __str__(self):
+        return str(expression)
+
 
 class ComplexExpression(ContainerNode):
     def __init__(self):
@@ -102,6 +108,7 @@ class Element(ContainerNode):
         self.guard      = None
         self.constant_attributes = {}
         self.mutable_attributes  = {}
+        self.dynamic_attrs       = None
 
     def __str__(self):
         attrs = str(self.attributes)
@@ -117,11 +124,15 @@ class Element(ContainerNode):
 
         self.attributes[name] = value
 
+    def set_dynamic_attrs(self, expression):
+        self.dynamic_attrs = expression
+
     def get_constant_attributes(self):
         return self.constant_attributes    
 
     def get_mutable_attributes(self):
         return self.mutable_attributes    
+
 
 class For(ContainerNode):
     IN_RE = re.compile('\s+in\s+')
@@ -148,6 +159,7 @@ class Define(ContainerNode):
 
     def __str__(self):
         return ', '.join([self.funcspec, unicode(self.children)])
+
 
 class Import(BaseNode):
     def __init__(self, href, alias):

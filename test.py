@@ -22,12 +22,17 @@ template = """<!DOCTYPE html>
         <py:def function="the_body"><ul><li py:for="i in ['1', '2', '3']">$i ${str(int(i))}</li></ul></py:def>
         <py:def function="output_body(body_func)"><div>${body_func()}</div></py:def>
         ${output_body(the_body)}
-        <div id="foo">$foo</div>
-        <div id="bar">$bar</div>
+        <div id="foo&lt;" attr="$foo">&lt;$foo</div>
+        <div id="bar&lt;" attr="$bar">$bar</div>
+        <input checked="${true}"/>
+        <input checked="${false}"/>
+        <input checked="${none}"/>
+
+        <input py:attrs="dict(foo=5, bar='6', href='&lt;', checked=True, selected=False, simple=None)"/>
         </body>
 </html>"""
 
 compiled = Loader(debug=True).load_string(template)
 print("Rendered python template >>>")
-print(compiled.render(dict(foo=1, bar='asdf')))
+print(compiled.render(dict(foo=1, bar='<<<asdf>>>', true=True, false=False, none=None)))
 print("<<< ends here")

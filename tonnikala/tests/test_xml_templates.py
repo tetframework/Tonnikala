@@ -60,7 +60,7 @@ class TestXmlTemplates(unittest.TestCase):
     def test_for(self):
         fragment = '<html><py:for each="i in values">${i}</py:for></html>'
         self.are('<html></html>', fragment, values=[])
-        self.are('<html>01234</html>', fragment, values=xrange(5))
+        self.are('<html>01234</html>', fragment, values=range(5))
         self.are('<html>&lt;</html>', fragment, values=['<'])
 
         fragment = '<html><div py:for="i in values">${i}</div></html>'

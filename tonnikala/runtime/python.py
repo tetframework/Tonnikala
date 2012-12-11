@@ -1,4 +1,5 @@
-from types import NoneType
+NoneType = type(None)
+
 from .rope import Rope
 from ..helpers import escape as strescape
 from six import text_type

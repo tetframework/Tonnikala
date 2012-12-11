@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from tonnikala.ir import nodes
 from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 from tonnikala.languages.python.astmangle import FreeVarFinder
@@ -180,7 +184,6 @@ class PyDefineNode(PyComplexNode):
         self.generated_variables = fvf.get_generated_variables()
         self.masked_variables = fvf.get_masked_variables()
         self.free_variables = fvf.get_free_variables() - fvf.get_generated_variables()
-        print self.generated_variables, self.free_variables
 
     def generate(self):
         yield self.generate_indented_code("def %s:" % self.funcspec)

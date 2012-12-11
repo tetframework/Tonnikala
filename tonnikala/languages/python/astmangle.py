@@ -30,7 +30,7 @@ class FreeVarFinder(ast.NodeVisitor):
 
     def visit_Lambda(self, node):
         args = node.args.args
-        masked = [ getattr(i, 'id', getattr(i, 'arg')) for i in args ]
+        masked = [ getattr(i, 'id', getattr(i, 'arg', None)) for i in args ]
         subscoper = FreeVarFinder(masked)
         subscoper.generic_visit(node)
         self.vars = self.vars.union(subscoper.get_free_variables())

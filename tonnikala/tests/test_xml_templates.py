@@ -65,3 +65,16 @@ class TestXmlTemplates(unittest.TestCase):
 
         fragment = '<html><div py:for="i in values">${i}</div></html>'
         self.are('<html><div>0</div><div>1</div></html>', fragment, values=range(2))
+
+    def test_def(self):
+        fragment = '<html><py:def function="foo(bar)">bar: ${bar}</py:def>' \
+            '-${foo("baz")}-</html>'
+
+        self.are('<html>-bar: baz-</html>', fragment)
+
+    def test_closures(self):
+        fragment = '<html><a py:def="embed(func)">${func()}</a>' \
+            '<py:for each="i in range(3)"><py:def function="callable()">${i}</py:def>' \
+            '${embed(callable)}</py:for></html>'
+
+        self.are('<html><a>0</a><a>1</a><a>2</a></html>', fragment)

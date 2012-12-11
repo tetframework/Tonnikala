@@ -22,8 +22,9 @@ class PythonNode(LanguageNode):
 
         return rv
 
-    def generate_yield(self, code):
-        return self.generate_indented_code('__output__(%s)' % code)
+    def generate_yield(self, code, escape=False):
+        func = '__output__' if not escape else '__output__.escape'
+        return self.generate_indented_code('%s(%s)' % (func, code))
 
     def gen_name(self):
         global name_counter
@@ -65,7 +66,7 @@ class PyExpressionNode(PythonNode):
         self.free_variables = FreeVarFinder.for_expression(self.expr).get_free_variables()
 
     def generate(self):
-        yield self.generate_yield('(%s)' % self.expr)
+        yield self.generate_yield('(%s)' % self.expr, escape=True)
 
 
 class PyComplexNode(ComplexNode, PythonNode):
@@ -154,7 +155,6 @@ class PyComplexExprNode(PyComplexNode):
     def generate(self):
         for i in self.indented_children(increment=0):
             yield i
-
 
 class PyRootNode(PyComplexNode):
     def __init__(self):

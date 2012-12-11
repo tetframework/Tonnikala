@@ -20,6 +20,6 @@ setup(
     """.split(),
     setup_requires=[],
     include_package_data=True,
-    test_suite='nose.collector',
+    test_suite = "tonnikala.tests.test_all",
     tests_require=[]
 )

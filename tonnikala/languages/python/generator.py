@@ -112,6 +112,10 @@ class PyIfNode(PyComplexNode):
             yield i
 
 
+def PyUnlessNode(self, expression):
+    return PyIfNode('not (%s)' % expression)
+
+
 class PyImportNode(PythonNode):
     def __init__(self, href, alias):
         super(PyImportNode, self).__init__()
@@ -236,3 +240,4 @@ class Generator(BaseGenerator):
     RootNode        = PyRootNode
     AttributeNode   = PyAttributeNode
     AttrsNode       = PyAttrsNode
+    UnlessNode      = PyUnlessNode

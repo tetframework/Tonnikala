@@ -102,10 +102,10 @@ class ComplexExpression(ContainerNode):
 
 
 class Element(ContainerNode):
-    def __init__(self, name):
+    def __init__(self, name, guard_expression=None):
         super(Element, self).__init__()
         self.name       = name
-        self.guard      = None
+        self.guard_expression = guard_expression
         self.constant_attributes = {}
         self.mutable_attributes  = {}
         self.dynamic_attrs       = None
@@ -114,7 +114,10 @@ class Element(ContainerNode):
         attrs = str(self.attributes)
         children = str(self.children)
         
-        return ', '.join([self.name, attrs, children])
+        return ', '.join([self.name, 'guard=%s' % self.guard_expression, attrs, children])
+
+    def get_guard_expression(self):
+        return self.guard_expression
 
     def set_attribute(self, name, value):
         if isinstance(value, Text):
@@ -175,6 +178,17 @@ class Import(BaseNode):
 class If(ContainerNode):
     def __init__(self, expression):
         super(If, self).__init__()
+
+        self.expression = expression
+
+    def __str__(self):
+        children = str(self.children)
+        return ', '.join([("(%s)" % self.expression), children])
+
+
+class Unless(ContainerNode):
+    def __init__(self, expression):
+        super(Unless, self).__init__()
 
         self.expression = expression
 

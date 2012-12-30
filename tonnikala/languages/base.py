@@ -48,6 +48,7 @@ class BaseGenerator(object):
     ExpressionNode  = unimplemented
     ImportNode      = unimplemented
     Node            = unimplemented
+    UnlessNode      = unimplemented
 
     def __init__(self, ir_tree):
         self.tree = ir_tree
@@ -62,6 +63,9 @@ class BaseGenerator(object):
 
         elif isinstance(ir_node, nodes.If):
             new_node = self.IfNode(ir_node.expression)
+
+        elif isinstance(ir_node, nodes.Unless):
+            new_node = self.UnlessNode(ir_node.expression)
 
         elif isinstance(ir_node, nodes.For):
             new_node = self.ForNode(ir_node.parts[0], ir_node.parts[1])

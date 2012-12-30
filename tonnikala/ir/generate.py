@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes
+from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless
+
 from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
 from xml.dom.minidom    import Node
 from tonnikala.ir.tree  import IRTree
@@ -45,8 +46,8 @@ class IRGenerator(object):
             current = current.nextSibling
 
 
-    def map_guards(self, dom_node, ir_node):
-        return ir_node
+    def get_guard_expression(self, dom_node):
+        return self.grab_and_remove_control_attr(dom_node, 'strip')
 
 
     def generate_attributes(self, dom_node, ir_node):
@@ -57,7 +58,6 @@ class IRGenerator(object):
         attrs = dict(dom_node.attributes)
         for name, attr in attrs.items():
             ir_node.set_attribute(name, handle_text_node(attr.nodeValue))
-
 
 
     def is_control_name(self, name, to_match):
@@ -73,7 +73,8 @@ class IRGenerator(object):
 
         return None
 
-    def create_control_node(self, dom_node):
+
+    def create_control_nodes(self, dom_node):
         name = dom_node.tagName
 
         ir_node_stack = []
@@ -126,27 +127,29 @@ class IRGenerator(object):
 
 
     def generate_element_node(self, dom_node):
-        generate_element, top_control, bottom_control = self.create_control_node(dom_node)
+        generate_element, topmost, bottom = self.create_control_nodes(dom_node)
 
-        bottom_node = bottom_control
-        top_node = top_control
+        guard_expression = self.get_guard_expression(dom_node)
+
+        # on py:strip="" the element is stripped out unconditionally and needs not 
+        # be generated
+        if guard_expression is not None and not guard_expression.strip():
+            generate_element = False
 
         if generate_element:
-            el_ir_node = Element(dom_node.tagName)
-
-            el_ir_node = self.map_guards(dom_node, el_ir_node)
+            el_ir_node = Element(dom_node.tagName, guard_expression=guard_expression)
             self.generate_attributes(dom_node, el_ir_node)
 
-            if not top_node:
-                top_node = el_ir_node
+            if not topmost:
+                topmost = el_ir_node
 
-            if bottom_node:
-                bottom_node.add_child(el_ir_node)
+            if bottom:
+                bottom.add_child(el_ir_node)
 
-            bottom_node = el_ir_node
+            bottom = el_ir_node
         
-        self.add_children(self.child_iter(dom_node), bottom_node)
-        return top_node
+        self.add_children(self.child_iter(dom_node), bottom)
+        return topmost
 
 
     def generate_ir_node(self, dom_node):
@@ -177,6 +180,7 @@ class IRGenerator(object):
         self.add_children(self.child_iter(self.dom_document), root)
         return self.tree
 
+
     def render_constant_attributes(self, element):
         cattr = element.get_constant_attributes()
         code = []
@@ -184,6 +188,23 @@ class IRGenerator(object):
             code.append(' %s="%s"' % (name, value.escaped()))
 
         return ''.join(code)
+
+    def get_start_tag_nodes(self, element):
+        start_tag_nodes = []
+        pre_text_node = '<%s' % element.name
+        if element.attributes:
+            pre_text_node += self.render_constant_attributes(element)
+
+        start_tag_nodes.append(EscapedText(pre_text_node))
+        if element.mutable_attributes:
+            for n, v in element.mutable_attributes.items():
+                start_tag_nodes.append(MutableAttribute(n, v))
+
+        if element.dynamic_attrs:
+            start_tag_nodes.append(DynamicAttributes(element.dynamic_attrs))
+
+        return start_tag_nodes
+
 
     def flatten_element_nodes_on(self, node):
         new_children = []
@@ -193,31 +214,43 @@ class IRGenerator(object):
                 new_children.append(i)
 
             else:
-                pre_text_node = '<%s' % i.name
-                if i.attributes:
-                    pre_text_node += self.render_constant_attributes(i)
+                # this is complicated because of the stupid strip syntax :)
+                start_tag_nodes = self.get_start_tag_nodes(i)
+                end_tag_nodes = []
 
-                new_children.append(EscapedText(pre_text_node))
-                if i.mutable_attributes:
-                    for n, v in i.mutable_attributes.items():
-                        new_children.append(MutableAttribute(n, v))
-
-                if i.dynamic_attrs:
-                    new_children.append(DynamicAttributes(i.dynamic_attrs))
-
+                # if no children, then 1 guard is enough
                 if not i.children:
                     if i.name in self.empty_elements:
-                        new_children.append(EscapedText('/>'))
-                        continue
+                        start_tag_nodes.append(EscapedText('/>'))
 
-                new_children.append(EscapedText('>'))
-                merged = i.children
-                for j in merged:
-                    new_children.append(j)
+                    else:
+                        start_tag_nodes.append(EscapedText('></%s>' % i.name))
+
+                else:
+                    start_tag_nodes.append(EscapedText('>'))
+                    end_tag_nodes = [ EscapedText('</%s>' % i.name) ]
+                
+                child_nodes = []
+                for j in i.children:
+                    child_nodes.append(j)
                     if isinstance(j, Element):
                         recurse = True
 
-                new_children.append(EscapedText('</%s>' % i.name))
+                # if there is a guard...
+                guard = i.get_guard_expression()
+                if guard is not None:
+                    start_tag = Unless(guard)
+                    start_tag.children = start_tag_nodes
+                    start_tag_nodes = [ start_tag ]
+
+                    if end_tag_nodes:
+                        end_tag = Unless(guard)
+                        end_tag.children = end_tag_nodes
+                        end_tag_nodes = [ end_tag ]
+
+                new_children.extend(start_tag_nodes)
+                new_children.extend(child_nodes)
+                new_children.extend(end_tag_nodes)
 
         node.children = new_children
 

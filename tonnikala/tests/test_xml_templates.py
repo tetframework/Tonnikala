@@ -72,6 +72,19 @@ class TestXmlTemplates(unittest.TestCase):
 
         self.are('<html>-bar: baz-</html>', fragment)
 
+    def test_strip(self):
+        fragment = '<html><div py:strip="foo()">bar</div></html>'
+        self.are('<html>bar</html>', fragment, foo=lambda: True)
+        self.are('<html><div>bar</div></html>', fragment, foo=lambda: False)
+
+        # the strip expression should not be evalled twice, but currently is
+        # self.are('<html>bar</html>',           fragment,
+        #    foo=iter([ True, False ]).next)
+
+        # self.are('<html><div>bar<div></html>', fragment,
+        #    foo=iter([ False, True ]).next)
+        
+
     def test_closures(self):
         fragment = '<html><a py:def="embed(func)">${func()}</a>' \
             '<py:for each="i in range(3)"><py:def function="callable()">${i}</py:def>' \

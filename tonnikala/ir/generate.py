@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless
+from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless, Expression
 
 from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
 from xml.dom.minidom    import Node
@@ -31,10 +31,15 @@ html5_empty_tags = frozenset('''
 
 
 class IRGenerator(object):
-    def __init__(self, document):
+    def __init__(self, document, mode='html5'):
         self.dom_document = document
         self.tree = IRTree()
-        self.empty_elements = html5_empty_tags
+    
+        if mode in [ 'html', 'html5', 'xhtml' ]:
+            self.empty_elements = html5_empty_tags
+
+        else:
+            self.empty_elements = set()
 
     def child_iter(self, node):
         if not node.firstChild:
@@ -91,10 +96,8 @@ class IRGenerator(object):
         if self.is_control_name(name, 'import'):
             ir_node_stack.append(Import(dom_node.getAttribute('href'), dom_node.getAttribute('alias')))
 
-
         # TODO: add all node types in order
         generate_element = not bool(ir_node_stack)
-
         attr = self.grab_and_remove_control_attr(dom_node, 'if')
         if attr is not None:
             ir_node_stack.append(If(attr))
@@ -136,19 +139,45 @@ class IRGenerator(object):
         if guard_expression is not None and not guard_expression.strip():
             generate_element = False
 
+        # facility to replace children for content control attr
+        overridden_children = None
+        content = self.grab_and_remove_control_attr(dom_node, 'content')
+        if content:
+            overridden_children = [ Expression(content) ]
+
+        if self.is_control_name(dom_node.tagName, 'replace'):
+            replace = dom_node.getAttribute('value')
+            if replace is None:
+                raise ValueError("No value attribute specified for replace tag")
+        else:
+            replace = self.grab_and_remove_control_attr(dom_node, 'replace')
+
+        add_children = True
+        el_ir_node = None
+        if replace is not None:
+            el_ir_node = Expression(replace)
+            add_children = False
+            generate_element = False
+
         if generate_element:
             el_ir_node = Element(dom_node.tagName, guard_expression=guard_expression)
             self.generate_attributes(dom_node, el_ir_node)
 
-            if not topmost:
-                topmost = el_ir_node
+        if not topmost:
+            topmost = el_ir_node
 
+        if el_ir_node:
             if bottom:
                 bottom.add_child(el_ir_node)
 
             bottom = el_ir_node
-        
-        self.add_children(self.child_iter(dom_node), bottom)
+
+        if add_children:
+            if overridden_children:
+                bottom.children = overridden_children
+            else:
+                self.add_children(self.child_iter(dom_node), bottom)
+
         return topmost
 
 
@@ -221,7 +250,7 @@ class IRGenerator(object):
                 # if no children, then 1 guard is enough
                 if not i.children:
                     if i.name in self.empty_elements:
-                        start_tag_nodes.append(EscapedText('/>'))
+                        start_tag_nodes.append(EscapedText(' />'))
 
                     else:
                         start_tag_nodes.append(EscapedText('></%s>' % i.name))

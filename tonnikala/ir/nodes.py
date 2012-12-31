@@ -41,13 +41,19 @@ class EscapedText(Text):
 
 
 class Expression(BaseNode):
-    def __init__(self, full_string, expression, tokens):
-        self.string = full_string
+    tokens = None
+    def __init__(self, expression):
         self.expression = expression
-        self.tokens = tokens
 
     def __str__(self):
         return self.expression
+
+
+class InterpolatedExpression(Expression):
+    def __init__(self, full_string, expression, tokens):
+        super(InterpolatedExpression, self).__init__(expression)
+        self.string = full_string
+        self.tokens = tokens
 
 
 class ContainerNode(BaseNode):

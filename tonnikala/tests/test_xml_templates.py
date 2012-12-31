@@ -84,6 +84,22 @@ class TestXmlTemplates(unittest.TestCase):
         # self.are('<html><div>bar<div></html>', fragment,
         #    foo=iter([ False, True ]).next)
         
+    def test_replace(self):
+        fragment = '<html><div py:replace="foo">bar</div></html>'
+        self.are('<html>baz</html>', fragment, foo='baz')
+        self.are('<html>&lt;</html>', fragment, foo='<')
+
+        fragment = '<html><py:replace value="foo">bar</py:replace></html>'
+        self.are('<html>baz</html>', fragment, foo='baz')
+        self.are('<html>&lt;</html>', fragment, foo='<')
+
+    def test_content(self):
+        fragment = '<html><div py:content="foo">bar</div></html>'
+        self.are('<html><div>baz</div></html>', fragment, foo='baz')
+
+    def test_empty_tags(self):
+        fragment = '<html><script/><script></script><br/><br></br></html>'
+        self.are('<html><script></script><script></script><br /><br /></html>', fragment)
 
     def test_closures(self):
         fragment = '<html><a py:def="embed(func)">${func()}</a>' \

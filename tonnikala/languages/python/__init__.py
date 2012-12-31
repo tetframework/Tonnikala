@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __docformat__ = "epytext"
 
 from tonnikala.exceptions import ParseError
-from tonnikala.ir.nodes import Expression
+from tonnikala.ir.nodes import InterpolatedExpression
 from tokenize import generate_tokens
 
 try:
@@ -14,7 +14,7 @@ except:
  
 import re
 
-class PythonExpression(Expression):
+class PythonExpression(InterpolatedExpression):
     pass
 
 identifier_match = re.compile(r'[a-zA-Z_][a-zA-Z_$0-9]*')

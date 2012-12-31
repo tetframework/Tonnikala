@@ -4,12 +4,12 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 __docformat__ = "epytext"
 
 from tonnikala.exceptions import ParseError
-from tonnikala.ir.nodes import Expression
+from tonnikala.ir.nodes import InterpolatedExpression
 
 from tonnikala.languages.javascript.jslex import JsLexer
 import re
 
-class JavascriptExpression(Expression):
+class JavascriptExpression(InterpolatedExpression):
     pass
 
 identifier_match = re.compile(r'[a-zA-Z_$][a-zA-Z_$0-9]*')

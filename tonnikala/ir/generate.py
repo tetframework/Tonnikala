@@ -28,18 +28,27 @@ html5_empty_tags = frozenset('''
     source
 '''.split())
 
-
+class all_set(object):
+    def __contains__(self, value):
+        return True
 
 class IRGenerator(object):
     def __init__(self, document, mode='html5'):
         self.dom_document = document
         self.tree = IRTree()
-    
+        self.mode = mode
+
         if mode in [ 'html', 'html5', 'xhtml' ]:
             self.empty_elements = html5_empty_tags
+            self.empty_tag_closing_string = ' />'
+
+        elif mode == 'xml':
+            self.empty_elements = all_set()
+            self.empty_tag_closing_string = '/>'
 
         else:
-            self.empty_elements = set()
+            raise ValueError("Unknown render mode '%s'" % mode)
+
 
     def child_iter(self, node):
         if not node.firstChild:
@@ -250,7 +259,7 @@ class IRGenerator(object):
                 # if no children, then 1 guard is enough
                 if not i.children:
                     if i.name in self.empty_elements:
-                        start_tag_nodes.append(EscapedText(' />'))
+                        start_tag_nodes.append(EscapedText(self.empty_tag_closing_string))
 
                     else:
                         start_tag_nodes.append(EscapedText('></%s>' % i.name))

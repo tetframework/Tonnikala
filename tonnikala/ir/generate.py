@@ -144,10 +144,11 @@ class IRGenerator(object):
 
         guard_expression = self.get_guard_expression(dom_node)
 
-        # on py:strip="" the element is stripped out unconditionally and needs not
-        # be generated
+
+        # on py:strip="" the expression is to be set to "1"
         if guard_expression is not None and not guard_expression.strip():
-            generate_element = False
+            guard_expression = '1'
+
 
         # facility to replace children for content control attr
         overridden_children = None
@@ -202,7 +203,7 @@ class IRGenerator(object):
             return ir_node
 
         if node_t == Node.COMMENT_NODE:
-            ir_node = Comment(dom_node.nodeValue)
+            ir_node = EscapedText(u'<!--' + dom_node.nodeValue + u'-->')
             return ir_node
 
         raise ValueError("Unhandled node type %d" % node_t)

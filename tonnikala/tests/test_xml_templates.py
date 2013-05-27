@@ -77,12 +77,24 @@ class TestXmlTemplates(unittest.TestCase):
         self.are('<html>bar</html>', fragment, foo=lambda: True)
         self.are('<html><div>bar</div></html>', fragment, foo=lambda: False)
 
+    def test_top_level_strip(self):
+        fragment = '<html py:strip="True">content</html>'
+        self.are('content', fragment, foo=lambda: True)
+
         # the strip expression should not be evalled twice, but currently is
         # self.are('<html>bar</html>',           fragment,
         #    foo=iter([ True, False ]).next)
 
         # self.are('<html><div>bar<div></html>', fragment,
         #    foo=iter([ False, True ]).next)
+
+    def test_comments(self):
+        fragment = '<html><!-- some comment here, passed verbatim <html></html> --></html>'
+        self.are('<html><!-- some comment here, passed verbatim <html></html> --></html>', fragment)
+
+    def test_comments_stripped(self):
+        fragment = '<html><!--! some comment here, stripped --></html>'
+        self.are('<html></html>', fragment)
 
     def test_replace(self):
         fragment = '<html><div py:replace="foo">bar</div></html>'

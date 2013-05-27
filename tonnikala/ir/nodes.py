@@ -19,14 +19,29 @@ class BaseNode(object):
 class Text(BaseNode):
     translatable = False
 
-    def __init__(self, string):
-        self.string = string
+    def __init__(self, text):
+        self.text = text
 
     def __str__(self):
-        return self.string
+        return self.text
 
     def escaped(self):
-        return escape(self.string)
+        return escape(self.text)
+
+
+def escape_comment(text):
+    return text.replace('-->', '--&lt;')
+
+
+class Comment(BaseNode):
+    def __init__(self, text):
+        self.text = text
+
+    def escaped(self):
+        return escape_comment(self.text)
+
+    def __str__(self):
+        return self.text
 
 
 class EscapedText(Text):
@@ -34,10 +49,10 @@ class EscapedText(Text):
         super(EscapedText, self).__init__(string)
 
     def __str__(self):
-        return self.string
-    
+        return self.text
+
     def escaped(self):
-        return self.string
+        return self.text
 
 
 class Expression(BaseNode):
@@ -119,7 +134,7 @@ class Element(ContainerNode):
     def __str__(self):
         attrs = str(self.attributes)
         children = str(self.children)
-        
+
         return ', '.join([self.name, 'guard=%s' % self.guard_expression, attrs, children])
 
     def get_guard_expression(self):
@@ -137,10 +152,10 @@ class Element(ContainerNode):
         self.dynamic_attrs = expression
 
     def get_constant_attributes(self):
-        return self.constant_attributes    
+        return self.constant_attributes
 
     def get_mutable_attributes(self):
-        return self.mutable_attributes    
+        return self.mutable_attributes
 
 
 class For(ContainerNode):

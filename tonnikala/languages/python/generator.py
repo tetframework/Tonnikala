@@ -54,7 +54,7 @@ class PythonNode(LanguageNode):
             yield self.generate_indented_code('return __output__')
 
         self.indent_level -= 1
-        
+
     def generate_varscope(self, generator):
         name = self.gen_name()
         for i in self.generate_function(name, generator):

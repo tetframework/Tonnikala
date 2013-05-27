@@ -5,7 +5,7 @@ __docformat__ = "epytext"
 
 """XML parser"""
 
-from six import StringIO
+import six
 from six.moves import html_entities
 
 entitydefs = html_entities.entitydefs
@@ -31,7 +31,13 @@ class Parser(sax.ContentHandler):
         parser.setProperty(sax.handler.property_lexical_handler, self)
         parser.setContentHandler(self)
         source = sax.xmlreader.InputSource()
-        source.setByteStream(StringIO(self._source))
+
+        if isinstance(self._source, six.binary_type):
+            stream = six.BytesIO(self._source)
+        else:
+            stream = six.StringIO(self._source)
+
+        source.setByteStream(stream)
         source.setSystemId(self._filename)
         parser.parse(source)
         return self._doc
@@ -98,11 +104,15 @@ class Parser(sax.ContentHandler):
     # LexicalHandler implementation
     def comment(self, text):
         self._checkAndClearChrs()
-        node = self._doc.createComment(text)
-        node.lineno = self._parser.getLineNumber()
-        self._els[-1].appendChild(node)
 
-    def startCDATA(self): pass
+        if not text.strip().startswith('!'):
+            node = self._doc.createComment(text)
+            node.lineno = self._parser.getLineNumber()
+            self._els[-1].appendChild(node)
+
+    def startCDATA(self):
+        pass
+
     def endCDATA(self):
         pass
 

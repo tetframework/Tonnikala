@@ -59,7 +59,7 @@ def output_attrs(values):
         rv(k)
         rv('="')
         rv(escape(v))
-        rv('"')            
+        rv('"')
 
     return rv
 

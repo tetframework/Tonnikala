@@ -135,7 +135,7 @@ class PyAttributeNode(PyComplexNode):
 
     def generate(self):
         funcname = self.gen_name()
-        for i in self.generate_function(funcname, lambda: self.indented_children(0), 
+        for i in self.generate_function(funcname, lambda: self.indented_children(0),
                      add_buffer=True, buffer_class='__tonnikala__.AttrBuffer'):
             yield i
 
@@ -149,7 +149,7 @@ class PyAttrsNode(PythonNode):
         self.free_variables = FreeVarFinder.for_expression(expression).get_free_variables()
 
     def generate(self):
-        yield self.generate_yield('__tonnikala__.output_attrs(%s)' 
+        yield self.generate_yield('__tonnikala__.output_attrs(%s)'
             % self.expression)
 
 class PyForNode(PyComplexNode):

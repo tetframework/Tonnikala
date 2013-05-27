@@ -28,12 +28,12 @@ def render(template, **args):
 class TestXmlTemplates(unittest.TestCase):
     def are(self, result, template, **args):
         """assert rendered equals"""
-        
+
         self.assertEquals(render(template, **args), result)
- 
+
     def test_simple(self):
         self.are('<html></html>', '<html></html>')
-        self.are('<html attr="&amp;&lt;&quot;">&amp;&lt;&quot;</html>', 
+        self.are('<html attr="&amp;&lt;&quot;">&amp;&lt;&quot;</html>',
             '<html attr="&amp;&lt;&quot;">&amp;&lt;&quot;</html>')
         self.are('<html></html>', '<html ></html >')
         fragment = '<html><nested>a</nested>b<nested>c</nested></html>'
@@ -83,7 +83,7 @@ class TestXmlTemplates(unittest.TestCase):
 
         # self.are('<html><div>bar<div></html>', fragment,
         #    foo=iter([ False, True ]).next)
-        
+
     def test_replace(self):
         fragment = '<html><div py:replace="foo">bar</div></html>'
         self.are('<html>baz</html>', fragment, foo='baz')

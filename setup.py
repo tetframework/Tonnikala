@@ -9,6 +9,7 @@ except ImportError:
 from setuptools import Extension, Feature
 
 import platform
+import sys
 
 speedups = Feature(
     "optional C speed-enhancements",
@@ -18,6 +19,11 @@ speedups = Feature(
         Extension('tonnikala._rope', ['tonnikala/_rope.c']),
     ],
 )
+
+if sys.version_info.major == 2:
+    extra_kw = dict(features={'speedups': speedups})
+else:
+    extra_kw = dict()
 
 
 setup(
@@ -34,5 +40,5 @@ setup(
     include_package_data=True,
     test_suite = "tonnikala.tests.test_all",
     tests_require=[],
-    features={'speedups': speedups}
+    **extra_kw
 )

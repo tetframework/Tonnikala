@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 NoneType = type(None)
 
 from .rope import Rope
@@ -37,10 +39,10 @@ class AttrBuffer(Rope):
         self.boolean_value = None
 
 def make_buffer(*args):
-    rv = Buffer()
-    for i in args:
-        rv(i)
-    return rv
+    return Buffer(list(args))
+
+def make_buffer_from_list(thelist):
+    return Buffer(thelist)
 
 def output_attrs(values):
     if not values:
@@ -55,11 +57,11 @@ def output_attrs(values):
             else:
                 continue
 
-        rv(' ')
+        rv(u' ')
         rv(k)
-        rv('="')
+        rv(u'="')
         rv(escape(v))
-        rv('"')            
+        rv(u'"')
 
     return rv
 
@@ -71,7 +73,7 @@ def output_attr(name, value_func):
         else:
             contents = name
 
-    return make_buffer(' ', name, '="', contents, '"')
+    return make_buffer_from_list(' ', name, '="', contents, '"')
 
 def import_defs(href):
     return {}

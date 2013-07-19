@@ -27,10 +27,10 @@ static PyUnicodeObject *amp, *lt, *gt, *qt;
 static void
 init_constants(void)
 {
-    amp = PyUnicode_FromString("&amp;");
-    lt  = PyUnicode_FromString("&lt;");
-    gt  = PyUnicode_FromString("&gt;");
-    qt  = PyUnicode_FromString("&#34;");
+    amp = (PyUnicodeObject*)PyUnicode_FromString("&amp;");
+    lt  = (PyUnicodeObject*)PyUnicode_FromString("&lt;");
+    gt  = (PyUnicodeObject*)PyUnicode_FromString("&gt;");
+    qt  = (PyUnicodeObject*)PyUnicode_FromString("&#34;");
 }
 
 static PyUnicodeObject *
@@ -143,9 +143,81 @@ do_escape(PyObject *self, PyObject *args, PyObject *kwds)
     return (PyObject*)escape(text, quotes);
 }
 
+PyDoc_STRVAR(flatten__doc__,
+"Escape an unicode instance from a string and escape special characters\n\
+it may contain (<, >, & and \").\n\
+");
+
+static PyObject *
+do_flatten(PyObject *self, PyObject *arg, PyObject *kwds)
+{
+    PyObject *iterator = PyObject_GetIter(arg);
+
+    if (! iterator) {
+        return NULL;
+    }
+
+    Py_ssize_t allocated = 16;
+    Py_ssize_t used = 0;
+    PyObject **iterator_stack = (PyObject **)PyMem_New(PyObject *, allocated);
+    PyListObject *rv = (PyListObject*)PyList_New(0);
+
+    while (1) {
+        PyObject *new_obj = PyIter_Next(iterator);
+
+        if (new_obj) {
+            if (PyUnicode_CheckExact(new_obj)) {
+                // steals the reference...
+                PyList_Append((PyObject*)rv, new_obj);
+            }
+            else {
+                iterator_stack[used ++] = iterator;
+                iterator = PyObject_GetIter(new_obj);
+                Py_DECREF(new_obj);
+
+                if (! iterator) {
+                    goto error;
+                }
+
+                // loop with next iter
+            }
+        }
+        else {
+            // iterator failed for one reason or another
+            int had_err = !!PyErr_Occurred();
+            Py_DECREF(iterator);
+
+            if (had_err) {
+                goto error;
+            }
+
+            // exit loop here, all exhausted
+            if (! used) {
+                break;
+            }
+
+            iterator = iterator_stack[-- used];
+        }
+    }
+
+    PyMem_Free(iterator_stack);
+    return (PyObject*)rv;
+
+error:
+    for (used -= 1; used >= 0; used --) {
+        Py_DECREF(iterator_stack[used]);
+    }
+
+    PyMem_Free(iterator_stack);
+    Py_DECREF(rv);
+    return NULL;
+}
+
 static PyMethodDef module_methods[] = {
-    {"escape", (PyCFunction)do_escape,
+    {"escape",  (PyCFunction)do_escape,
         METH_VARARGS|METH_KEYWORDS, escape__doc__},
+    {"flatten", (PyCFunction)do_flatten,
+        METH_O, flatten__doc__},
     {NULL, NULL}  /* Sentinel */
 };
 

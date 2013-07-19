@@ -3,10 +3,11 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from six import text_type, PY3
 
 class Rope(object):
-    def __init__(self, initial=None):
-        self._buffer = []
-        if initial:
-            self._buffer.append(initial)
+    def __init__(self, initial_contents=None):
+        if initial_contents is not None:
+            self._buffer = initial_contents
+        else:
+            self._buffer = []
 
     def __call__(self, obj):
         if isinstance(obj, Rope):

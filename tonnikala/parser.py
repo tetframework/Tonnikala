@@ -5,7 +5,7 @@ __docformat__ = "epytext"
 
 """XML parser"""
 
-from six import StringIO
+from io import BytesIO
 from six.moves import html_entities
 
 entitydefs = html_entities.entitydefs
@@ -31,7 +31,7 @@ class Parser(sax.ContentHandler):
         parser.setProperty(sax.handler.property_lexical_handler, self)
         parser.setContentHandler(self)
         source = sax.xmlreader.InputSource()
-        source.setByteStream(StringIO(self._source))
+        source.setByteStream(BytesIO(self._source))
         source.setSystemId(self._filename)
         parser.parse(source)
         return self._doc

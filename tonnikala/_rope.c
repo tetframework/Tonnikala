@@ -1,18 +1,13 @@
 #include <Python.h>
 #include "structmember.h"
 
-typedef struct RopeContents {
-    PyObject *value;
-    struct RopeContents *next;
-} RopeContents;
-
-
-typedef struct {
+typedef struct Rope {
     PyObject_HEAD
     int flags;
-    RopeContents *head;
-    RopeContents *tail;
+    PyObject **objects;
     Py_ssize_t length;
+    Py_ssize_t used_slots;
+    Py_ssize_t array_size;
 } Rope;
 
 static PyTypeObject RopeType;
@@ -20,17 +15,14 @@ static PyTypeObject RopeType;
 static void
 Rope_dealloc(Rope* self)
 {
-    RopeContents *ptr = self->head;
-    RopeContents *old_ptr;
-
-    while (ptr) {
-        if (ptr->value) {
-            Py_XDECREF(ptr->value);
+    if (self->used_slots) {
+        Py_ssize_t i;
+        for (i = self->used_slots - 1; i >= 0; i --) {
+            Py_DECREF(self->objects[i]);
         }
 
-        old_ptr = ptr;
-        ptr = ptr->next;
-        PyMem_Free(old_ptr);
+        PyMem_Free(self->objects);
+        self->used_slots = 0;
     }
 
     self->ob_type->tp_free((PyObject*)self);
@@ -43,17 +35,16 @@ Rope_init(Rope *self, PyObject *args, PyObject *kwds)
     if (! PyArg_ParseTupleAndKeywords(args, kwds, "", kwlist))
         return -1;
 
+    self->objects = (PyObject**)PyMem_Malloc(sizeof(PyObject*) * 16);
+    self->used_slots = 0;
+    self->array_size = 16;
     return 0;
 }
-
-//static PyMemberDef Rope_members[] = {
-//    { NULL }  /* Sentinel */
-//};
 
 static PyObject *
 Rope_append(Rope* self, PyObject *arg)
 {
-    Py_ssize_t length = 0;
+    Py_ssize_t length;
     if (self->flags & 7) {
         PyErr_SetString(PyExc_TypeError, "this Rope cannot be appended to now");
         return NULL;
@@ -61,12 +52,12 @@ Rope_append(Rope* self, PyObject *arg)
 
     self->flags |= 2;
 
-    if (PyUnicode_Check(arg)) {
-        length = PyUnicode_GetSize(arg);
+    if (PyUnicode_CheckExact(arg)) {
+        length = PyUnicode_GET_SIZE(arg);
     }
     else {
         if (! PyObject_TypeCheck(arg, &RopeType)) {
-            PyErr_SetString(PyExc_TypeError, "append must be given an unicode object or a Rope");
+            PyErr_SetString(PyExc_TypeError, "append must be given a unicode object or a Rope");
             self->flags &= ~2;
             return NULL;
         }
@@ -83,20 +74,21 @@ Rope_append(Rope* self, PyObject *arg)
 	length = ((Rope*)arg)->length;
     }
 
-    self->length += length;
-    RopeContents *item = PyMem_Malloc(sizeof(RopeContents));
+    if (self->used_slots == self->array_size) {
+        Py_ssize_t new_size = self->array_size << 1;
+        PyObject **new_ary = PyMem_Realloc(self->objects, sizeof(PyObject *) * new_size);
+
+        if (! new_ary) {
+            self->flags &= ~2;
+            return PyErr_NoMemory();
+        }
+        self->objects = new_ary;
+        self->array_size = new_size;
+    }
 
     Py_INCREF(arg);
-    item->value = arg;
-    item->next = NULL;
-
-    if (self->tail) {
-        self->tail->next = item;
-        self->tail = item;
-    }
-    else {
-        self->head = self->tail = item;
-    }
+    self->length += length;
+    self->objects[self->used_slots ++] = arg;
 
     self->flags &= ~2;
     Py_INCREF(Py_None);
@@ -106,22 +98,18 @@ Rope_append(Rope* self, PyObject *arg)
 static int
 rope_copy(Rope *self, PyUnicodeObject *to, Py_ssize_t from, Py_ssize_t array_length)
 {
-    if (Py_EnterRecursiveCall(" in rope_copy") != 0) {
-        return 0;
-    }
-
-    RopeContents *current = self->head;
-
     Py_UNICODE *ptr = PyUnicode_AS_UNICODE(to);
-//    Py_UNICODE *max_ptr = ptr + array_length;
     ptr += from;
     PyUnicodeObject *tmp;
     Py_ssize_t size;
 
-    while (current) {
-        PyObject *obj = current->value;
+    Py_ssize_t the_max = self->used_slots;
+    Py_ssize_t ct;
 
-        if (PyUnicode_Check(obj)) {
+    for (ct = 0; ct < the_max; ct ++) {
+        PyObject *obj = self->objects[ct];
+
+        if (PyUnicode_CheckExact(obj)) {
             tmp = (PyUnicodeObject*)obj;
             size = PyUnicode_GET_SIZE(tmp);
             Py_UNICODE_COPY(ptr, tmp->str, size);
@@ -136,10 +124,8 @@ rope_copy(Rope *self, PyUnicodeObject *to, Py_ssize_t from, Py_ssize_t array_len
 
         ptr += size;
         from += size;
-        current = current->next;
     }
 
-    Py_LeaveRecursiveCall();
     return 1;
 }
 

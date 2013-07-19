@@ -38,7 +38,7 @@ def parse_expression(text, start_pos=0):
 
         if content == '{':
             braces += 1
-        
+
         length += len(content)
         nodes.append((type, content))
 

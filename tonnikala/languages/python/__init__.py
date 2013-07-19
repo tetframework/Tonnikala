@@ -11,7 +11,7 @@ try:
     from StringIO import StringIO
 except:
     from io import StringIO
- 
+
 import re
 
 class PythonExpression(InterpolatedExpression):
@@ -62,7 +62,7 @@ def parse_expression(text, start_pos=0):
                 nodes.append((type, line[binary_pos - 1] + content))
 
         else:
-            binary = False        
+            binary = False
 
         if content == '}':
             if braces <= 0:

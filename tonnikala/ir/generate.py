@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless, Expression
+from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless, Expression, Comment
 
 from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
 from xml.dom.minidom    import Node
@@ -21,6 +21,7 @@ html5_empty_tags = frozenset('''
     col
     hr
     img
+    link
     meta
     param
     command
@@ -143,10 +144,11 @@ class IRGenerator(object):
 
         guard_expression = self.get_guard_expression(dom_node)
 
-        # on py:strip="" the element is stripped out unconditionally and needs not 
-        # be generated
+
+        # on py:strip="" the expression is to be set to "1"
         if guard_expression is not None and not guard_expression.strip():
-            generate_element = False
+            guard_expression = '1'
+
 
         # facility to replace children for content control attr
         overridden_children = None
@@ -201,15 +203,17 @@ class IRGenerator(object):
             return ir_node
 
         if node_t == Node.COMMENT_NODE:
-            # strip all ;)
-            return None
+            ir_node = EscapedText(u'<!--' + dom_node.nodeValue + u'-->')
+            return ir_node
 
         raise ValueError("Unhandled node type %d" % node_t)
 
 
     def add_children(self, children, ir_node):
         for dom_node in children:
-            ir_node.add_child(self.generate_ir_node(dom_node))
+            node = self.generate_ir_node(dom_node)
+            if node != None:
+                ir_node.add_child(node)
 
 
     def generate_tree(self):
@@ -226,6 +230,7 @@ class IRGenerator(object):
             code.append(' %s="%s"' % (name, value.escaped()))
 
         return ''.join(code)
+
 
     def get_start_tag_nodes(self, element):
         start_tag_nodes = []
@@ -248,8 +253,14 @@ class IRGenerator(object):
         new_children = []
         recurse = False
         for i in node.children:
-            if not isinstance(i, Element):
+            if not isinstance(i, (Element, Comment)):
                 new_children.append(i)
+                continue
+
+            elif isinstance(i, Comment):
+                new_children.append(EscapedText('<!--'))
+                new_children.append(EscapedText(i.escaped()))
+                new_children.append(EscapedText('-->'))
 
             else:
                 # this is complicated because of the stupid strip syntax :)

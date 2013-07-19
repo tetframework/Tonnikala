@@ -3,5 +3,5 @@ def escape(string):
                  .replace('<', '&lt;')   \
                  .replace('>', '&gt;')   \
                  .replace('"', '&quot;') \
-                 .replace("'", '&#39;') 
+                 .replace("'", '&#39;')
 

@@ -57,11 +57,11 @@ def output_attrs(values):
             else:
                 continue
 
-        rv(u' ')
+        rv(' ')
         rv(k)
-        rv(u'="')
+        rv('="')
         rv(escape(v))
-        rv(u'"')
+        rv('"')
 
     return rv
 

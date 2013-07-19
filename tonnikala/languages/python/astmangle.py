@@ -2,7 +2,7 @@ import ast
 
 class FreeVarFinder(ast.NodeVisitor):
     """
-    Finds free variables in a Python expression, which may contain lambda 
+    Finds free variables in a Python expression, which may contain lambda
     functions.
     """
     def __init__(self, masked=[]):

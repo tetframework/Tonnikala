@@ -19,14 +19,29 @@ class BaseNode(object):
 class Text(BaseNode):
     translatable = False
 
-    def __init__(self, string):
-        self.string = string
+    def __init__(self, text):
+        self.text = text
 
     def __str__(self):
-        return self.string
+        return self.text
 
     def escaped(self):
-        return escape(self.string)
+        return escape(self.text)
+
+
+def escape_comment(text):
+    return text.replace('-->', '--&lt;')
+
+
+class Comment(BaseNode):
+    def __init__(self, text):
+        self.text = text
+
+    def escaped(self):
+        return escape_comment(self.text)
+
+    def __str__(self):
+        return self.text
 
 
 class EscapedText(Text):
@@ -34,10 +49,10 @@ class EscapedText(Text):
         super(EscapedText, self).__init__(string)
 
     def __str__(self):
-        return self.string
+        return self.text
 
     def escaped(self):
-        return self.string
+        return self.text
 
 
 class Expression(BaseNode):

@@ -20,7 +20,7 @@ class Tok(object):
 
 def literals(choices, prefix="", suffix=""):
     """Create a regex from a space-separated list of literal `choices`.
-    
+
     If provided, `prefix` and `suffix` will be attached to each choice
     individually.
 
@@ -71,7 +71,7 @@ class Lexer(object):
 
 class JsLexer(Lexer):
     """A Javascript lexer
-    
+
     >>> lexer = JsLexer()
     >>> list(lexer.lex("a = 1"))
     [("id", "a"), ("ws", " "), ("punct", "="), ("ws", " "), ("dnum", "1")]
@@ -115,17 +115,17 @@ class JsLexer(Lexer):
                                 \.                      # dot
                                 [0-9]*                  # DecimalDigits-opt
                                 ([eE][-+]?[0-9]+)?      # ExponentPart-opt
-                            |   
+                            |
                                 \.                      # dot
                                 [0-9]+                  # DecimalDigits
                                 ([eE][-+]?[0-9]+)?      # ExponentPart-opt
-                            |   
+                            |
                                 (0|[1-9][0-9]*)         # DecimalIntegerLiteral
                                 ([eE][-+]?[0-9]+)?      # ExponentPart-opt
                             )
                             """, next='div'),
         Tok("punct",        literals("""
-                                >>>= === !== >>> <<= >>= <= >= == != << >> && 
+                                >>>= === !== >>> <<= >>= <= >= == != << >> &&
                                 || += -= *= %= &= |= ^=
                                 """), next="reg"),
         Tok("punct",        literals("++ -- ) ]"), next='div'),
@@ -146,7 +146,7 @@ class JsLexer(Lexer):
 
         'reg':  # slash will mean regex
             both_before + [
-            Tok("regex",        
+            Tok("regex",
                 r"""
                     /                       # opening slash
                     # First character is..

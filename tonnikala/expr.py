@@ -9,7 +9,7 @@ import re
 
 from tonnikala.ir.nodes import Text, ComplexExpression
 from tonnikala.languages import javascript, python
-from tonnikala.exceptions import ParseError 
+from tonnikala.exceptions import ParseError
 
 _dollar_strip_re = re.compile(r"\$([a-zA-Z_{])|(\$\$)|\$", re.DOTALL)
 

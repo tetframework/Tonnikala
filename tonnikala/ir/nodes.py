@@ -35,7 +35,7 @@ class EscapedText(Text):
 
     def __str__(self):
         return self.string
-    
+
     def escaped(self):
         return self.string
 
@@ -119,7 +119,7 @@ class Element(ContainerNode):
     def __str__(self):
         attrs = str(self.attributes)
         children = str(self.children)
-        
+
         return ', '.join([self.name, 'guard=%s' % self.guard_expression, attrs, children])
 
     def get_guard_expression(self):
@@ -137,10 +137,10 @@ class Element(ContainerNode):
         self.dynamic_attrs = expression
 
     def get_constant_attributes(self):
-        return self.constant_attributes    
+        return self.constant_attributes
 
     def get_mutable_attributes(self):
-        return self.mutable_attributes    
+        return self.mutable_attributes
 
 
 class For(ContainerNode):

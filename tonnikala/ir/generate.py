@@ -267,7 +267,7 @@ class IRGenerator(object):
                 else:
                     start_tag_nodes.append(EscapedText('>'))
                     end_tag_nodes = [ EscapedText('</%s>' % i.name) ]
-                
+
                 child_nodes = []
                 for j in i.children:
                     child_nodes.append(j)

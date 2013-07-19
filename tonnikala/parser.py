@@ -7,6 +7,7 @@ __docformat__ = "epytext"
 
 from io import BytesIO
 from six.moves import html_entities
+from six import text_type
 
 entitydefs = html_entities.entitydefs
 
@@ -77,7 +78,7 @@ class Parser(sax.ContentHandler):
 
     def skippedEntity(self, name):
         # Encoding?
-        content = unicode(entitydefs.get(name))
+        content = text_type(entitydefs.get(name))
         if not content:
             raise RuntimeError("Unknown HTML entity &%s;" % name)
 

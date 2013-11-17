@@ -16,6 +16,8 @@ else:
 class Helpers():
     pass
 
+import astor
+
 helpers = Helpers()
 helpers.literal = lambda x: x
 
@@ -78,16 +80,17 @@ class Loader(object):
 
         tree = generator.flatten_element_nodes(tree)
         tree = generator.merge_text_nodes(tree)
-        code = PythonGenerator(tree).generate()
+        code = PythonGenerator(tree).generate_ast()
 
         if self.debug:
-            print(code)
+            print(astor.codegen.to_source(code))
 
         glob = {
             '__tonnikala_runtime__': python,
             'literal':               lambda x: x
         }
 
-        exec(code, glob, glob)
+        compiled = compile(code, '<string>', 'exec')
+        exec(compiled, glob, glob)
         template_func = glob['__binder__']
         return Template(template_func)

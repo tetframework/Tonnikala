@@ -1,6 +1,6 @@
 import unittest
 
-from . import test_expressions, test_xml_templates, test_rope
+from . import test_expressions, test_xml_templates #, test_rope
 
 
 test_modules = [

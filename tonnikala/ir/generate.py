@@ -310,10 +310,12 @@ class IRGenerator(object):
             if hasattr(i, 'children') and i.children:
                 self.flatten_element_nodes_on(i)
 
+
     def flatten_element_nodes(self, tree):
         root = tree.root
         self.flatten_element_nodes_on(root)
         return tree
+
 
     def _merge_text_nodes_on(self, node):
         """Merges all consecutive non-translatable text nodes into one"""
@@ -339,6 +341,7 @@ class IRGenerator(object):
         node.children = new_children
         for i in node.children:
             self._merge_text_nodes_on(i)
+
 
     def merge_text_nodes(self, tree):
         root = tree.root

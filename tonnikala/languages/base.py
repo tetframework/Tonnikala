@@ -102,3 +102,10 @@ class BaseGenerator(object):
         self.add_children(self.tree.root, self.root_node)
         x = list(self.root_node.generate())
         return ''.join(self.root_node.generate())
+
+    def generate_ast(self):
+        root = self.tree
+        self.root_node = self.RootNode()
+        self.add_children(self.tree.root, self.root_node)
+        return self.root_node.generate_ast()
+

@@ -6,6 +6,7 @@ from tonnikala.ir import nodes
 from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 from tonnikala.languages.python.astmangle import FreeVarFinder
 import ast
+from ast import *
 
 name_counter = 0
 ALWAYS_BUILTINS = '''
@@ -14,12 +15,48 @@ ALWAYS_BUILTINS = '''
     None
 '''.split()
 
+
+def SimpleCall(func, args=None):
+    return Call(func=func, args=args or [], keywords=[], starargs=None, kwargs=None)
+
+
+def SimpleFunctionDef(name):
+    return FunctionDef(
+        name=name,
+        args=arguments(
+            args=[],
+            vararg=None,
+            varargannotation=None,
+            kwonlyargs=[],
+            kwarg=None,
+            kwargannotation=None,
+            defaults=[],
+            kw_defaults=[]),
+        body=[Pass()],
+        decorator_list=[],
+        returns=None
+    )
+
+
+def NameX(id, store=False):
+    return Name(id=id, ctx=Load() if not store else Store())
+
+
+def get_expression_ast(expression, mode='eval'):
+    if not isinstance(expression, str):
+        return expression
+
+    tree = ast.parse(expression, mode=mode)
+    return tree.body
+
+
 class PythonNode(LanguageNode):
     def __init__(self, *a, **kw):
         super(PythonNode, self).__init__(*a, **kw)
         self.free_variables = set()
         self.masked_variables = set()
         self.generated_variables = set()
+
 
     def make_string(self, text):
         if isinstance(text, bytes):
@@ -31,39 +68,63 @@ class PythonNode(LanguageNode):
 
         return rv
 
-    def generate_yield(self, code, escape=False):
-        method = '.escape' if escape else ''
-        return self.generate_indented_code('__output__%s(%s)' % (method, code))
+    def generate_output_ast(self, code, escape=False):
+        func = Name(id='__output__', ctx=Load())
+        if escape:
+            func = Attribute(value=func, attr='escape', ctx=Load())
+
+        return [ Expr(SimpleCall(func, [code])) ]
 
     def gen_name(self):
         global name_counter
         name_counter += 1
         return "__tk_%d__" % name_counter
 
-    def generate_function(self, name, generator, add_buffer=False, buffer_class='__tonnikala__.Buffer'):
-        yield self.generate_indented_code('def %s():' % name)
-        self.indent_level += 1
+
+    def generate_buffer_frame(self, body, buffer_class='__tonnikala__.Buffer'):
+        new_body = []
+        new_body.append(Assign(
+            targets=[NameX('__output__', store=True)],
+            value=SimpleCall(
+                get_expression_ast(buffer_class)
+            )
+        ))
+
+        new_body.extend(body)
+        new_body.append(Return(value=NameX('__output__')))
+        return new_body
+        
+
+    def generate_function(self, name, body, add_buffer=False, 
+                          buffer_class='__tonnikala__.Buffer'):
+
+        func = SimpleFunctionDef(name)
+        new_body = func.body = [ ]
 
         if add_buffer:
-            yield self.generate_indented_code('__output__ = %s()' % buffer_class)
+            new_body.extend(self.generate_buffer_frame(body, buffer_class))
 
-        for i in generator():
-            yield i
+        else:
+            new_body.extend(body)
 
-        if add_buffer:
-            yield self.generate_indented_code('return __output__')
+        if not new_body:
+            new_body.append(Pass())
 
-        self.indent_level -= 1
+        return func
 
-    def generate_varscope(self, generator):
+
+    def generate_varscope(self, body):
         name = self.gen_name()
-        for i in self.generate_function(name, generator):
-            yield i
+        rv = [
+            self.generate_function(name, body),
+            Expr(SimpleCall(NameX(name)))
+        ]
+        return rv
 
-        yield self.generate_indented_code('%s()' % name)
 
     def get_generated_variables(self):
         return set(self.generated_variables)
+
 
     def get_free_variables(self):
         return set(self.free_variables) - set(self.masked_variables)
@@ -74,8 +135,9 @@ class PyOutputNode(PythonNode):
         super(PyOutputNode, self).__init__()
         self.text = text
 
-    def generate(self):
-        yield self.generate_yield(self.make_string(self.text))
+
+    def generate_ast(self):
+        return self.generate_output_ast(Str(s=(self.text)))
 
 
 class PyExpressionNode(PythonNode):
@@ -85,11 +147,20 @@ class PyExpressionNode(PythonNode):
         self.tokens = tokens
         self.free_variables = FreeVarFinder.for_expression(self.expr).get_free_variables()
 
-    def generate(self):
-        yield self.generate_yield('%s' % self.expr, escape=True)
+
+    def generate_ast(self):
+        expr = get_expression_ast(self.expr)
+        return self.generate_output_ast(expr, escape=True)
 
 
 class PyComplexNode(ComplexNode, PythonNode):
+    def generate_child_ast(self):
+        rv = []
+        for i in self.children:
+            rv.extend(i.generate_ast())
+        return rv
+
+
     def get_free_variables(self):
         rv = set(self.free_variables)
         gens = set(self.generated_variables)
@@ -106,14 +177,20 @@ class PyIfNode(PyComplexNode):
         self.expression = expression
         self.free_variables = FreeVarFinder.for_expression(self.expression).get_free_variables()
 
-    def generate(self):
-        yield self.generate_indented_code("if (%s):" % self.expression)
-        for i in self.indented_children():
-            yield i
+
+    def generate_ast(self):
+        node = If(
+           test=get_expression_ast(self.expression), 
+           body=self.generate_child_ast(),
+           orelse=[]
+        )
+        return [ node ]
 
 
 def PyUnlessNode(self, expression):
-    return PyIfNode('not (%s)' % expression)
+    expression = get_expression_ast(expression)
+    expression = UnaryOp(op=Not(), operand=expression)
+    return PyIfNode(expression)
 
 
 class PyImportNode(PythonNode):
@@ -123,9 +200,18 @@ class PyImportNode(PythonNode):
         self.alias = alias
         self.generated_variables = set([self.alias])
 
-    def generate(self):
-        yield self.generate_indented_code(
-           "%s = __tonnikala__.import_defs('%s')" % (self.alias, self.href))
+    def generate_ast(self):
+        node = Assign(
+            targets = [NameX(self.alias)],
+            value = 
+                SimpleCall(
+                    func=
+                        Attribute(value=NameX('__tonnikala__'), 
+                                  attr='import_defs', ctx=Load()), 
+                    args=[Str(s=self.href)]
+                )
+        )
+        return node
 
 
 class PyAttributeNode(PyComplexNode):
@@ -133,14 +219,32 @@ class PyAttributeNode(PyComplexNode):
         super(PyAttributeNode, self).__init__()
         self.name = name
 
-    def generate(self):
-        funcname = self.gen_name()
-        for i in self.generate_function(funcname, lambda: self.indented_children(0),
-                     add_buffer=True, buffer_class='__tonnikala__.AttrBuffer'):
-            yield i
 
-        yield self.generate_yield('__tonnikala__.output_attr("%s", %s)'
-            % (self.name, funcname))
+    def generate_ast(self):
+        funcname = self.gen_name()
+        attr_builder = self.generate_function(
+            funcname,
+            self.generate_child_ast(),
+            add_buffer=True,
+            buffer_class='__tonnikala__.AttrBuffer'
+        )
+
+        output = SimpleCall(
+            func=Attribute(
+                value=NameX('__tonnikala__'),
+                attr='output_attr',
+                ctx=Load()
+            ),
+            args=[
+                Str(s=self.name),
+                NameX(funcname)
+            ]
+        )
+
+        return [
+            attr_builder
+        ] + self.generate_output_ast(output)
+
 
 class PyAttrsNode(PythonNode):
     def __init__(self, expression):
@@ -148,9 +252,21 @@ class PyAttrsNode(PythonNode):
         self.expression = expression
         self.free_variables = FreeVarFinder.for_expression(expression).get_free_variables()
 
+
     def generate(self):
-        yield self.generate_yield('__tonnikala__.output_attrs(%s)'
-            % self.expression)
+        expression = get_expression_ast(self.expression)
+        
+        output = SimpleCall(
+            func=Attribute(
+                value=NameX('__tonnikala__'),
+                attr='output_attrs',
+                ctx=Load()
+            ),
+            args=[expression]
+        )
+
+        return self.generate_output_ast(output)
+
 
 class PyForNode(PyComplexNode):
     def __init__(self, vars, expression):
@@ -166,14 +282,20 @@ class PyForNode(PyComplexNode):
         # sic
         self.generated_variables = self.masked_variables
 
-    def generate_contents(self):
-        yield self.generate_indented_code("for %s in %s:" % (self.vars, self.expression))
-        for i in self.indented_children():
-            yield i
 
-    def generate(self):
-        for i in self.generate_varscope(self.generate_contents):
-            yield i
+    def generate_contents(self):
+        body = get_expression_ast(
+            "for %s in %s: pass" % 
+            (self.vars, self.expression),
+            'exec'
+        )
+        for_node      = body[0]
+        for_node.body = self.generate_child_ast()
+        return [ for_node ]
+
+
+    def generate_ast(self):
+        return self.generate_varscope(self.generate_contents())
 
 
 class PyDefineNode(PyComplexNode):
@@ -189,44 +311,63 @@ class PyDefineNode(PyComplexNode):
         self.masked_variables = fvf.get_masked_variables()
         self.free_variables = fvf.get_free_variables() - fvf.get_generated_variables()
 
-    def generate(self):
-        yield self.generate_indented_code("def %s:" % self.funcspec)
-        yield self.generate_indented_code("    __output__ = __tonnikala__.Buffer()")
 
-        for i in self.indented_children():
-            yield i
-
-        yield self.generate_indented_code("    return __output__")
+    def generate_ast(self):
+        body = get_expression_ast(
+            "def %s:pass" % self.funcspec,
+            "exec"
+        )
+        def_node = body[0]
+        def_node.body = self.generate_buffer_frame(
+            self.generate_child_ast()
+        )
+        
+        return [ def_node ]
 
 
 class PyComplexExprNode(PyComplexNode):
-    def generate(self):
-        for i in self.indented_children(increment=0):
-            yield i
+    def generate_ast(self):
+        return self.generate_child_ast()
+
 
 class PyRootNode(PyComplexNode):
     def __init__(self):
         super(PyRootNode, self).__init__()
-        self.set_indent_level(0)
 
-    def generate(self):
+
+    def generate_ast(self):
         free_variables = self.get_free_variables()
         free_variables.difference_update(ALWAYS_BUILTINS)
-        yield 'def __binder__(__tonnikala__context__):\n'
-        yield '    __tonnikala__ = __tonnikala_runtime__\n'
+
+        code  = 'def __binder__(__tonnikala__context__):\n'
+        code += '    __tonnikala__ = __tonnikala_runtime__\n'
 
         for i in free_variables:
-            yield '    if "%s" in __tonnikala__context__: %s = __tonnikala__context__["%s"]\n' % (i, i, i)
+            code += '    if "%s" in __tonnikala__context__: %s = __tonnikala__context__["%s"]\n' % (i, i, i)
 
-        yield '    class __Template__(object):\n'
-        yield '        def __main__(__self__):\n'
-        yield '            __output__ = __tonnikala__.Buffer()\n'
+        code += '    class __Template__(object):\n'
+        code += '        def __main__(__self__):\n'
+        code += '            __output__ = __tonnikala__.Buffer()\n'
+        code += '            return "template_placeholder"\n'
+        code += '            return __output__\n'
+        code += '    return __Template__()\n'
 
-        for i in self.indented_children(increment=3):
-            yield i
+        tree = ast.parse(code)
 
-        yield '            return __output__\n'
-        yield '    return __Template__()\n'
+        class MainLocator(ast.NodeVisitor):
+            found = None
+            def visit_FunctionDef(self, node):
+                if node.name == '__main__':
+                    self.found = node
+                else:
+                    self.generic_visit(node)
+
+        locator = MainLocator()
+        locator.visit(tree)
+        main_func = locator.found
+        main_func.body[1:2] = self.generate_child_ast()
+        ast.fix_missing_locations(tree)
+        return tree
 
 
 class Generator(BaseGenerator):

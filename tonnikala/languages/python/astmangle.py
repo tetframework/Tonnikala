@@ -12,21 +12,25 @@ class FreeVarFinder(ast.NodeVisitor):
         self.generated    = set()
         self.newly_masked = set()
 
+
     @classmethod
     def for_ast(cls, ast):
         rv = cls()
         rv.visit(ast)
         return rv
 
+
     @classmethod
     def for_expression(cls, expr):
         tree = ast.parse(expr, mode='eval')
         return cls.for_ast(tree)
 
+
     @classmethod
     def for_statement(cls, stmt):
         tree = ast.parse(stmt, mode='exec')
         return cls.for_ast(tree)
+
 
     def visit_Lambda(self, node):
         args = node.args.args
@@ -41,8 +45,10 @@ class FreeVarFinder(ast.NodeVisitor):
         self.generated.add(node.name)
         self.visit_Lambda(node)
 
+
     def visit_arguments(self, node):
         pass
+
 
     def do_visit_lambda_defaults(self, node):
         for field, value in ast.iter_fields(node):
@@ -57,6 +63,7 @@ class FreeVarFinder(ast.NodeVisitor):
             elif isinstance(value, ast.AST):
                 self.visit(value)
 
+
     def visit_Name(self, node):
         if isinstance(node.ctx, ast.Store):
             self.masked.add(node.id)
@@ -64,11 +71,14 @@ class FreeVarFinder(ast.NodeVisitor):
         else:
             self.vars.add(node.id)
 
+
     def get_free_variables(self):
         return self.vars - self.masked - self.generated
 
+
     def get_generated_variables(self):
         return self.generated
+
 
     def get_masked_variables(self):
         return self.newly_masked

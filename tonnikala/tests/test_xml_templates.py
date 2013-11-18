@@ -22,7 +22,7 @@ template = """<!DOCTYPE html>
 </html>"""
 
 def render(template, **args):
-    compiled = Loader().load_string(template)
+    compiled = Loader(True).load_string(template)
     return six.text_type(compiled.render(args))
 
 class TestXmlTemplates(unittest.TestCase):

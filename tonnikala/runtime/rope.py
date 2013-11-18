@@ -6,11 +6,14 @@ class Rope(object):
     def __init__(self, initial_contents=None):
         self._buffer = initial_contents or []
 
-    def __call__(self, obj):
-        if isinstance(obj, Rope):
-            self._buffer.extend(obj._buffer)
-        else:
-            self._buffer.append(text_type(obj))
+    def __call__(self, *objs):
+        for obj in objs:
+            if isinstance(obj, Rope):
+                self._buffer.extend(obj._buffer)
+            else:
+                self._buffer.append(text_type(obj))
+
+        return self
 
     def join(self):
         return ''.join(self._buffer)

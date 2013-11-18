@@ -69,12 +69,19 @@ class PythonNode(LanguageNode):
         rv = repr(text)
         return rv
 
+
     def generate_output_ast(self, code, escape=False):
         func = Name(id='__output__', ctx=Load())
         if escape:
             func = Attribute(value=func, attr='escape', ctx=Load())
 
-        return [ Expr(SimpleCall(func, [code])) ]
+        if not isinstance(code, list):
+            code = [ code ]
+
+        rv = Expr(SimpleCall(func, code))
+        rv.is_output = True
+        return [ rv ]
+
 
     def gen_name(self):
         global name_counter
@@ -137,8 +144,16 @@ class PyOutputNode(PythonNode):
         self.text = text
 
 
+    def get_expressions(self):
+        return [ self.get_expression() ]
+
+
+    def get_expression(self):
+        return Str(s=(self.text))
+
+
     def generate_ast(self):
-        return self.generate_output_ast(Str(s=(self.text)))
+        return self.generate_output_ast(self.get_expression())
 
 
 class PyExpressionNode(PythonNode):
@@ -149,9 +164,23 @@ class PyExpressionNode(PythonNode):
         self.free_variables = FreeVarFinder.for_expression(self.expr).get_free_variables()
 
 
+    def get_expressions(self):
+        return [ self.get_expression() ]
+
+
+    def get_expression(self):
+        return SimpleCall(
+            NameX('__tonnikala__escape__'),
+            [ self.get_unescaped_expression() ]
+        )
+
+
+    def get_unescaped_expression(self):
+        return get_expression_ast(self.expr)
+
+
     def generate_ast(self):
-        expr = get_expression_ast(self.expr)
-        return self.generate_output_ast(expr, escape=True)
+        return self.generate_output_ast(self.get_expression())
 
 
 class PyComplexNode(ComplexNode, PythonNode):
@@ -159,6 +188,7 @@ class PyComplexNode(ComplexNode, PythonNode):
         rv = []
         for i in self.children:
             rv.extend(i.generate_ast())
+
         return rv
 
 
@@ -181,7 +211,7 @@ class PyIfNode(PyComplexNode):
 
     def generate_ast(self):
         node = If(
-           test=get_expression_ast(self.expression), 
+           test=get_expression_ast(self.expression),
            body=self.generate_child_ast(),
            orelse=[]
         )
@@ -200,6 +230,7 @@ class PyImportNode(PythonNode):
         self.href = href
         self.alias = alias
         self.generated_variables = set([self.alias])
+
 
     def generate_ast(self):
         node = Assign(
@@ -221,30 +252,40 @@ class PyAttributeNode(PyComplexNode):
         self.name = name
 
 
+    def get_expressions(self):
+        rv = []
+        for i in self.children:
+            rv.extend(i.get_expressions())
+
+        return rv
+
+
     def generate_ast(self):
-        funcname = self.gen_name()
-        attr_builder = self.generate_function(
-            funcname,
-            self.generate_child_ast(),
-            add_buffer=True,
-            buffer_class='__tonnikala__.AttrBuffer'
-        )
+        if len(self.children) == 1 and \
+                isinstance(self.children[0], PyExpressionNode):
+            
+            # special case, the attribute contains a single 
+            # expression, these are handled by __output__.output_attr,
+            # given the name, and unescaped expression!
+            return [ Expr(SimpleCall(
+                func=Attribute(
+                    value=NameX('__output__'),
+                    attr='output_boolean_attr',
+                    ctx=Load()
+                ),
+                args=[
+                     Str(s=self.name),
+                     self.children[0].get_unescaped_expression()
+                ]
+            )) ]
 
-        output = SimpleCall(
-            func=Attribute(
-                value=NameX('__tonnikala__'),
-                attr='output_attr',
-                ctx=Load()
-            ),
-            args=[
-                Str(s=self.name),
-                NameX(funcname)
-            ]
+        # otherwise just return the output for the attribute code
+        # like before
+        return self.generate_output_ast(
+            [ Str(s=' %s="' % self.name) ] + 
+            self.get_expressions() +
+            [ Str(s='"') ]
         )
-
-        return [
-            attr_builder
-        ] + self.generate_output_ast(output)
 
 
 class PyAttrsNode(PythonNode):
@@ -327,8 +368,12 @@ class PyDefineNode(PyComplexNode):
 
 
 class PyComplexExprNode(PyComplexNode):
+    def get_expressions(self):
+        return [ i.get_expression() for i in self.children ]
+
+
     def generate_ast(self):
-        return self.generate_child_ast()
+        return self.generate_output_ast(self.get_expressions())
 
 
 class PyRootNode(PyComplexNode):
@@ -342,6 +387,7 @@ class PyRootNode(PyComplexNode):
 
         code  = 'def __binder__(__tonnikala__context__):\n'
         code += '    __tonnikala__ = __tonnikala_runtime__\n'
+        code += '    __tonnikala__escape__ = __tonnikala__.escape\n'
 
         for i in free_variables:
             code += '    if "%s" in __tonnikala__context__: %s = __tonnikala__context__["%s"]\n' % (i, i, i)

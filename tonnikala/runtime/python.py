@@ -12,18 +12,36 @@ def escape(obj):
 
     return strescape(text_type(obj))
 
+
 class Buffer(Rope):
     def __init__(self, initial_contents=None):
         super(Buffer, self).__init__(initial_contents or [])
+        self.rope_call = super(Buffer, self).__call__
+
 
     def escape(self, obj):
-        Rope.__call__(self, escape(obj))
+        self.rope_call(escape(obj))
+        return self
+
+
+    def output_boolean_attr(self, name, value):
+        if isinstance(value, (bool, NoneType)):
+            if bool(value):
+                self.rope_call(' ', name, '=', name)
+
+            # skip on false, None
+            return
+
+        self.rope_call(' ', name, '="', escape(value), '"')
+        return self
+
 
 class AttrBuffer(Rope):
     def __init__(self):
         super(AttrBuffer, self).__init__()
         self.boolean_value = None
         self.count = 0
+        self.rope_call = super(AttrBuffer, self).__call__
 
     def escape(self, obj):
         self.count += 1
@@ -31,18 +49,23 @@ class AttrBuffer(Rope):
         if self.count == 1 and isinstance(obj, (bool, NoneType)):
             self.boolean_value = bool(obj)
 
-        Rope.__call__(self, escape(obj))
+        self.rope_call(escape(obj))
+        return self
 
     def __call__(self, obj):
-        Rope.__call__(self, obj)
+        self.rope_call(obj)
         self.count += 1
         self.boolean_value = None
+        return self
+
 
 def make_buffer(*args):
     return Buffer(list(args))
 
+
 def make_buffer_from_list(thelist):
     return Buffer(thelist)
+
 
 def output_attrs(values):
     if not values:

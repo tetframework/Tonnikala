@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+# notice: this module cannot be sanely written to take use of
+# unicode_literals, bc some of the arguments need to be str on 
+# both python2 and 3
+from __future__ import absolute_import, division, print_function
 
 from tonnikala.ir import nodes
 from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 from tonnikala.languages.python.astmangle import FreeVarFinder
 import ast
 from ast import *
+from six import string_types
 
 name_counter = 0
 ALWAYS_BUILTINS = '''
@@ -43,7 +47,7 @@ def NameX(id, store=False):
 
 
 def get_expression_ast(expression, mode='eval'):
-    if not isinstance(expression, str):
+    if not isinstance(expression, string_types):
         return expression
 
     tree = ast.parse(expression, mode=mode)
@@ -63,9 +67,6 @@ class PythonNode(LanguageNode):
             text = text.decode('UTF-8')
 
         rv = repr(text)
-        if rv.startswith('u'):
-            rv = rv[1:]
-
         return rv
 
     def generate_output_ast(self, code, escape=False):
@@ -366,7 +367,9 @@ class PyRootNode(PyComplexNode):
         locator.visit(tree)
         main_func = locator.found
         main_func.body[1:2] = self.generate_child_ast()
+
         ast.fix_missing_locations(tree)
+
         return tree
 
 

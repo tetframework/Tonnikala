@@ -82,8 +82,8 @@ class Loader(object):
         code = PythonGenerator(tree).generate_ast()
 
         if self.debug:
-            import astor
             import ast
+            import astor
 
             print(ast.dump(code))
             print(astor.codegen.to_source(code))

@@ -86,10 +86,10 @@ class TestXmlTemplates(unittest.TestCase):
 
         fragment = '<html><div py:strip="foo()">bar</div></html>'
         self.are('<html>bar</html>',           fragment,
-            foo=iter([ True, False ]).__next__)
+            foo=lambda x=iter([ True, False ]): next(x))
 
         self.are('<html><div>bar<div></html>', fragment,
-            foo=iter([ False, True ]).__next__)
+            foo=lambda x=iter([ False, True ]): next(x))
 
     def test_comments(self):
         fragment = '<html><!-- some comment here, passed verbatim <html></html> --></html>'

@@ -77,7 +77,7 @@ class PythonNode(LanguageNode):
             code = [ code ]
 
         rv = Expr(SimpleCall(func, code))
-        rv.is_output = True
+        rv.output_args = code
         return [ rv ]
 
 
@@ -176,9 +176,23 @@ class PyExpressionNode(PythonNode):
 
 class PyComplexNode(ComplexNode, PythonNode):
     def generate_child_ast(self):
-        rv = []
+        tmp = []
         for i in self.children:
-            rv.extend(i.generate_ast())
+            tmp.extend(i.generate_ast())
+
+        # coalesce continuous output nodes
+        rv = []
+        output_node = None
+        for i in tmp:
+            if hasattr(i, 'output_args'):
+                if output_node:
+                    output_node.output_args.extend(i.output_args)
+                    continue
+                else:
+                    output_node = i
+            else:
+                output_node = None
+            rv.append(i)
 
         return rv
 

@@ -81,12 +81,15 @@ class TestXmlTemplates(unittest.TestCase):
         fragment = '<html py:strip="True">content</html>'
         self.are('content', fragment, foo=lambda: True)
 
+    def test_strip_twice(self):
         # the strip expression should not be evalled twice, but currently is
-        # self.are('<html>bar</html>',           fragment,
-        #    foo=iter([ True, False ]).next)
 
-        # self.are('<html><div>bar<div></html>', fragment,
-        #    foo=iter([ False, True ]).next)
+        fragment = '<html><div py:strip="foo()">bar</div></html>'
+        self.are('<html>bar</html>',           fragment,
+            foo=iter([ True, False ]).__next__)
+
+        self.are('<html><div>bar<div></html>', fragment,
+            foo=iter([ False, True ]).__next__)
 
     def test_comments(self):
         fragment = '<html><!-- some comment here, passed verbatim <html></html> --></html>'
@@ -119,3 +122,11 @@ class TestXmlTemplates(unittest.TestCase):
             '${embed(callable)}</py:for></html>'
 
         self.are('<html><a>0</a><a>1</a><a>2</a></html>', fragment)
+
+    def test_attribute_expressions(self):
+        fragment = '<html a="$foo"></html>'
+        self.are('<html></html>', fragment, foo=None)
+        self.are('<html></html>', fragment, foo=False)
+        self.are('<html a=""></html>', fragment, foo="")
+        self.are('<html a="abc"></html>', fragment, foo="abc")
+        self.are('<html a="&lt;&amp;&quot;&gt;"></html>', fragment, foo='<&">')

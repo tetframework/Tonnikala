@@ -13,8 +13,8 @@ def escape(obj):
     return strescape(text_type(obj))
 
 class Buffer(Rope):
-    def __init__(self):
-        super(Buffer, self).__init__()
+    def __init__(self, initial_contents=None):
+        super(Buffer, self).__init__(initial_contents or [])
 
     def escape(self, obj):
         Rope.__call__(self, escape(obj))
@@ -71,9 +71,9 @@ def output_attr(name, value_func):
         if not contents.boolean_value:
             return ''
         else:
-            contents = name
+            return ' %s="%s"' % (name, name)
 
-    return make_buffer_from_list(' ', name, '="', contents, '"')
+    return make_buffer_from_list([' ' + name + '="'] + contents._buffer + ['"'])
 
 def import_defs(href):
     return {}

@@ -8,6 +8,7 @@ from tonnikala.languages.javascript.generator import Generator as JavascriptGene
 from tonnikala.runtime import python
 from tonnikala.parser import Parser
 import six
+
 if six.PY3:
     import builtins as __builtin__
 else:
@@ -15,8 +16,6 @@ else:
 
 class Helpers():
     pass
-
-import astor
 
 helpers = Helpers()
 helpers.literal = lambda x: x
@@ -83,6 +82,10 @@ class Loader(object):
         code = PythonGenerator(tree).generate_ast()
 
         if self.debug:
+            import astor
+            import ast
+
+            print(ast.dump(code))
             print(astor.codegen.to_source(code))
 
         glob = {

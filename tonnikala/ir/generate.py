@@ -29,6 +29,14 @@ html5_empty_tags = frozenset('''
     source
 '''.split())
 
+try:
+    unicode
+    def u(s):
+        return unicode(s)
+except:
+    def u(s):
+        return s
+
 class all_set(object):
     def __contains__(self, value):
         return True
@@ -203,7 +211,7 @@ class IRGenerator(object):
             return ir_node
 
         if node_t == Node.COMMENT_NODE:
-            ir_node = EscapedText(u'<!--' + dom_node.nodeValue + u'-->')
+            ir_node = EscapedText(u('<!--') + dom_node.nodeValue + u('-->'))
             return ir_node
 
         raise ValueError("Unhandled node type %d" % node_t)

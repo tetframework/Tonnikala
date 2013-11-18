@@ -62,14 +62,6 @@ class PythonNode(LanguageNode):
         self.generated_variables = set()
 
 
-    def make_string(self, text):
-        if isinstance(text, bytes):
-            text = text.decode('UTF-8')
-
-        rv = repr(text)
-        return rv
-
-
     def generate_output_ast(self, code, escape=False):
         func = Name(id='__output__', ctx=Load())
         if escape:

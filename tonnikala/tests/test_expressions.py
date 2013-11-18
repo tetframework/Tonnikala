@@ -16,19 +16,19 @@ from tonnikala.loader import Loader
 class TestExpressions(unittest.TestCase):
     def test_python_expression(self):
         content = repr(expr.handle_text_node('${a\n+\n"}"}'))
-        self.assertEquals(content, 'PythonExpression(a\n+\n"}")')
+        self.assertEqual(content, 'PythonExpression(a\n+\n"}")')
 
     def test_javascript_expression(self):
         # a divide operator
         content = repr(expr.handle_text_node('a ${1 / 0} /} }',
             expr_parser=javascript.parse_expression))
 
-        self.assertEquals(content,
+        self.assertEqual(content,
             'ComplexExpression([Text(a ), JavascriptExpression(1 / 0), Text( /} })])')
 
         # a regexp literal
         content = repr(expr.handle_text_node('a ${1 + / 0} /} }',
             expr_parser=javascript.parse_expression))
 
-        self.assertEquals(content,
+        self.assertEqual(content,
             'ComplexExpression([Text(a ), JavascriptExpression(1 + / 0} /), Text( })])')

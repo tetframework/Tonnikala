@@ -89,8 +89,8 @@ class Loader(object):
             print(astor.codegen.to_source(code))
 
         glob = {
-            '__tonnikala_runtime__': python,
-            'literal':               lambda x: x
+            '__tonnikala__': python,
+            'literal':       lambda x: x
         }
 
         compiled = compile(code, '<string>', 'exec')

@@ -54,6 +54,12 @@ def get_expression_ast(expression, mode='eval'):
     return tree.body
 
 
+def gen_name():
+    global name_counter
+    name_counter += 1
+    return "__tk_%d__" % name_counter
+
+
 class PythonNode(LanguageNode):
     def __init__(self, *a, **kw):
         super(PythonNode, self).__init__(*a, **kw)
@@ -63,7 +69,7 @@ class PythonNode(LanguageNode):
 
 
     def generate_output_ast(self, code, escape=False):
-        func = Name(id='__output__', ctx=Load())
+        func = Name(id='__tk__output__', ctx=Load())
         if escape:
             func = Attribute(value=func, attr='escape', ctx=Load())
 
@@ -75,34 +81,27 @@ class PythonNode(LanguageNode):
         return [ rv ]
 
 
-    def gen_name(self):
-        global name_counter
-        name_counter += 1
-        return "__tk_%d__" % name_counter
-
-
-    def generate_buffer_frame(self, body, buffer_class='__tonnikala__.Buffer'):
+    def generate_buffer_frame(self, body):
         new_body = []
         new_body.append(Assign(
-            targets=[NameX('__output__', store=True)],
+            targets=[NameX('__tk__output__', store=True)],
             value=SimpleCall(
-                get_expression_ast(buffer_class)
+                NameX('__tk__buffer__')
             )
         ))
 
         new_body.extend(body)
-        new_body.append(Return(value=NameX('__output__')))
+        new_body.append(Return(value=NameX('__tk__output__')))
         return new_body
-        
 
-    def generate_function(self, name, body, add_buffer=False, 
-                          buffer_class='__tonnikala__.Buffer'):
+
+    def generate_function(self, name, body, add_buffer=False):
 
         func = SimpleFunctionDef(name)
         new_body = func.body = [ ]
 
         if add_buffer:
-            new_body.extend(self.generate_buffer_frame(body, buffer_class))
+            new_body.extend(self.generate_buffer_frame(body))
 
         else:
             new_body.extend(body)
@@ -114,7 +113,7 @@ class PythonNode(LanguageNode):
 
 
     def generate_varscope(self, body):
-        name = self.gen_name()
+        name = gen_name()
         rv = [
             self.generate_function(name, body),
             Expr(SimpleCall(NameX(name)))
@@ -162,7 +161,7 @@ class PyExpressionNode(PythonNode):
 
     def get_expression(self):
         return SimpleCall(
-            NameX('__tonnikala__escape__'),
+            NameX('__tk__escape__'),
             [ self.get_unescaped_expression() ]
         )
 
@@ -227,11 +226,11 @@ class PyImportNode(PythonNode):
     def generate_ast(self):
         node = Assign(
             targets = [NameX(self.alias)],
-            value = 
+            value =
                 SimpleCall(
                     func=
-                        Attribute(value=NameX('__tonnikala__'), 
-                                  attr='import_defs', ctx=Load()), 
+                        Attribute(value=NameX('__tonnikala__'),
+                                  attr='import_defs', ctx=Load()),
                     args=[Str(s=self.href)]
                 )
         )
@@ -255,13 +254,14 @@ class PyAttributeNode(PyComplexNode):
     def generate_ast(self):
         if len(self.children) == 1 and \
                 isinstance(self.children[0], PyExpressionNode):
-            
-            # special case, the attribute contains a single 
-            # expression, these are handled by __output__.output_boolean_attr,
+
+            # special case, the attribute contains a single
+            # expression, these are handled by
+            # __tk__output__.output_boolean_attr,
             # given the name, and unescaped expression!
             return [ Expr(SimpleCall(
                 func=Attribute(
-                    value=NameX('__output__'),
+                    value=NameX('__tk__output__'),
                     attr='output_boolean_attr',
                     ctx=Load()
                 ),
@@ -274,7 +274,7 @@ class PyAttributeNode(PyComplexNode):
         # otherwise just return the output for the attribute code
         # like before
         return self.generate_output_ast(
-            [ Str(s=' %s="' % self.name) ] + 
+            [ Str(s=' %s="' % self.name) ] +
             self.get_expressions() +
             [ Str(s='"') ]
         )
@@ -289,13 +289,9 @@ class PyAttrsNode(PythonNode):
 
     def generate(self):
         expression = get_expression_ast(self.expression)
-        
+
         output = SimpleCall(
-            func=Attribute(
-                value=NameX('__tonnikala__'),
-                attr='output_attrs',
-                ctx=Load()
-            ),
+            NameX('__tk_output_attrs__'),
             args=[expression]
         )
 
@@ -319,7 +315,7 @@ class PyForNode(PyComplexNode):
 
     def generate_contents(self):
         body = get_expression_ast(
-            "for %s in %s: pass" % 
+            "for %s in %s: pass" %
             (self.vars, self.expression),
             'exec'
         )
@@ -355,7 +351,7 @@ class PyDefineNode(PyComplexNode):
         def_node.body = self.generate_buffer_frame(
             self.generate_child_ast()
         )
-        
+
         return [ def_node ]
 
 
@@ -377,19 +373,20 @@ class PyRootNode(PyComplexNode):
         free_variables = self.get_free_variables()
         free_variables.difference_update(ALWAYS_BUILTINS)
 
-        code  = 'def __binder__(__tonnikala__context__):\n'
-        code += '    __tonnikala__ = __tonnikala_runtime__\n'
-        code += '    __tonnikala__escape__ = __tonnikala__.escape\n'
+        code  = '__tk__buffer__ = __tonnikala__.Buffer\n'
+        code += '__tk__escape__ = __tonnikala__.escape\n'
+        code += '__tk__output_attrs__ = __tonnikala__.output_attrs\n'
+        code += 'def __binder__(__tk__context__):\n'
 
         for i in free_variables:
-            code += '    if "%s" in __tonnikala__context__: %s = __tonnikala__context__["%s"]\n' % (i, i, i)
+            code += '    if "%s" in __tk__context__: %s = __tk__context__["%s"]\n' % (i, i, i)
 
-        code += '    class __Template__(object):\n'
-        code += '        def __main__(__self__):\n'
-        code += '            __output__ = __tonnikala__.Buffer()\n'
+        code += '    class __tk__template__(object):\n'
+        code += '        def __main__(__tk__self__):\n'
+        code += '            __tk__output__ = __tk__buffer__()\n'
         code += '            return "template_placeholder"\n'
-        code += '            return __output__\n'
-        code += '    return __Template__()\n'
+        code += '            return __tk__output__\n'
+        code += '    return __tk__template__()\n'
 
         tree = ast.parse(code)
 

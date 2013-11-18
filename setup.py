@@ -16,7 +16,6 @@ speedups = Feature(
     standard = True,
     ext_modules = [
         Extension('tonnikala._speedups', ['tonnikala/_speedups.c']),
-        Extension('tonnikala._rope', ['tonnikala/_rope.c']),
     ],
 )
 

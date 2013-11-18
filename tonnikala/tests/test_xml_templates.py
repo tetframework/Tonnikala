@@ -22,7 +22,7 @@ template = """<!DOCTYPE html>
 </html>"""
 
 def render(template, **args):
-    compiled = Loader(True).load_string(template)
+    compiled = Loader().load_string(template)
     return six.text_type(compiled.render(args))
 
 class TestXmlTemplates(unittest.TestCase):
@@ -127,6 +127,13 @@ class TestXmlTemplates(unittest.TestCase):
         fragment = '<html a="$foo"></html>'
         self.are('<html></html>', fragment, foo=None)
         self.are('<html></html>', fragment, foo=False)
+        self.are('<html a="a"></html>', fragment, foo=True)
         self.are('<html a=""></html>', fragment, foo="")
         self.are('<html a="abc"></html>', fragment, foo="abc")
         self.are('<html a="&lt;&amp;&quot;&gt;"></html>', fragment, foo='<&">')
+
+        fragment = '<html a="abc$foo&lt;"></html>'
+        self.are('<html a="abcab&lt;&lt;"></html>', fragment, foo='ab<')
+        self.are('<html a="abcFalse&lt;"></html>', fragment, foo=False)
+        self.are('<html a="abcNone&lt;"></html>', fragment, foo=None)
+        self.are('<html a="abcTrue&lt;"></html>', fragment, foo=True)

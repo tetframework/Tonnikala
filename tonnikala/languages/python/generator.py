@@ -265,7 +265,7 @@ class PyAttributeNode(PyComplexNode):
                 isinstance(self.children[0], PyExpressionNode):
             
             # special case, the attribute contains a single 
-            # expression, these are handled by __output__.output_attr,
+            # expression, these are handled by __output__.output_boolean_attr,
             # given the name, and unescaped expression!
             return [ Expr(SimpleCall(
                 func=Attribute(

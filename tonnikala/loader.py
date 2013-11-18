@@ -58,17 +58,19 @@ class TemplateContext(object):
             return False
 
 class Template(object):
-    def __init__(self, binder):
+    def __init__(self, binder, importer):
         self.func = binder
+        self.importer = importer
 
-    def render(self, context):
-        return self.func(TemplateContext(context)).__main__()
+    def render(self, context, function='__main__'):
+        return getattr(self.func(TemplateContext(context)), function)()
+
 
 class Loader(object):
     def __init__(self, debug=False):
         self.debug = debug
 
-    def load_string(self, string, filename="<string>"):
+    def load_string(self, string, filename="<string>", import_loader=None):
         parser = Parser(filename, string)
         parsed = parser.parse()
         generator = IRGenerator(parsed)
@@ -98,5 +100,20 @@ class Loader(object):
 
         compiled = compile(code, '<string>', 'exec')
         exec(compiled, glob, glob)
-        template_func = glob['__binder__']
-        return Template(template_func)
+        template_func = glob['__tk__binder__']
+        return Template(template_func, ImportLoader(self))
+
+
+class ImportLoader(object):
+    def __init__(self, loader):
+        self.loaded = {}
+
+    def load_template(self, file):
+        pass
+
+
+def load_template():
+    pass
+
+
+

@@ -60,6 +60,19 @@ def gen_name():
     return "__tk_%d__" % name_counter
 
 
+def static_eval(expr):
+    if isinstance(expr, UnaryOp) and isinstance(expr.op, Not):
+        return not static_eval(expr.operand)
+
+    return literal_eval(expr)
+
+
+def static_expr_to_bool(expr):
+    try:
+        return bool(static_eval(expr))
+    except:
+        return None
+
 class PythonNode(LanguageNode):
     def __init__(self, *a, **kw):
         super(PythonNode, self).__init__(*a, **kw)
@@ -174,6 +187,23 @@ class PyExpressionNode(PythonNode):
         return self.generate_output_ast(self.get_expression())
 
 
+def coalesce_strings(args):
+    rv = []
+    str_on = None
+
+    for i in args:
+        if isinstance(i, Str):
+            if str_on:
+                str_on.s += i.s
+                continue
+            str_on = i
+
+        else:
+            str_on = None
+        rv.append(i)
+
+    return rv
+
 class PyComplexNode(ComplexNode, PythonNode):
     def generate_child_ast(self):
         tmp = []
@@ -183,16 +213,26 @@ class PyComplexNode(ComplexNode, PythonNode):
         # coalesce continuous output nodes
         rv = []
         output_node = None
+
+        def coalesce():
+            if output_node:
+                output_node.output_args[:] = \
+                    coalesce_strings(output_node.output_args)
+
         for i in tmp:
             if hasattr(i, 'output_args'):
                 if output_node:
                     output_node.output_args.extend(i.output_args)
                     continue
+
                 else:
                     output_node = i
             else:
+                coalesce()
                 output_node = None
             rv.append(i)
+
+        coalesce()
 
         return rv
 
@@ -215,8 +255,17 @@ class PyIfNode(PyComplexNode):
 
 
     def generate_ast(self):
+        test = get_expression_ast(self.expression)
+        boolean = static_expr_to_bool(test)
+
+        if boolean == False:
+            return []
+
+        if boolean == True:
+            return self.generate_child_ast()
+
         node = If(
-           test=get_expression_ast(self.expression),
+           test=test,
            body=self.generate_child_ast(),
            orelse=[]
         )
@@ -365,6 +414,7 @@ class PyDefineNode(PyComplexNode):
         def_node.body = self.generate_buffer_frame(
             self.generate_child_ast()
         )
+        def_node.is_pydef = True
 
         return [ def_node ]
 
@@ -390,10 +440,11 @@ class PyRootNode(PyComplexNode):
         code  = '__tk__buffer__ = __tonnikala__.Buffer\n'
         code += '__tk__escape__ = __tonnikala__.escape\n'
         code += '__tk__output_attrs__ = __tonnikala__.output_attrs\n'
-        code += 'def __binder__(__tk__context__):\n'
+        code += 'def __tk__binder__(__tk__context__):\n'
 
         for i in free_variables:
-            code += '    if "%s" in __tk__context__: %s = __tk__context__["%s"]\n' % (i, i, i)
+            code += '    if "%s" in __tk__context__:\n' % i
+            code += '        %s = __tk__context__["%s"]\n' % (i, i)
 
         code += '    class __tk__template__(object):\n'
         code += '        def __main__(__tk__self__):\n'
@@ -405,17 +456,66 @@ class PyRootNode(PyComplexNode):
         tree = ast.parse(code)
 
         class MainLocator(ast.NodeVisitor):
-            found = None
+            main   = None
+            binder = None
+            template_class = None
+
             def visit_FunctionDef(self, node):
                 if node.name == '__main__':
-                    self.found = node
-                else:
-                    self.generic_visit(node)
+                    self.main = node
+
+                if node.name == '__tk__binder__':
+                    self.binder = node
+
+                self.generic_visit(node)
+
+            def visit_ClassDef(self, node):
+                if node.name == '__tk__template__':
+                    self.template_class = node
+
+                self.generic_visit(node)
 
         locator = MainLocator()
         locator.visit(tree)
-        main_func = locator.found
-        main_func.body[1:2] = self.generate_child_ast()
+
+        main_body = self.generate_child_ast()
+
+        pydef_funcs = [ i for i in main_body
+            if getattr(i, 'is_pydef', False) ]
+
+        main_body = [ i for i in main_body
+            if not getattr(i, 'is_pydef', False) ]
+
+        # inject the main body in the main func
+        main_func = locator.main
+        main_func.body[1:2] = main_body
+
+        # inject the other top level funcs in the binder
+        binder = locator.binder
+        binder.body[:0] = pydef_funcs
+
+        pydef_func_names = [ i.name for i in pydef_funcs ]
+        template_class = locator.template_class
+
+        function_injections = []
+
+        # create injections within class body
+        for i in pydef_func_names:
+            function_injections.append(
+                Assign(
+                    [Attribute(
+                        value=NameX('__tk__template__'),
+                        attr=i,
+                        ctx=Store()
+                    )],
+                    SimpleCall(
+                        NameX('staticmethod'),
+                        [NameX(i)]
+                    )
+                )
+            )
+
+        binder.body[-1:-1] = function_injections
 
         ast.fix_missing_locations(tree)
 

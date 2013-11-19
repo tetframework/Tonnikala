@@ -2,46 +2,57 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 NoneType = type(None)
 
-from .rope import Rope
 from ..helpers import escape as strescape
-from six import text_type
+from six import text_type, PY3
+from collections import deque
 
-def escape(obj):
-    if isinstance(obj, Buffer):
-        return obj
-
-    return strescape(text_type(obj))
+from markupsafe import escape
 
 
-class Buffer(Rope):
-    def __init__(self, initial_contents=None):
-        super(Buffer, self).__init__(initial_contents or [])
-        self.rope_call = super(Buffer, self).__call__
+class Buffer(object):
+    def __init__(self):
+        self._buffer = buffer = []
+        e = buffer.extend
+        a = buffer.append
+
+        def do_output(obj, Buffer=Buffer):
+            if obj.__class__ is Buffer:
+                e(obj._buffer)
+            else:
+                a(text_type(obj))
+
+        self.output = do_output
+        def output_boolean_attr(name, value):
+            t = type(value)
+            if t in (bool, NoneType):
+                if bool(value):
+                    do_output(' ' + name + '="' + name + '"')
+
+                # skip on false, None
+                return
+
+            do_output(' ' + name + '="')
+            do_output(escape(value))
+            do_output('"')
+
+        self.output_boolean_attr = output_boolean_attr
 
 
-    def escape(self, obj):
-        self.rope_call(escape(obj))
+    def __html__(self):
         return self
 
 
-    def output_boolean_attr(self, name, value):
-        if isinstance(value, (bool, NoneType)):
-            if bool(value):
-                self.rope_call(' ', name, '="', name, '"')
-
-            # skip on false, None
-            return
-
-        self.rope_call(' ', name, '="', escape(value), '"')
-        return self
+    def join(self):
+        return ''.join(self._buffer)
 
 
-def make_buffer(*args):
-    return Buffer(list(args))
+    if PY3:
+        __str__ = join
 
-
-def make_buffer_from_list(thelist):
-    return Buffer(thelist)
+    else:
+        __unicode__ = join
+        def __str__(self):
+            return self.join().encode('UTF-8')
 
 
 def output_attrs(values):
@@ -65,5 +76,7 @@ def output_attrs(values):
 
     return rv
 
+
 def import_defs(href):
     return {}
+

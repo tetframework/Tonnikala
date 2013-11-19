@@ -34,7 +34,7 @@ class TestXmlTemplates(unittest.TestCase):
     def test_simple(self):
         self.are('<html></html>', '<html></html>')
         self.are('<html attr="&amp;&lt;&quot;">&amp;&lt;&quot;</html>',
-            '<html attr="&amp;&lt;&quot;">&amp;&lt;&quot;</html>')
+            '<html attr="&amp;&lt;&#34;">&amp;&lt;&#34;</html>')
         self.are('<html></html>', '<html ></html >')
         fragment = '<html><nested>a</nested>b<nested>c</nested></html>'
         self.are(fragment, fragment)
@@ -55,7 +55,7 @@ class TestXmlTemplates(unittest.TestCase):
         self.are('<html></html>', fragment, flag=None)
 
     def test_escapes_in_expression(self):
-        self.are('<html>&lt;&amp;&quot;</html>', '<html>${i}</html>', i='<&"')
+        self.are('<html>&lt;&amp;&#34;</html>', '<html>${i}</html>', i='<&"')
 
     def test_for(self):
         fragment = '<html><py:for each="i in values">${i}</py:for></html>'
@@ -131,7 +131,7 @@ class TestXmlTemplates(unittest.TestCase):
         self.are('<html a="a"></html>', fragment, foo=True)
         self.are('<html a=""></html>', fragment, foo="")
         self.are('<html a="abc"></html>', fragment, foo="abc")
-        self.are('<html a="&lt;&amp;&quot;&gt;"></html>', fragment, foo='<&">')
+        self.are('<html a="&lt;&amp;&#34;&gt;"></html>', fragment, foo='<&">')
 
         fragment = '<html a="abc$foo&lt;"></html>'
         self.are('<html a="abcab&lt;&lt;"></html>', fragment, foo='ab<')

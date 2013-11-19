@@ -10,6 +10,7 @@ from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 from tonnikala.languages.python.astmangle import FreeVarFinder
 import ast
 from ast import *
+import ast
 from six import string_types
 
 name_counter = 0
@@ -24,11 +25,21 @@ def SimpleCall(func, args=None):
     return Call(func=func, args=args or [], keywords=[], starargs=None, kwargs=None)
 
 
-def SimpleFunctionDef(name):
+try:
+    unicode
+    def create_argument_list(arguments):
+        return [ Name(id=id, ctx=Param()) for id in arguments ]
+        
+except:
+    def create_argument_list(arguments):
+        return [ arg(arg=id, annotation=None) for id in arguments ]
+
+def SimpleFunctionDef(name, arguments=None):
+    arguments = create_argument_list(arguments)
     return FunctionDef(
         name=name,
-        args=arguments(
-            args=[],
+        args=ast.arguments(
+            args=arguments,
             vararg=None,
             varargannotation=None,
             kwonlyargs=[],
@@ -83,36 +94,41 @@ class PythonNode(LanguageNode):
 
     def generate_output_ast(self, code, escape=False):
         func = Name(id='__tk__output__', ctx=Load())
-        if escape:
-            func = Attribute(value=func, attr='escape', ctx=Load())
 
         if not isinstance(code, list):
             code = [ code ]
 
-        rv = Expr(SimpleCall(func, code))
-        rv.output_args = code
-        return [ rv ]
+        rv = []
+        for i in code:
+            e = Expr(SimpleCall(func, [i]))
+            e.output_args = [i]
+            rv.append(e)
+        return rv
 
 
     def generate_buffer_frame(self, body):
         new_body = []
         new_body.append(Assign(
-            targets=[NameX('__tk__output__', store=True)],
+            targets=[
+                Tuple(elts=[
+                    NameX('__tk__output__', store=True),
+                    NameX('__tk__buffer__', store=True)
+                ], ctx=Store())
+            ],
             value=SimpleCall(
-                NameX('__tk__buffer__')
+                NameX('__tk__mkbuffer__')
             )
         ))
 
         new_body.extend(body)
-        new_body.append(Return(value=NameX('__tk__output__')))
+        new_body.append(Return(value=NameX('__tk__buffer__')))
         return new_body
 
 
-    def generate_function(self, name, body, add_buffer=False):
-
-        func = SimpleFunctionDef(name)
+    def generate_function(self, name, body, add_buffer=False, arguments=None):
+        func = SimpleFunctionDef(name, arguments=arguments)
         new_body = func.body = [ ]
-
+             
         if add_buffer:
             new_body.extend(self.generate_buffer_frame(body))
 
@@ -128,8 +144,9 @@ class PythonNode(LanguageNode):
     def generate_varscope(self, body):
         name = gen_name()
         rv = [
-            self.generate_function(name, body),
-            Expr(SimpleCall(NameX(name)))
+            self.generate_function(name, body, 
+                arguments=['__tk__output__', '__tk__escape__']),
+            Expr(SimpleCall(NameX(name), [ NameX('__tk__output__'), NameX('__tk__escape__') ]))
         ]
         return rv
 
@@ -206,33 +223,9 @@ def coalesce_strings(args):
 
 class PyComplexNode(ComplexNode, PythonNode):
     def generate_child_ast(self):
-        tmp = []
-        for i in self.children:
-            tmp.extend(i.generate_ast())
-
-        # coalesce continuous output nodes
         rv = []
-        output_node = None
-
-        def coalesce():
-            if output_node:
-                output_node.output_args[:] = \
-                    coalesce_strings(output_node.output_args)
-
-        for i in tmp:
-            if hasattr(i, 'output_args'):
-                if output_node:
-                    output_node.output_args.extend(i.output_args)
-                    continue
-
-                else:
-                    output_node = i
-            else:
-                coalesce()
-                output_node = None
-            rv.append(i)
-
-        coalesce()
+        for i in self.children:
+            rv.extend(i.generate_ast())
 
         return rv
 
@@ -324,7 +317,7 @@ class PyAttributeNode(PyComplexNode):
             # given the name, and unescaped expression!
             return [ Expr(SimpleCall(
                 func=Attribute(
-                    value=NameX('__tk__output__'),
+                    value=NameX('__tk__buffer__'),
                     attr='output_boolean_attr',
                     ctx=Load()
                 ),
@@ -354,7 +347,7 @@ class PyAttrsNode(PythonNode):
         expression = get_expression_ast(self.expression)
 
         output = SimpleCall(
-            NameX('__tk_output_attrs__'),
+            NameX('__tk__output_attrs__'),
             args=[expression]
         )
 
@@ -388,7 +381,8 @@ class PyForNode(PyComplexNode):
 
 
     def generate_ast(self):
-        return self.generate_varscope(self.generate_contents())
+        # return self.generate_varscope(self.generate_contents())
+        return self.generate_contents()
 
 
 class PyDefineNode(PyComplexNode):
@@ -428,6 +422,88 @@ class PyComplexExprNode(PyComplexNode):
         return self.generate_output_ast(self.get_expressions())
 
 
+def ast_equals(tree1, tree2):
+    x1 = ast.dump(tree1)
+    x2 = ast.dump(tree2)
+    print(x1, x2)
+    return x1 == x2
+
+def coalesce_outputs(tree):
+    """
+    Coalesce the constant output expressions 
+        __output__('foo')
+        __output__('bar')
+    into
+        __output__('foobar')
+    """
+
+    class OutputCoalescer(NodeVisitor):
+        def visit(self, node):
+            if hasattr(node, 'body'):
+                # coalesce continuous string output nodes
+                new_body = []
+                str_output_node = None
+
+                for i in node.body:
+                    if hasattr(i, 'output_args') and \
+                            isinstance(i.output_args[0], Str):
+
+                        if str_output_node:
+                            str_output_node.output_args[0].s += \
+                                i.output_args[0].s
+
+                            continue
+
+                        else:
+                            str_output_node = i
+                    else:
+                        str_output_node = None
+
+                    new_body.append(i)
+
+                node.body = new_body
+
+            NodeVisitor.visit(self, node)
+
+        def check(self, node):
+            print("check 0\n")
+            if not ast_equals(node.func, NameX('__tk__output__')):
+                return
+
+            print("check 1\n")
+            if len(node.args) != 1:
+                return
+
+            print("check 1\n")
+            arg1 = node.args[0]
+            if not arg1.__class__.__name__ == 'Call':
+                return
+
+            if not ast_equals(arg1.func, NameX('__tk__escape__')):
+                return
+
+            if len(arg1.args) != 1:
+                return
+
+            print("check 2\n")
+            arg2 = arg1.args[0]
+            if not arg2.__class__.__name__ == 'Call':
+                return
+
+            if not ast_equals(arg2.func, NameX('literal')):
+                return
+
+            if len(arg2.args) != 1:
+                return
+
+            node.args = arg2.args
+
+        def visit_Call(self, node):
+            self.check(node)
+            self.generic_visit(node)
+
+    OutputCoalescer().visit(tree)
+
 class PyRootNode(PyComplexNode):
     def __init__(self):
         super(PyRootNode, self).__init__()
@@ -437,8 +513,10 @@ class PyRootNode(PyComplexNode):
         free_variables = self.get_free_variables()
         free_variables.difference_update(ALWAYS_BUILTINS)
 
-        code  = '__tk__buffer__ = __tonnikala__.Buffer\n'
-        code += '__tk__escape__ = __tonnikala__.escape\n'
+        code  = 'def __tk__mkbuffer__():\n'
+        code += '    buffer = __tonnikala__.Buffer()\n'
+        code += '    return buffer.output, buffer\n'
+        code += '__tk__escape__ = __tk__escape_g__ = __tonnikala__.escape\n'
         code += '__tk__output_attrs__ = __tonnikala__.output_attrs\n'
         code += 'def __tk__binder__(__tk__context__):\n'
 
@@ -448,9 +526,10 @@ class PyRootNode(PyComplexNode):
 
         code += '    class __tk__template__(object):\n'
         code += '        def __main__(__tk__self__):\n'
-        code += '            __tk__output__ = __tk__buffer__()\n'
+        code += '            __tk__escape__ = __tk__escape_g__\n'
+        code += '            __tk__output__, __tk__buffer__ = __tk__mkbuffer__()\n'
         code += '            return "template_placeholder"\n'
-        code += '            return __tk__output__\n'
+        code += '            return __tk__buffer__\n'
         code += '    return __tk__template__()\n'
 
         tree = ast.parse(code)
@@ -488,7 +567,7 @@ class PyRootNode(PyComplexNode):
 
         # inject the main body in the main func
         main_func = locator.main
-        main_func.body[1:2] = main_body
+        main_func.body[2:3] = main_body
 
         # inject the other top level funcs in the binder
         binder = locator.binder
@@ -517,6 +596,7 @@ class PyRootNode(PyComplexNode):
 
         binder.body[-1:-1] = function_injections
 
+        coalesce_outputs(tree)
         ast.fix_missing_locations(tree)
 
         return tree

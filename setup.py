@@ -15,14 +15,24 @@ speedups = Feature(
     "optional C speed-enhancements",
     standard = True,
     ext_modules = [
-        Extension('tonnikala._speedups', ['tonnikala/_speedups.c']),
+        Extension('tonnikala._speedups',       ['tonnikala/_speedups.c']),
     ],
+)
+
+speedups3k = Feature(
+    "optional C speed-enhancements",
+    standard = True,
+    ext_modules = [
+        Extension('tonnikala.runtime._buffer', ['tonnikala/runtime/_buffer.c']),
+        Extension('tonnikala.runtime.noddy', ['tonnikala/runtime/noddy.c']),
+    ]
 )
 
 if sys.version_info[0] == 2:
     extra_kw = dict(features={'speedups': speedups})
 else:
-    extra_kw = dict()
+    extra_kw = dict(features={'speedups3k': speedups3k })
+    extra_kw = dict(features={'speedups3k': speedups3k })
 
 
 setup(

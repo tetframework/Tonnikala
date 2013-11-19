@@ -29,7 +29,7 @@ try:
     unicode
     def create_argument_list(arguments):
         return [ Name(id=id, ctx=Param()) for id in arguments ]
-        
+
 except:
     def create_argument_list(arguments):
         return [ arg(arg=id, annotation=None) for id in arguments ]
@@ -425,12 +425,11 @@ class PyComplexExprNode(PyComplexNode):
 def ast_equals(tree1, tree2):
     x1 = ast.dump(tree1)
     x2 = ast.dump(tree2)
-    print(x1, x2)
     return x1 == x2
 
 def coalesce_outputs(tree):
     """
-    Coalesce the constant output expressions 
+    Coalesce the constant output expressions
         __output__('foo')
         __output__('bar')
     into
@@ -466,15 +465,12 @@ def coalesce_outputs(tree):
             NodeVisitor.visit(self, node)
 
         def check(self, node):
-            print("check 0\n")
             if not ast_equals(node.func, NameX('__tk__output__')):
                 return
 
-            print("check 1\n")
             if len(node.args) != 1:
                 return
 
-            print("check 1\n")
             arg1 = node.args[0]
             if not arg1.__class__.__name__ == 'Call':
                 return
@@ -485,7 +481,6 @@ def coalesce_outputs(tree):
             if len(arg1.args) != 1:
                 return
 
-            print("check 2\n")
             arg2 = arg1.args[0]
             if not arg2.__class__.__name__ == 'Call':
                 return

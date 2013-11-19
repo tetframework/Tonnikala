@@ -54,6 +54,28 @@ class Buffer(object):
         def __str__(self):
             return self.join().encode('UTF-8')
 
+try:
+    from ._buffer import Buffer as _Buffer
+
+    ftn = (False, True, None)
+    def Buffer():
+        b = _Buffer()
+
+        def output_boolean_attr(name, value):
+            if value in ftn:
+                value and b(' ' + name + '="' + name + '"')
+
+                # skip on false, None
+                return
+
+            b(' ' + name + '="', escape(value), '"')
+
+        b.output_boolean_attr = output_boolean_attr
+
+        return b
+except:
+    pass
+
 
 def output_attrs(values):
     if not values:

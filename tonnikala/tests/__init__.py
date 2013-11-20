@@ -1,11 +1,10 @@
 import unittest
 
-from . import test_expressions, test_xml_templates #, test_rope
-
+from . import test_expressions, test_html_templates
 
 test_modules = [
     test_expressions,
-    test_xml_templates,
+    test_html_templates,
 ]
 
 def create_test_suite(modules):

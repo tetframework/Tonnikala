@@ -9,7 +9,7 @@ from tonnikala.ir.tree  import IRTree
 
 __docformat__ = "epytext"
 
-"""Generates IR nodes from XML parsetree"""
+"""Generates IR nodes from DOM tree"""
 
 html5_empty_tags = frozenset('''
     br
@@ -29,6 +29,12 @@ html5_empty_tags = frozenset('''
     source
 '''.split())
 
+html5_cdata_elements = frozenset('''
+    script
+    style
+'''.split())
+
+
 try:
     unicode
     def u(s):
@@ -46,6 +52,7 @@ class IRGenerator(object):
         self.dom_document = document
         self.tree = IRTree()
         self.mode = mode
+        self.is_cdata = False
 
         if mode in [ 'html', 'html5', 'xhtml' ]:
             self.empty_elements = html5_empty_tags
@@ -207,7 +214,7 @@ class IRGenerator(object):
             return self.generate_element_node(dom_node)
 
         if node_t == Node.TEXT_NODE:
-            ir_node = handle_text_node(dom_node.nodeValue)
+            ir_node = handle_text_node(dom_node.nodeValue, is_cdata=self.is_cdata)
             return ir_node
 
         if node_t == Node.COMMENT_NODE:
@@ -218,11 +225,18 @@ class IRGenerator(object):
 
 
     def add_children(self, children, ir_node):
+        is_cdata_save = self.is_cdata
+        if isinstance(ir_node, Element) \
+                and ir_node.name in html5_cdata_elements:
+
+            self.is_cdata = True
+
         for dom_node in children:
             node = self.generate_ir_node(dom_node)
             if node != None:
                 ir_node.add_child(node)
 
+        self.is_cdata = is_cdata_save
 
     def generate_tree(self):
         root = Root()

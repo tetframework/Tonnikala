@@ -7,31 +7,17 @@ from tonnikala import parser
 from tonnikala.ir.generate import IRGenerator
 from tonnikala.loader import Loader
 
-template = """<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"
-        xmlns:py="http://genshi.edgewall.org/"
-        xmlns:fb="http://www.facebook.com/2008/fbml" py:foo="barf">
-        <py:import href="includes.html" alias="includes"/>
-        <body>
-        <py:def function="the_body"><ul><li py:for="i in ['1', '2', '3']">$i ${str(int(i))}</li></ul></py:def>
-        <py:def function="output_body(body_func)"><div>${body_func()}</div></py:def>
-        ${output_body(the_body)}
-        <div id="foo">$foo</div>
-        <div id="bar">$bar</div>
-        </body>
-</html>"""
-
 def render(template, **args):
     compiled = Loader().load_string(template)
     return six.text_type(compiled.render(args))
 
-class TestXmlTemplates(unittest.TestCase):
+class TestHtmlTemplates(unittest.TestCase):
     def are(self, result, template, **args):
         """assert rendered equals"""
 
         self.assertEqual(render(template, **args), result)
 
-    def etest_simple(self):
+    def test_simple(self):
         self.are('<html></html>', '<html></html>')
         self.are('<html attr="&amp;&lt;&quot;">&amp;&lt;&quot;</html>',
             '<html attr="&amp;&lt;&#34;">&amp;&lt;&#34;</html>')
@@ -39,7 +25,7 @@ class TestXmlTemplates(unittest.TestCase):
         fragment = '<html><nested>a</nested>b<nested>c</nested></html>'
         self.are(fragment, fragment)
 
-    def etest_if(self):
+    def test_if(self):
         fragment = '<html><py:if test="flag">was true</py:if></html>'
         self.are('<html>was true</html>', fragment, flag=True)
         self.are('<html></html>', fragment, flag=False)
@@ -54,10 +40,10 @@ class TestXmlTemplates(unittest.TestCase):
         self.are('<html></html>', fragment, flag={})
         self.are('<html></html>', fragment, flag=None)
 
-    def etest_escapes_in_expression(self):
+    def test_escapes_in_expression(self):
         self.are('<html>&lt;&amp;&#34;</html>', '<html>${i}</html>', i='<&"')
 
-    def etest_for(self):
+    def test_for(self):
         fragment = '<html><py:for each="i in values">${i}</py:for></html>'
         self.are('<html></html>', fragment, values=[])
         self.are('<html>01234</html>', fragment, values=range(5))
@@ -72,12 +58,12 @@ class TestXmlTemplates(unittest.TestCase):
 
         self.are('<html>-bar: baz-</html>', fragment)
 
-    def etest_strip(self):
+    def test_strip(self):
         fragment = '<html><div py:strip="foo()">bar</div></html>'
         self.are('<html>bar</html>', fragment, foo=lambda: True)
         self.are('<html><div>bar</div></html>', fragment, foo=lambda: False)
 
-    def etest_top_level_strip(self):
+    def test_top_level_strip(self):
         fragment = '<html py:strip="True">content</html>'
         self.are('content', fragment, foo=lambda: True)
 
@@ -92,15 +78,15 @@ class TestXmlTemplates(unittest.TestCase):
         self.are('<html><div>bar<div></html>', fragment,
             foo=lambda x=iter([ False, True ]): next(x))
 
-    def etest_comments(self):
+    def test_comments(self):
         fragment = '<html><!-- some comment here, passed verbatim <html></html> --></html>'
         self.are('<html><!-- some comment here, passed verbatim <html></html> --></html>', fragment)
 
-    def etest_comments_stripped(self):
+    def test_comments_stripped(self):
         fragment = '<html><!--! some comment here, stripped --></html>'
         self.are('<html></html>', fragment)
 
-    def etest_replace(self):
+    def test_replace(self):
         fragment = '<html><div py:replace="foo">bar</div></html>'
         self.are('<html>baz</html>', fragment, foo='baz')
         self.are('<html>&lt;</html>', fragment, foo='<')
@@ -109,11 +95,11 @@ class TestXmlTemplates(unittest.TestCase):
         self.are('<html>baz</html>', fragment, foo='baz')
         self.are('<html>&lt;</html>', fragment, foo='<')
 
-    def etest_content(self):
+    def test_content(self):
         fragment = '<html><div py:content="foo">bar</div></html>'
         self.are('<html><div>baz</div></html>', fragment, foo='baz')
 
-    def etest_empty_tags(self):
+    def test_empty_tags(self):
         fragment = '<html><script/><script></script><br/><br></br></html>'
         self.are('<html><script></script><script></script><br /><br /></html>', fragment)
 
@@ -124,7 +110,7 @@ class TestXmlTemplates(unittest.TestCase):
 
         self.are('<html><a>0</a><a>1</a><a>2</a></html>', fragment)
 
-    def etest_attribute_expressions(self):
+    def test_attribute_expressions(self):
         fragment = '<html a="$foo"></html>'
         self.are('<html></html>', fragment, foo=None)
         self.are('<html></html>', fragment, foo=False)
@@ -138,3 +124,12 @@ class TestXmlTemplates(unittest.TestCase):
         self.are('<html a="abcFalse&lt;"></html>', fragment, foo=False)
         self.are('<html a="abcNone&lt;"></html>', fragment, foo=None)
         self.are('<html a="abcTrue&lt;"></html>', fragment, foo=True)
+
+    def test_dollars(self):
+        fragment = '<html><script>$.fn $(abc) $$a $a</script></html>'
+        self.are('<html><script>$.fn $(abc) $a foobar</script></html>',
+            fragment, a='foobar')
+
+    def test_script_tags(self):
+        fragment = '<html><script>alert(1 < 3)</script></html>'
+        self.are('<html><script>alert(1 < 3)</script></html>', fragment)

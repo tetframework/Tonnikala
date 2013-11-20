@@ -17,6 +17,7 @@ class BaseNode(object):
 
 
 class Text(BaseNode):
+    is_cdata = False
     translatable = False
 
     def __init__(self, text):
@@ -26,6 +27,9 @@ class Text(BaseNode):
         return self.text
 
     def escaped(self):
+        if self.is_cdata:
+            return self.text
+
         return escape(self.text)
 
 
@@ -56,7 +60,9 @@ class EscapedText(Text):
 
 
 class Expression(BaseNode):
+    is_cdata = False
     tokens = None
+
     def __init__(self, expression):
         self.expression = expression
 

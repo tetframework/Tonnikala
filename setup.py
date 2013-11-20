@@ -43,6 +43,7 @@ setup(
     #url='',
     install_requires="""
         six
+        markupsafe
     """.split(),
     setup_requires=[],
     include_package_data=True,

@@ -90,8 +90,9 @@ class Loader(object):
             print(ast.dump(code))
             print(astor.codegen.to_source(code))
 
-        # import astor
-        # print(astor.codegen.to_source(code))
+        if 0:
+            import astor
+            print(astor.codegen.to_source(code))
 
         glob = {
             '__tonnikala__': python,

@@ -54,8 +54,14 @@ Buffer_call(Buffer *self, PyObject *args, PyObject *other)
         PyObject* obj;
         obj = PyTuple_GET_ITEM(args, i);
         if (Py_TYPE(obj) == &buffer_BufferType) {
-            return _PyList_Extend((PyListObject*)self->buffer_list,
+            PyObject *rv;
+            rv = _PyList_Extend((PyListObject*)self->buffer_list,
                 ((Buffer*)obj)->buffer_list);
+            if (! rv) {
+                return NULL;
+            }
+            // extend returns Py_None on success
+            Py_DECREF(rv);
         }
         else {
             if (! PyUnicode_CheckExact(obj)) {

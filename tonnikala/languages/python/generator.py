@@ -213,10 +213,12 @@ def coalesce_strings(args):
             if str_on:
                 str_on.s += i.s
                 continue
+
             str_on = i
 
         else:
             str_on = None
+
         rv.append(i)
 
     return rv
@@ -432,35 +434,46 @@ def coalesce_outputs(tree):
     Coalesce the constant output expressions
         __output__('foo')
         __output__('bar')
+        __output__(baz)
+        __output__('xyzzy')
     into
-        __output__('foobar')
+        __output__('foobar', baz, 'xyzzy')
     """
+
+    coalesce_all_outputs = True
+    if coalesce_all_outputs:
+        should_coalesce = lambda n: True
+    else:
+        should_coalesce = lambda n: n.output_args[0].__class__ is Str
 
     class OutputCoalescer(NodeVisitor):
         def visit(self, node):
             if hasattr(node, 'body'):
                 # coalesce continuous string output nodes
                 new_body = []
-                str_output_node = None
+                output_node = None
+
+                def coalesce_strs():
+                    if output_node:
+                        output_node.value.args[:] = \
+                            coalesce_strings(output_node.value.args)
 
                 for i in node.body:
-                    if hasattr(i, 'output_args') and \
-                            isinstance(i.output_args[0], Str):
-
-                        if str_output_node:
-                            str_output_node.output_args[0].s += \
-                                i.output_args[0].s
-
+                    if hasattr(i, 'output_args') and should_coalesce(i):
+                        if output_node:
+                            output_node.value.args.extend(i.output_args)                            
                             continue
 
-                        else:
-                            str_output_node = i
+                        output_node = i
+
                     else:
-                        str_output_node = None
+                        coalesce_strs()
+                        output_node = None
 
                     new_body.append(i)
 
-                node.body = new_body
+                coalesce_strs()
+                node.body[:] = new_body
 
             NodeVisitor.visit(self, node)
 
@@ -468,30 +481,28 @@ def coalesce_outputs(tree):
             if not ast_equals(node.func, NameX('__tk__output__')):
                 return
 
-            if len(node.args) != 1:
-                return
+            for i in range(len(node.args)):
+                arg1 = node.args[i]
+                if not arg1.__class__.__name__ == 'Call':
+                    continue
 
-            arg1 = node.args[0]
-            if not arg1.__class__.__name__ == 'Call':
-                return
+                if not ast_equals(arg1.func, NameX('__tk__escape__')):
+                    continue
 
-            if not ast_equals(arg1.func, NameX('__tk__escape__')):
-                return
+                if len(arg1.args) != 1:
+                    continue
 
-            if len(arg1.args) != 1:
-                return
+                arg2 = arg1.args[0]
+                if not arg2.__class__.__name__ == 'Call':
+                    continue
 
-            arg2 = arg1.args[0]
-            if not arg2.__class__.__name__ == 'Call':
-                return
+                if not ast_equals(arg2.func, NameX('literal')):
+                    continue
 
-            if not ast_equals(arg2.func, NameX('literal')):
-                return
+                if len(arg2.args) != 1:
+                    continue
 
-            if len(arg2.args) != 1:
-                return
-
-            node.args = arg2.args
+                node.args[i] = arg2.args[0]
 
         def visit_Call(self, node):
             self.check(node)

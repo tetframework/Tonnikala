@@ -24,7 +24,6 @@ speedups3k = Feature(
     standard = True,
     ext_modules = [
         Extension('tonnikala.runtime._buffer', ['tonnikala/runtime/_buffer.c']),
-        Extension('tonnikala.runtime.noddy', ['tonnikala/runtime/noddy.c']),
     ]
 )
 

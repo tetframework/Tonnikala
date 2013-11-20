@@ -9,17 +9,18 @@ from collections import deque
 from markupsafe import escape
 
 
-class Buffer(object):
+class __tk__buffer__(object):
     def __init__(self):
         self._buffer = buffer = []
         e = buffer.extend
         a = buffer.append
 
-        def do_output(obj, Buffer=Buffer):
-            if obj.__class__ is Buffer:
-                e(obj._buffer)
-            else:
-                a(text_type(obj))
+        def do_output(*objs):
+            for obj in objs:
+                if obj.__class__ is __tk__buffer__:
+                    e(obj._buffer)
+                else:
+                    a(text_type(obj))
 
         self.output = do_output
         def output_boolean_attr(name, value):
@@ -53,6 +54,8 @@ class Buffer(object):
         __unicode__ = join
         def __str__(self):
             return self.join().encode('UTF-8')
+
+Buffer = __tk__buffer__
 
 try:
     from ._buffer import Buffer as _Buffer

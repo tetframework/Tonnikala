@@ -12,6 +12,7 @@ Example
 =======
 
 ::
+
     from tonnikala.loader import Loader
 
     template_source = u"""

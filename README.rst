@@ -35,6 +35,26 @@ Example
 The `render()` returns a Buffer object that you can coerce into unicode by calling the `join()` method, 
 or by implicit conversion (str() on python 3, unicode() on python 2).
 
+Status
+======
+
+Alpha, working features are 
+
+  * Structural elements `py:if`, `py:unless`, `py:def`, `py:for`;
+  * Rendering an explicit `py:def` block (no arguments)
+  * Expression interpolation using $simple_identifier and ${complex + python + "expression"}
+  * Boolean attributes: `<tag attr="${False}">`, `<tag attr="$True">`
+  * Implicit escaping
+  * Disabling implicit escaping (`literal()`) 
+
+Upcoming features:
+
+  * Structural elements: `py:vars`
+  * Custom tags to `py:def`
+  * I18N with optional in-parse-tree localization
+  * Compiling into Javascript
+  * Template inheritance
+  * Importing def blocks from another template: `py:import`
 
 Contributors
 ============

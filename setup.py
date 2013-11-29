@@ -42,8 +42,8 @@ setup(
     author_email='',
     #url='',
     install_requires="""
-        six
-        markupsafe
+        six>=1.4.1
+        markupsafe>=0.18
     """.split(),
     setup_requires=[],
     include_package_data=True,

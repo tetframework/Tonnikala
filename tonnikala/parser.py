@@ -125,10 +125,10 @@ class Parser(sax.ContentHandler):
         pass
 
 
-from html.parser import HTMLParser
-from html.entities import name2codepoint
+from six.moves import html_parser
 
-class Parser(HTMLParser):
+# force a new-style class!
+class Parser(html_parser.HTMLParser, object):
     def __init__(self, filename, source):
         super(Parser, self).__init__()
         self.filename = filename
@@ -206,8 +206,8 @@ class Parser(HTMLParser):
 
             content = six.unichr(cp)
             return self.handle_data(content)
-        except Exception:
-            raise RuntimeError("Invalid HTML charref &#%s;" % code)
+        except Exception as e:
+            raise RuntimeError("Invalid HTML charref &#%s;: %s" % (code, e))
 
     # LexicalHandler implementation
     def handle_comment(self, text):

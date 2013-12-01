@@ -6,9 +6,7 @@ import unittest
 
 from tonnikala import expr
 from tonnikala.languages import javascript
-from tonnikala import parser
 from os import path
-from tonnikala.ir.generate import IRGenerator
 from tonnikala.languages.python.generator import Generator as PythonGenerator
 from tonnikala.languages.javascript.generator import Generator as JavascriptGenerator
 from tonnikala.loader import Loader

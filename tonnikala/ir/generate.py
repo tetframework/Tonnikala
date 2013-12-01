@@ -2,8 +2,6 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless, Expression, Comment
-
-from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
 from xml.dom.minidom    import Node
 from tonnikala.ir.tree  import IRTree
 
@@ -47,7 +45,7 @@ class all_set(object):
     def __contains__(self, value):
         return True
 
-class IRGenerator(object):
+class BaseDOMIRGenerator(object):
     def __init__(self, document, mode='html5'):
         self.dom_document = document
         self.tree = IRTree()
@@ -56,11 +54,13 @@ class IRGenerator(object):
 
         if mode in [ 'html', 'html5', 'xhtml' ]:
             self.empty_elements = html5_empty_tags
+            self.cdata_elements = html5_cdata_elements
             self.empty_tag_closing_string = ' />'
 
         elif mode == 'xml':
             self.empty_elements = all_set()
             self.empty_tag_closing_string = '/>'
+            self.cdata_elements = set()
 
         else:
             raise ValueError("Unknown render mode '%s'" % mode)
@@ -76,158 +76,18 @@ class IRGenerator(object):
             current = current.nextSibling
 
 
-    def get_guard_expression(self, dom_node):
-        return self.grab_and_remove_control_attr(dom_node, 'strip')
+    def generate_attributes(self, ir_node, attrs=[], dynamic_attrs=None):
+        if dynamic_attrs:
+            ir_node.set_dynamic_attrs(dynamic_attrs)
 
-
-    def generate_attributes(self, dom_node, ir_node):
-        attrs_node = self.grab_and_remove_control_attr(dom_node, 'attrs')
-        if attrs_node:
-            ir_node.set_dynamic_attrs(attrs_node)
-
-        attrs = dict(dom_node.attributes)
-        for name, attr in attrs.items():
-            ir_node.set_attribute(name, handle_text_node(attr.nodeValue))
-
-
-    def is_control_name(self, name, to_match):
-        return 'py:' + to_match == name
-
-
-    def grab_and_remove_control_attr(self, dom_node, name):
-        name = 'py:' + name
-        if dom_node.hasAttribute(name):
-            value = dom_node.getAttribute(name)
-            dom_node.removeAttribute(name)
-            return value
-
-        return None
-
-
-    def create_control_nodes(self, dom_node):
-        name = dom_node.tagName
-
-        ir_node_stack = []
-
-        if self.is_control_name(name, 'if'):
-            ir_node_stack.append(If(dom_node.getAttribute('test')))
-
-        if self.is_control_name(name, 'for'):
-            ir_node_stack.append(For(dom_node.getAttribute('each')))
-
-        if self.is_control_name(name, 'def'):
-            ir_node_stack.append(Define(dom_node.getAttribute('function')))
-
-        if self.is_control_name(name, 'import'):
-            ir_node_stack.append(Import(dom_node.getAttribute('href'), dom_node.getAttribute('alias')))
-
-        # TODO: add all node types in order
-        generate_element = not bool(ir_node_stack)
-        attr = self.grab_and_remove_control_attr(dom_node, 'if')
-        if attr is not None:
-            ir_node_stack.append(If(attr))
-
-        attr = self.grab_and_remove_control_attr(dom_node, 'for')
-        if attr is not None:
-            ir_node_stack.append(For(attr))
-
-        attr = self.grab_and_remove_control_attr(dom_node, 'def')
-        if attr is not None:
-            ir_node_stack.append(Define(attr))
-
-        # TODO: add all control attrs in order
-        if not ir_node_stack:
-            return True, None, None
-
-        top = ir_node_stack[0]
-        bottom = ir_node_stack[-1]
-
-        # link children
-        while ir_node_stack:
-            current = ir_node_stack.pop()
-
-            if not ir_node_stack:
-                break
-
-            ir_node_stack[-1].add_child(current)
-
-        return generate_element, top, bottom
-
-
-    def generate_element_node(self, dom_node):
-        generate_element, topmost, bottom = self.create_control_nodes(dom_node)
-
-        guard_expression = self.get_guard_expression(dom_node)
-
-
-        # on py:strip="" the expression is to be set to "1"
-        if guard_expression is not None and not guard_expression.strip():
-            guard_expression = '1'
-
-
-        # facility to replace children for content control attr
-        overridden_children = None
-        content = self.grab_and_remove_control_attr(dom_node, 'content')
-        if content:
-            overridden_children = [ Expression(content) ]
-
-        if self.is_control_name(dom_node.tagName, 'replace'):
-            replace = dom_node.getAttribute('value')
-            if replace is None:
-                raise ValueError("No value attribute specified for replace tag")
-        else:
-            replace = self.grab_and_remove_control_attr(dom_node, 'replace')
-
-        add_children = True
-        el_ir_node = None
-        if replace is not None:
-            el_ir_node = Expression(replace)
-            add_children = False
-            generate_element = False
-
-        if generate_element:
-            el_ir_node = Element(dom_node.tagName, guard_expression=guard_expression)
-            self.generate_attributes(dom_node, el_ir_node)
-
-        if not topmost:
-            topmost = el_ir_node
-
-        if el_ir_node:
-            if bottom:
-                bottom.add_child(el_ir_node)
-
-            bottom = el_ir_node
-
-        if add_children:
-            if overridden_children:
-                bottom.children = overridden_children
-            else:
-                self.add_children(self.child_iter(dom_node), bottom)
-
-        return topmost
-
-
-    def generate_ir_node(self, dom_node):
-        node_t = dom_node.nodeType
-
-        if node_t == Node.ELEMENT_NODE:
-            return self.generate_element_node(dom_node)
-
-        if node_t == Node.TEXT_NODE:
-            ir_node = handle_text_node(dom_node.nodeValue, is_cdata=self.is_cdata)
-            return ir_node
-
-        if node_t == Node.COMMENT_NODE:
-            ir_node = EscapedText(u('<!--') + dom_node.nodeValue + u('-->'))
-            return ir_node
-
-        raise ValueError("Unhandled node type %d" % node_t)
+        for name, value in attrs:
+            ir_node.set_attribute(name, value)
 
 
     def add_children(self, children, ir_node):
         is_cdata_save = self.is_cdata
         if isinstance(ir_node, Element) \
-                and ir_node.name in html5_cdata_elements:
+                and ir_node.name in self.cdata_elements:
 
             self.is_cdata = True
 
@@ -237,6 +97,7 @@ class IRGenerator(object):
                 ir_node.add_child(node)
 
         self.is_cdata = is_cdata_save
+
 
     def generate_tree(self):
         root = Root()
@@ -339,7 +200,7 @@ class IRGenerator(object):
         return tree
 
 
-    def _merge_text_nodes_on(self, node):
+    def merge_text_nodes_on(self, node):
         """Merges all consecutive non-translatable text nodes into one"""
 
         if not isinstance(node, ContainerNode) or not node.children:
@@ -362,10 +223,10 @@ class IRGenerator(object):
 
         node.children = new_children
         for i in node.children:
-            self._merge_text_nodes_on(i)
+            self.merge_text_nodes_on(i)
 
 
     def merge_text_nodes(self, tree):
         root = tree.root
-        self._merge_text_nodes_on(root)
+        self.merge_text_nodes_on(root)
         return tree

@@ -1,4 +1,4 @@
-Tonnikala.egg-info/
+tonnikala.egg-info/
 *.pyc
 venv*
 .venv-path

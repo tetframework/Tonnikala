@@ -3,8 +3,6 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import unittest
 import six
 
-from tonnikala import parser
-from tonnikala.ir.generate import IRGenerator
 from tonnikala.loader import Loader
 
 def render(template, **args):

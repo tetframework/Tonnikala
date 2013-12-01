@@ -1,12 +1,10 @@
 from tonnikala import expr
 from tonnikala.languages import javascript
-from tonnikala import parser
+from tonnikala.syntaxes.tonnikala import parse
 from os import path
-from tonnikala.ir.generate import IRGenerator
 from tonnikala.languages.python.generator import Generator as PythonGenerator
 from tonnikala.languages.javascript.generator import Generator as JavascriptGenerator
 from tonnikala.runtime import python
-from tonnikala.parser import Parser
 import six
 
 if six.PY3:
@@ -71,16 +69,7 @@ class Loader(object):
         self.debug = debug
 
     def load_string(self, string, filename="<string>", import_loader=None):
-        parser = Parser(filename, string)
-        parsed = parser.parse()
-        generator = IRGenerator(parsed)
-        tree = generator.generate_tree()
-
-        if self.debug:
-            print(tree)
-
-        tree = generator.flatten_element_nodes(tree)
-        tree = generator.merge_text_nodes(tree)
+        tree = parse(filename, string)
         code = PythonGenerator(tree).generate_ast()
 
         if self.debug:

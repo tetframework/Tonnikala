@@ -31,16 +31,26 @@ if sys.version_info[0] == 2:
     extra_kw = dict(features={'speedups': speedups})
 else:
     extra_kw = dict(features={'speedups3k': speedups3k })
-    extra_kw = dict(features={'speedups3k': speedups3k })
-
 
 setup(
-    name='Tonnikala',
-    version='0.12',
-    description='',
-    author='',
-    author_email='',
-    #url='',
+    name='tonnikala',
+    version='0.13',
+    description='Python templating engine - the one ton solution',
+    author='Antti Haapala',
+    author_email='antti@haapala.name',
+    url='https://github.com/ztane/Tonnikala',
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Framework :: Pyramid",
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2.6",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Topic :: Text Processing :: Markup",
+        "Topic :: Text Processing :: Markup :: HTML"
+    ],
     install_requires="""
         six>=1.4.1
         markupsafe>=0.18

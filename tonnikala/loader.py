@@ -1,6 +1,7 @@
 from tonnikala import expr
 from tonnikala.languages import javascript
-from tonnikala.syntaxes.tonnikala import parse
+from tonnikala.syntaxes.tonnikala import parse as parse_tonnikala
+from tonnikala.syntaxes.chameleon import parse as parse_chameleon
 from os import path
 from tonnikala.languages.python.generator import Generator as PythonGenerator
 from tonnikala.languages.javascript.generator import Generator as JavascriptGenerator
@@ -64,12 +65,23 @@ class Template(object):
         return getattr(self.func(TemplateContext(context)), function)()
 
 
+parsers = {
+    'tonnikala': parse_tonnikala,
+    'chameleon': parse_chameleon
+}
+
 class Loader(object):
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, syntax='tonnikala'):
         self.debug = debug
+        self.syntax = syntax
 
     def load_string(self, string, filename="<string>", import_loader=None):
-        tree = parse(filename, string)
+        parser_func = parsers.get(self.syntax)
+        if not parser_func:
+            raise ValueError("Invalid parser syntax %s: valid syntaxes: %r"
+                % sorted(parser.keys))
+
+        tree = parser_func(filename, string)
         code = PythonGenerator(tree).generate_ast()
 
         if self.debug:

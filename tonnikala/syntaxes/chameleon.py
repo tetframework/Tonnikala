@@ -11,24 +11,23 @@ from six import text_type
 
 entitydefs = html_entities.entitydefs
 
-from xml import sax
-
 from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless, Expression, Comment
+from xml.dom.minidom import Node
 
 from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
-from xml.dom.minidom    import Node
 from tonnikala.ir.tree  import IRTree
 from tonnikala.ir.generate import BaseDOMIRGenerator
-from tonnikala.syntaxes.docparser import TonnikalaXMLParser, TonnikalaHTMLParser
+from tonnikala.syntaxes.docparser import \
+    TonnikalaXMLParser, TonnikalaHTMLParser
 
 
-class TonnikalaIRGenerator(BaseDOMIRGenerator):
+class ChameleonIRGenerator(BaseDOMIRGenerator):
     def __init__(self, *a, **kw):
-        super(TonnikalaIRGenerator, self).__init__(*a, **kw)
+        super(ChameleonIRGenerator, self).__init__(*a, **kw)
 
 
     def get_guard_expression(self, dom_node):
-        return self.grab_and_remove_control_attr(dom_node, 'strip')
+        return self.grab_and_remove_control_attr(dom_node, 'omit-tag')
 
 
     def generate_attributes_for_node(self, dom_node, ir_node):
@@ -38,11 +37,11 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
 
 
     def is_control_name(self, name, to_match):
-        return 'py:' + to_match == name
+        return 'tal:' + to_match == name
 
 
     def grab_and_remove_control_attr(self, dom_node, name):
-        name = 'py:' + name
+        name = 'tal:' + name
         if dom_node.hasAttribute(name):
             value = dom_node.getAttribute(name)
             dom_node.removeAttribute(name)
@@ -56,31 +55,18 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
 
         ir_node_stack = []
 
-        if self.is_control_name(name, 'if'):
-            ir_node_stack.append(If(dom_node.getAttribute('test')))
-
-        if self.is_control_name(name, 'for'):
-            ir_node_stack.append(For(dom_node.getAttribute('each')))
-
-        if self.is_control_name(name, 'def'):
-            ir_node_stack.append(Define(dom_node.getAttribute('function')))
-
-        if self.is_control_name(name, 'import'):
-            ir_node_stack.append(Import(dom_node.getAttribute('href'), dom_node.getAttribute('alias')))
+        # if self.is_control_name(name, 'import'):
+        #    ir_node_stack.append(Import(dom_node.getAttribute('href'), dom_node.getAttribute('alias')))
 
         # TODO: add all node types in order
         generate_element = not bool(ir_node_stack)
-        attr = self.grab_and_remove_control_attr(dom_node, 'if')
+        attr = self.grab_and_remove_control_attr(dom_node, 'condition')
         if attr is not None:
             ir_node_stack.append(If(attr))
 
-        attr = self.grab_and_remove_control_attr(dom_node, 'for')
+        attr = self.grab_and_remove_control_attr(dom_node, 'repeat')
         if attr is not None:
             ir_node_stack.append(For(attr))
-
-        attr = self.grab_and_remove_control_attr(dom_node, 'def')
-        if attr is not None:
-            ir_node_stack.append(Define(attr))
 
         # TODO: add all control attrs in order
         if not ir_node_stack:
@@ -174,7 +160,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
 def parse(filename, string):
     parser = TonnikalaHTMLParser(filename, string)
     parsed = parser.parse()
-    generator = TonnikalaIRGenerator(parsed)
+    generator = ChameleonIRGenerator(parsed)
     tree = generator.generate_tree()
 
     tree = generator.flatten_element_nodes(tree)

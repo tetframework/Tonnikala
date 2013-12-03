@@ -5,8 +5,8 @@ import six
 
 from tonnikala.loader import Loader
 
-def render(template, **args):
-    compiled = Loader().load_string(template)
+def render(template, debug=False, **args):
+    compiled = Loader(debug).load_string(template)
     return six.text_type(compiled.render(args))
 
 class TestHtmlTemplates(unittest.TestCase):
@@ -131,3 +131,10 @@ class TestHtmlTemplates(unittest.TestCase):
     def test_script_tags(self):
         fragment = '<html><script>alert(1 < 3)</script></html>'
         self.are('<html><script>alert(1 < 3)</script></html>', fragment)
+
+    def test_block(self):
+        fragment = '<html><py:block name="foo">a block</py:block></html>'
+        self.are('<html>a block</html>', fragment, debug=True)
+
+        fragment = '<html><div py:block="foo">a block</div></html>'
+        self.are('<html><div>a block</div></html>', fragment)

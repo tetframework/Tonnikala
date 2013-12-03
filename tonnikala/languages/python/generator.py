@@ -86,6 +86,8 @@ def static_expr_to_bool(expr):
 
 
 class PythonNode(LanguageNode):
+    is_top_level = False
+
     def __init__(self, *a, **kw):
         super(PythonNode, self).__init__(*a, **kw)
         self.free_variables = set()
@@ -225,10 +227,10 @@ def coalesce_strings(args):
     return rv
 
 class PyComplexNode(ComplexNode, PythonNode):
-    def generate_child_ast(self, generator, parent):
+    def generate_child_ast(self, generator, parent_for_children):
         rv = []
         for i in self.children:
-            rv.extend(i.generate_ast(generator, parent))
+            rv.extend(i.generate_ast(generator, parent_for_children))
 
         return rv
 
@@ -262,7 +264,7 @@ class PyIfNode(PyComplexNode):
 
         node = If(
            test=test,
-           body=self.generate_child_ast(generator, parent),
+           body=self.generate_child_ast(generator, self),
            orelse=[]
         )
         return [ node ]
@@ -380,7 +382,7 @@ class PyForNode(PyComplexNode):
             'exec'
         )
         for_node      = body[0]
-        for_node.body = self.generate_child_ast(generator, parent)
+        for_node.body = self.generate_child_ast(generator, self)
         return [ for_node ]
 
 
@@ -410,9 +412,13 @@ class PyDefineNode(PyComplexNode):
         )
         def_node = body[0]
         def_node.body = self.make_buffer_frame(
-            self.generate_child_ast(generator, parent),
+            self.generate_child_ast(generator, self),
         )
-        def_node.is_pydef = True
+
+        # move the function out of the closure
+        if parent.is_top_level:
+            generator.add_top_def(def_node)
+            return []           
 
         return [ def_node ]
 
@@ -426,17 +432,17 @@ class PyComplexExprNode(PyComplexNode):
         return self.generate_output_ast(self.get_expressions(), generator, parent)
 
 
-
 class PyBlockNode(PyComplexNode):
     def __init__(self, name):
         super(PyBlockNode, self).__init__()
         self.name = name
 
+
     def generate_ast(self, generator, parent):
         is_extended = isinstance(parent, PyExtendsNode)
 
         body = get_expression_ast(
-            "def %s:pass" % self.funcspec,
+            "def %s():pass" % self.name,
             "exec"
         )
         def_node = body[0]
@@ -448,13 +454,18 @@ class PyBlockNode(PyComplexNode):
 
         if not is_extended:
             # call the block in place
-            return [ SimpleCall(NameX(name), []) ]
+            return self.generate_output_ast(
+                [ SimpleCall(NameX(self.name), []) ],
+                self, parent
+            )
 
         else:
             return [ ]
 
 
 class PyExtendsNode(PyComplexNode):
+    is_top_level = True
+
     def __init__(self, href):
         super(PyExtendsNode, self).__init__()
         self.href = href
@@ -559,6 +570,9 @@ class PyRootNode(PyComplexNode):
         super(PyRootNode, self).__init__()
 
 
+    is_top_level = True
+
+
     def get_extends_node(self):
         if len(self.children) == 1 and \
                 isinstance(self.children[0], PyExtendsNode):
@@ -626,12 +640,6 @@ class PyRootNode(PyComplexNode):
         locator = LocatorAndTransformer()
         locator.visit(tree)
 
-        pydef_funcs = [ i for i in main_body
-            if getattr(i, 'is_pydef', False) ]
-
-        main_body = [ i for i in main_body
-            if not getattr(i, 'is_pydef', False) ]
-
         if main_body and locator.main:
             # inject the main body in the main func
             main_func = locator.main
@@ -639,9 +647,10 @@ class PyRootNode(PyComplexNode):
 
         # inject the other top level funcs in the binder
         binder = locator.binder
-        binder.body[:0] = pydef_funcs
+        toplevel_funcs = generator.blocks + generator.top_defs
+        binder.body[:0] = toplevel_funcs
 
-        pydef_func_names = [ i.name for i in pydef_funcs ]
+        pydef_func_names = [ i.name for i in toplevel_funcs ]
         template_class = locator.template_class
 
         function_injections = []

@@ -13,7 +13,9 @@ entitydefs = html_entities.entitydefs
 
 from xml import sax
 
-from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless, Expression, Comment
+from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, \
+    EscapedText, MutableAttribute, ContainerNode, Block, Extends, \
+    Root, DynamicAttributes, Unless, Expression, Comment
 
 from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
 from xml.dom.minidom    import Node
@@ -56,20 +58,30 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
 
         ir_node_stack = []
 
-        if self.is_control_name(name, 'if'):
+        if self.is_control_name(name, 'extends'):
+            ir_node_stack.append(Extends(dom_node.getAttribute('href')))
+
+        elif self.is_control_name(name, 'block'):
+            ir_node_stack.append(Block(dom_node.getAttribute('name')))
+
+        elif self.is_control_name(name, 'if'):
             ir_node_stack.append(If(dom_node.getAttribute('test')))
 
-        if self.is_control_name(name, 'for'):
+        elif self.is_control_name(name, 'for'):
             ir_node_stack.append(For(dom_node.getAttribute('each')))
 
-        if self.is_control_name(name, 'def'):
+        elif self.is_control_name(name, 'def'):
             ir_node_stack.append(Define(dom_node.getAttribute('function')))
 
-        if self.is_control_name(name, 'import'):
+        elif self.is_control_name(name, 'import'):
             ir_node_stack.append(Import(dom_node.getAttribute('href'), dom_node.getAttribute('alias')))
 
         # TODO: add all node types in order
         generate_element = not bool(ir_node_stack)
+        attr = self.grab_and_remove_control_attr(dom_node, 'block')
+        if attr is not None:
+            ir_node_stack.append(Block(attr))
+
         attr = self.grab_and_remove_control_attr(dom_node, 'if')
         if attr is not None:
             ir_node_stack.append(If(attr))

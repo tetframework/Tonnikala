@@ -40,15 +40,19 @@ def unimplemented(self, *a, **kw):
     raise NotImplementedError("Error: unimplemented")
 
 class BaseGenerator(object):
-    OutputNode      = unimplemented
-    IfNode          = unimplemented
-    ForNode         = unimplemented
-    DefineNode      = unimplemented
-    ComplexExprNode = unimplemented
-    ExpressionNode  = unimplemented
-    ImportNode      = unimplemented
-    Node            = unimplemented
-    UnlessNode      = unimplemented
+    OutputNode        = unimplemented
+    IfNode            = unimplemented
+    ForNode           = unimplemented
+    DefineNode        = unimplemented
+    ComplexExprNode   = unimplemented
+    ExpressionNode    = unimplemented
+    ImportNode        = unimplemented
+    Node              = unimplemented
+    UnlessNode        = unimplemented
+    MutableAttribute  = unimplemented
+    DynamicAttributes = unimplemented
+    ExtendsNode       = unimplemented
+    BlockNode         = unimplemented
 
     def __init__(self, ir_tree):
         self.tree = ir_tree
@@ -88,6 +92,12 @@ class BaseGenerator(object):
         elif isinstance(ir_node, nodes.DynamicAttributes):
             new_node = self.AttrsNode(ir_node.expression)
 
+        elif isinstance(ir_node, nodes.Extends):
+            new_node = self.ExtendsNode(ir_node.href)
+
+        elif isinstance(ir_node, nodes.Block):
+            new_node = self.BlockNode(ir_node.name)
+
         else:
             raise ValueError("Unknown node type", ir_node.__class__.__name__)
 
@@ -107,5 +117,5 @@ class BaseGenerator(object):
         root = self.tree
         self.root_node = self.RootNode()
         self.add_children(self.tree.root, self.root_node)
-        return self.root_node.generate_ast()
+        return self.root_node.generate_ast(self)
 

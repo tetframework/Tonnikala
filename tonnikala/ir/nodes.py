@@ -11,6 +11,11 @@ except:
     unicode = str
 
 
+class IRTemplateSyntaxError(SyntaxError):
+    def __init__(self, message, node):
+        super(IRTemplateSyntaxError, self).__init__(message)
+
+
 class BaseNode(object):
     def __repr__(self):
         return self.__class__.__name__ + '(%s)' % str(self)
@@ -83,6 +88,9 @@ class ContainerNode(BaseNode):
         self.children   = []
 
     def add_child(self, child):
+        """
+        Add a child to the tree. Subclasses may raise SyntaxError
+        """
         self.children.append(child)
 
     def set_attribute(self, name, value):
@@ -222,3 +230,51 @@ class Unless(ContainerNode):
     def __str__(self):
         children = str(self.children)
         return ', '.join([("(%s)" % self.expression), children])
+
+
+class Block(ContainerNode):
+    def __init__(self, name):
+        super(Block, self).__init__()
+        self.name = name
+
+    def __str__(self):
+        children = str(self.children)
+        return "%s, %s" % (repr(self.name), children)
+
+
+class Extends(ContainerNode):
+    def __init__(self, href):
+        super(Extends, self).__init__()
+
+        self.href = href
+
+    def __str__(self):
+        children = str(self.children)
+        return ', '.join([("(%s)" % self.expression), children])
+
+    def add_child(self, child):
+        """
+        Add a child to the tree. Extends discards all comments
+        and whitespace Text. On non-whitespace Text, and any
+        other nodes, raise a syntax error.
+        """
+
+        if isinstance(child, Comment):
+            return
+
+        if isinstance(child, Text):
+            if child.text.strip():
+                raise IRTemplateSyntaxError(
+                    "No Text allowed within an Extend block", child)
+
+            return
+
+        if not isinstance(child, Block):
+            raise IRTemplateSyntaxError(
+                "Child of type %s is not allowed within an Extend block" %
+                     child.__class__.__name__,
+                child
+            )
+
+        super(Extends, self).append_child(child)
+

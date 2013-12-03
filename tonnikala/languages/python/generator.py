@@ -435,6 +435,9 @@ class PyComplexExprNode(PyComplexNode):
 class PyBlockNode(PyComplexNode):
     def __init__(self, name):
         super(PyBlockNode, self).__init__()
+        if not isinstance(name, str):
+            name = name.encode('UTF-8') # python 2
+
         self.name = name
 
 

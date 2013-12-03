@@ -86,14 +86,15 @@ class Loader(object):
 
         if self.debug:
             import ast
-            import astor
 
             print(ast.dump(code))
-            print(astor.codegen.to_source(code))
 
-        if 0:
-            import astor
-            print(astor.codegen.to_source(code))
+            try:
+                import astor
+                print(astor.codegen.to_source(code))
+            except ImportError:
+                print("Not reversing AST to source as astor was not installed")
+
 
         glob = {
             '__tonnikala__': python,

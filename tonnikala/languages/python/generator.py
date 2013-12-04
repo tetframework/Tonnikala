@@ -595,33 +595,37 @@ class PyRootNode(PyComplexNode):
         code += '    return buffer.output, buffer\n'
         code += '__tk__escape__ = __tk__escape_g__ = __tonnikala__.escape\n'
         code += '__tk__output_attrs__ = __tonnikala__.output_attrs\n'
+
+        extended = self.get_extends_node()
+        if extended:
+            code += '__tk__parent_binder__ = __tonnikala__.load(%r)\n' % repr(extended)
+
         code += 'def __tk__binder__(__tk__context__):\n'
+        code += '    __tk__bind__ = __tonnikala__.bind(__tk__context__)\n'
+
+        if not extended:
+            code += '    @__tk__bind__\n'
+            code += '    def __main__():\n'
+            code += '        __tk__escape__ = __tk__escape_g__\n'
+            code += '        __tk__output__, __tk__buffer__ = __tk__mkbuffer__()\n'
+            code += '        "template_placeholder"\n'
+            code += '        return __tk__buffer__\n'
+
+        else:
+            # an extended template does not have a __main__ (it is inherited)
+            code += '    __tk__parent_binder__(__tk__context__)\n'
 
         for i in free_variables:
             code += '    if "%s" in __tk__context__:\n' % i
             code += '        %s = __tk__context__["%s"]\n' % (i, i)
 
-        extended = self.get_extends_node()
-        if extended:
-            code += '    __tk__base_template__ = __tk__load__(%s)' % repr(extended.href)
-            code += '    class __tk__template__(__tk__base_template__):'
-            code += '        pass'
-        else:
-            code += '    class __tk__template__(object):\n'
-            code += '        def __main__(__tk__self__):\n'
-            code += '            __tk__escape__ = __tk__escape_g__\n'
-            code += '            __tk__output__, __tk__buffer__ = __tk__mkbuffer__()\n'
-            code += '            "template_placeholder"\n'
-            code += '            return __tk__buffer__\n'
-
-        code += '    return __tk__template__()\n'
+        code += '    return __tk__context__\n'
 
         tree = ast.parse(code)
 
         class LocatorAndTransformer(ast.NodeTransformer):
             main   = None
             binder = None
-            template_class = None
 
             def visit_FunctionDef(self, node):
                 if node.name == '__main__' and not self.main:
@@ -633,12 +637,6 @@ class PyRootNode(PyComplexNode):
                 self.generic_visit(node)
                 return node
 
-            def visit_ClassDef(self, node):
-                if node.name == '__tk__template__':
-                    self.template_class = node
-
-                self.generic_visit(node)
-                return node
 
         locator = LocatorAndTransformer()
         locator.visit(tree)
@@ -651,30 +649,9 @@ class PyRootNode(PyComplexNode):
         # inject the other top level funcs in the binder
         binder = locator.binder
         toplevel_funcs = generator.blocks + generator.top_defs
-        binder.body[:0] = toplevel_funcs
+        binder.body[1:1] = toplevel_funcs
 
         pydef_func_names = [ i.name for i in toplevel_funcs ]
-        template_class = locator.template_class
-
-        function_injections = []
-
-        # create injections within class body
-        for i in pydef_func_names:
-            function_injections.append(
-                Assign(
-                    [Attribute(
-                        value=NameX('__tk__template__'),
-                        attr=i,
-                        ctx=Store()
-                    )],
-                    SimpleCall(
-                        NameX('staticmethod'),
-                        [NameX(i)]
-                    )
-                )
-            )
-
-        binder.body[-1:-1] = function_injections
 
         coalesce_outputs(tree)
         ast.fix_missing_locations(tree)
@@ -703,10 +680,17 @@ class Generator(BaseGenerator):
         self.top_defs      = []
         self.extended_href = None
 
+    def add_bind_decorator(self, block):
+        binder_call = NameX('__tk__bind__')
+        decors = [ binder_call ]
+        block.decorator_list = decors
+
     def add_block(self, block):
+        self.add_bind_decorator(block)
         self.blocks.append(block)
 
     def add_top_def(self, defblock):
+        self.add_bind_decorator(defblock)
         self.top_defs.append(defblock)
 
     def make_extended_template(self, href):

@@ -105,3 +105,18 @@ def output_attrs(values):
 def import_defs(href):
     return {}
 
+
+def bind(context):
+    """
+    Given the context, returns a decorator wrapper;
+    the binder replaces the wrapped func with the 
+    value from the context OR puts this function in
+    the context with the name.
+    """
+    def wrapper(func):
+        name = func.__name__
+        if name not in context:
+            context[name] = func
+        return context[name]            
+
+    return wrapper

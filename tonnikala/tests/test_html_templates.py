@@ -138,3 +138,7 @@ class TestHtmlTemplates(unittest.TestCase):
 
         fragment = '<html><div py:block="foo">a block</div></html>'
         self.are('<html><div>a block</div></html>', fragment)
+
+    def nonused_test_extends(self):
+        fragment = '<py:extends href="foo"><py:block name="bar"></py:block><div py:block="baz"></div></py:extends>'
+        self.are('', fragment, debug=True)

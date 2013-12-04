@@ -19,50 +19,42 @@ class Helpers():
 helpers = Helpers()
 helpers.literal = lambda x: x
 
-class BuiltIn(object):
-    def __init__(self, chain=[helpers]):
-        self.builtins = {}
-        for i in [ __builtin__ ] + list(reversed(chain)):
-            for j in dir(i):
-                if not j.startswith('__') and not j.endswith('__'):
-                    self.builtins[j] = getattr(i, j)
+def get_builtins_with_chain(chain=[ helpers ]):
+    builtins = {}
+    for i in [ __builtin__ ] + list(reversed(chain)):
+        for j in dir(i):
+            if not j.startswith('__') and not j.endswith('__'):
+                builtins[j] = getattr(i, j)
 
-    def __getitem__(self, key):
-        return self.builtins[key]
+    return builtins
 
-    def __contains__(self, key):
-        return key in self.builtins
+_builtins = None
+def get_builtins():
+    global _builtins
+    if _builtins is None:
+        _builtins = get_builtins_with_chain()
+
+    return _builtins
 
 NOT_FOUND = object()
 
-class TemplateContext(object):
-    def __init__(self, context, builtins=BuiltIn()):
-        self.context = dict(context)
-        self.builtins = builtins
+def make_template_context(context):
+    rv = get_builtins().copy()
+    rv.update(context)
+    return rv
 
-    def __getitem__(self, key):
-        try:
-            return self.context[key]
-
-        except KeyError as e:
-            self.context[key] = rv = self.builtins[key]
-            return rv
-
-    def __contains__(self, key):
-        try:
-            return self[key] is not NOT_FOUND
-
-        except KeyError:
-            self.context[key] = NOT_FOUND
-            return False
 
 class Template(object):
-    def __init__(self, binder, importer):
-        self.func = binder
-        self.importer = importer
+    def __init__(self, binder):
+        self.binder_func = binder
 
-    def render(self, context, function='__main__'):
-        return getattr(self.func(TemplateContext(context)), function)()
+    def bind(self, context):
+        self.binder_func(context)
+
+    def render(self, context, funcname='__main__'):
+        context = make_template_context(context)
+        bound_template = self.bind(context)
+        return bound_template[funcname]()
 
 
 parsers = {
@@ -96,6 +88,9 @@ class Loader(object):
                 print("Not reversing AST to source as astor was not installed")
 
 
+        runtime = python.TonnikalaRuntime()
+        runtime.loader = ImportLoader(self)
+
         glob = {
             '__tonnikala__': python,
             'literal':       lambda x: x
@@ -104,11 +99,12 @@ class Loader(object):
         compiled = compile(code, '<string>', 'exec')
         exec(compiled, glob, glob)
         template_func = glob['__tk__binder__']
-        return Template(template_func, ImportLoader(self))
+        return Template(template_func)
 
 
 class ImportLoader(object):
     def __init__(self, loader):
+        self.loader = {}
         self.loaded = {}
 
     def load_template(self, file):
@@ -117,6 +113,3 @@ class ImportLoader(object):
 
 def load_template():
     pass
-
-
-

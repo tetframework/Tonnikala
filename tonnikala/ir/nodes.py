@@ -276,5 +276,5 @@ class Extends(ContainerNode):
                 child
             )
 
-        super(Extends, self).append_child(child)
+        super(Extends, self).add_child(child)
 

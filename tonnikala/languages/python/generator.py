@@ -474,6 +474,7 @@ class PyExtendsNode(PyComplexNode):
         self.href = href
 
     def generate_ast(self, generator, parent=None):
+        generator.make_extended_template(self.href)
         return self.generate_child_ast(generator, self)
 
 
@@ -575,15 +576,6 @@ class PyRootNode(PyComplexNode):
 
     is_top_level = True
 
-
-    def get_extends_node(self):
-        if len(self.children) == 1 and \
-                isinstance(self.children[0], PyExtendsNode):
-            return self.children[0]
-
-        return None
-
-
     def generate_ast(self, generator, parent=None):
         main_body = self.generate_child_ast(generator, self)
 
@@ -596,9 +588,9 @@ class PyRootNode(PyComplexNode):
         code += '__tk__escape__ = __tk__escape_g__ = __tonnikala__.escape\n'
         code += '__tk__output_attrs__ = __tonnikala__.output_attrs\n'
 
-        extended = self.get_extends_node()
+        extended = generator.extended_href
         if extended:
-            code += '__tk__parent_binder__ = __tonnikala__.load(%r)\n' % repr(extended)
+            code += '__tk__parent_template__ = __tonnikala__.load(%r)\n' % extended
 
         code += 'def __tk__binder__(__tk__context__):\n'
         code += '    __tk__bind__ = __tonnikala__.bind(__tk__context__)\n'
@@ -613,7 +605,7 @@ class PyRootNode(PyComplexNode):
 
         else:
             # an extended template does not have a __main__ (it is inherited)
-            code += '    __tk__parent_binder__(__tk__context__)\n'
+            code += '    __tk__parent_template__.binder_func(__tk__context__)\n'
 
         for i in free_variables:
             code += '    if "%s" in __tk__context__:\n' % i

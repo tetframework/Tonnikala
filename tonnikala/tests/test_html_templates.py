@@ -2,12 +2,29 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import unittest
 import six
-
-from tonnikala.loader import Loader
+import os.path
+import codecs
+from tonnikala.loader import Loader, FileLoader
 
 def render(template, debug=False, **args):
     compiled = Loader(debug).load_string(template)
     return six.text_type(compiled.render(args))
+
+data_dir = os.path.abspath(os.path.dirname(__file__))
+data_dir = os.path.join(data_dir, 'files')
+output_dir = os.path.join(data_dir, 'output')
+
+def get_loader(debug=False):
+    rv = FileLoader(debug=False)
+    rv.add_path(os.path.join(data_dir, 'input'))
+    return rv
+
+
+def get_reference_output(name):
+    path = os.path.join(output_dir, name)
+    with codecs.open(path, 'r', encoding='UTF-8') as f:
+       return f.read()
+
 
 class TestHtmlTemplates(unittest.TestCase):
     def are(self, result, template, **args):
@@ -139,6 +156,16 @@ class TestHtmlTemplates(unittest.TestCase):
         fragment = '<html><div py:block="foo">a block</div></html>'
         self.are('<html><div>a block</div></html>', fragment)
 
-    def nonused_test_extends(self):
-        fragment = '<py:extends href="foo"><py:block name="bar"></py:block><div py:block="baz"></div></py:extends>'
-        self.are('', fragment, debug=True)
+    def assert_file_rendering_equals(self, input_file, output_file, debug=False, **context):
+        loader = get_loader(debug=debug)
+        template = loader.load(input_file)
+        output = template.render(context)
+        reference = get_reference_output(output_file)
+        self.assertEqual(str(output), reference.rstrip('\n'))
+
+    def test_file_loader(self):
+        self.assert_file_rendering_equals('simple.tk', 'simple.tk', foo='bar')
+
+    def test_extension(self):      
+        self.assert_file_rendering_equals('base.tk', 'base.tk', title='the base')
+        self.assert_file_rendering_equals('child.tk', 'child.tk', title='the child')

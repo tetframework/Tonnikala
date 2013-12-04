@@ -1,0 +1,3 @@
+<html>
+<a py:for="i in foo">$i</a>
+</html>

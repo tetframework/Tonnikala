@@ -120,3 +120,15 @@ def bind(context):
         return context[name]            
 
     return wrapper
+
+class TonnikalaRuntime(object):
+    bind         = staticmethod(bind)
+    Buffer       = staticmethod(Buffer)
+    output_attrs = staticmethod(output_attrs)
+    escape       = staticmethod(escape)
+
+    def __init__(self):
+        self.loader = None
+
+    def load(self, href):
+        return self.loader.load(href)

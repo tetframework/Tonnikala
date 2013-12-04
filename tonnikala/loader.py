@@ -53,8 +53,8 @@ class Template(object):
 
     def render(self, context, funcname='__main__'):
         context = make_template_context(context)
-        bound_template = self.bind(context)
-        return bound_template[funcname]()
+        self.bind(context)
+        return context[funcname]()
 
 
 parsers = {
@@ -67,7 +67,7 @@ class Loader(object):
         self.debug = debug
         self.syntax = syntax
 
-    def load_string(self, string, filename="<string>", import_loader=None):
+    def load_string(self, string, filename="<string>"):
         parser_func = parsers.get(self.syntax)
         if not parser_func:
             raise ValueError("Invalid parser syntax %s: valid syntaxes: %r"
@@ -89,10 +89,10 @@ class Loader(object):
 
 
         runtime = python.TonnikalaRuntime()
-        runtime.loader = ImportLoader(self)
+        runtime.loader = self
 
         glob = {
-            '__tonnikala__': python,
+            '__tonnikala__': runtime,
             'literal':       lambda x: x
         }
 
@@ -102,13 +102,44 @@ class Loader(object):
         return Template(template_func)
 
 
-class ImportLoader(object):
-    def __init__(self, loader):
-        self.loader = {}
-        self.loaded = {}
+import codecs
+import os
+from errno import ENOENT
 
-    def load_template(self, file):
-        pass
+
+class FileLoader(Loader):
+    def __init__(self, paths=[], debug=False, syntax='tonnikala'):
+        super(FileLoader, self).__init__(debug=debug, syntax=syntax)
+
+        self.cache = {}
+        self.paths = list(paths)
+
+    def add_path(self, *a):
+        self.paths.extend(a)
+
+    def resolve(self, name):
+        for i in self.paths:
+            path = os.path.abspath(os.path.join(i, name))
+            if os.path.exists(path):
+                return path
+
+        return None
+
+    def load(self, name):
+        template = self.cache.get(name)
+        if template:
+            return template
+
+        path = self.resolve(name)
+        if not path:
+            raise OSError(ENOENT, "File not found: %s" % name)
+
+        with codecs.open(path, 'r', encoding='UTF-8') as f:
+           contents = f.read()
+
+        template = self.load_string(contents, filename=path)
+        self.cache[name] = template
+        return template
 
 
 def load_template():

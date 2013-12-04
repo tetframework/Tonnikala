@@ -1,0 +1,3 @@
+<py:extends href="base.tk">
+<py:block name="title_block">But I am instead ${title}</py:block>
+</py:extends>

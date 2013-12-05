@@ -11,14 +11,6 @@ from setuptools import Extension, Feature
 import platform
 import sys
 
-speedups = Feature(
-    "optional C speed-enhancements",
-    standard = True,
-    ext_modules = [
-        Extension('tonnikala._speedups',       ['tonnikala/_speedups.c']),
-    ],
-)
-
 speedups3k = Feature(
     "optional C speed-enhancements",
     standard = True,

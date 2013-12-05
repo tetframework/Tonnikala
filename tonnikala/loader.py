@@ -92,13 +92,13 @@ class Loader(object):
         runtime.loader = self
 
         glob = {
-            '__tonnikala__': runtime,
+            '_TK_runtime': runtime,
             'literal':       lambda x: x
         }
 
         compiled = compile(code, '<string>', 'exec')
         exec(compiled, glob, glob)
-        template_func = glob['__tk__binder__']
+        template_func = glob['_TK_binder']
         return Template(template_func)
 
 

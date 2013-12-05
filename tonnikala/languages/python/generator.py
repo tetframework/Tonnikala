@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # notice: this module cannot be sanely written to take use of
-# unicode_literals, bc some of the arguments need to be str on 
+# unicode_literals, bc some of the arguments need to be str on
 # both python2 and 3
 from __future__ import absolute_import, division, print_function
 
@@ -96,7 +96,7 @@ class PythonNode(LanguageNode):
 
 
     def generate_output_ast(self, code, generator, parent, escape=False):
-        func = Name(id='__tk__output__', ctx=Load())
+        func = Name(id='_TK_output', ctx=Load())
 
         if not isinstance(code, list):
             code = [ code ]
@@ -113,25 +113,22 @@ class PythonNode(LanguageNode):
         new_body = []
         new_body.append(Assign(
             targets=[
-                Tuple(elts=[
-                    NameX('__tk__output__', store=True),
-                    NameX('__tk__buffer__', store=True)
-                ], ctx=Store())
+                 NameX('_TK_output', store=True),
             ],
             value=SimpleCall(
-                NameX('__tk__mkbuffer__')
+                NameX('_TK_mkbuffer')
             )
         ))
 
         new_body.extend(body)
-        new_body.append(Return(value=NameX('__tk__buffer__')))
+        new_body.append(Return(value=NameX('_TK_output')))
         return new_body
 
 
     def make_function(self, name, body, add_buffer=False, arguments=None):
         func = SimpleFunctionDef(name, arguments=arguments)
         new_body = func.body = [ ]
-             
+
         if add_buffer:
             new_body.extend(self.make_buffer_frame(body))
 
@@ -147,9 +144,9 @@ class PythonNode(LanguageNode):
     def generate_varscope(self, body):
         name = gen_name()
         rv = [
-            self.make_function(name, body, 
-                arguments=['__tk__output__', '__tk__escape__']),
-            Expr(SimpleCall(NameX(name), [ NameX('__tk__output__'), NameX('__tk__escape__') ]))
+            self.make_function(name, body,
+                arguments=['_TK_output', '_TK_escape']),
+            Expr(SimpleCall(NameX(name), [ NameX('_TK_output'), NameX('_TK_escape') ]))
         ]
         return rv
 
@@ -194,7 +191,7 @@ class PyExpressionNode(PythonNode):
 
     def get_expression(self):
         return SimpleCall(
-            NameX('__tk__escape__'),
+            NameX('_TK_escape'),
             [ self.get_unescaped_expression() ]
         )
 
@@ -290,7 +287,7 @@ class PyImportNode(PythonNode):
             value =
                 SimpleCall(
                     func=
-                        Attribute(value=NameX('__tonnikala__'),
+                        Attribute(value=NameX('_TK_runtime'),
                                   attr='import_defs', ctx=Load()),
                     args=[Str(s=self.href)]
                 )
@@ -318,11 +315,11 @@ class PyAttributeNode(PyComplexNode):
 
             # special case, the attribute contains a single
             # expression, these are handled by
-            # __tk__output__.output_boolean_attr,
+            # _TK_output.output_boolean_attr,
             # given the name, and unescaped expression!
             return [ Expr(SimpleCall(
                 func=Attribute(
-                    value=NameX('__tk__buffer__'),
+                    value=NameX('_TK_output'),
                     attr='output_boolean_attr',
                     ctx=Load()
                 ),
@@ -353,7 +350,7 @@ class PyAttrsNode(PythonNode):
         expression = get_expression_ast(self.expression)
 
         output = SimpleCall(
-            NameX('__tk__output_attrs__'),
+            NameX('_TK_output_attrs'),
             args=[expression]
         )
 
@@ -418,7 +415,7 @@ class PyDefineNode(PyComplexNode):
         # move the function out of the closure
         if parent.is_top_level:
             generator.add_top_def(def_node)
-            return []           
+            return []
 
         return [ def_node ]
 
@@ -519,7 +516,7 @@ def coalesce_outputs(tree):
                 for i in node.body:
                     if hasattr(i, 'output_args') and should_coalesce(i):
                         if output_node:
-                            output_node.value.args.extend(i.output_args)                            
+                            output_node.value.args.extend(i.output_args)
                             continue
 
                         output_node = i
@@ -536,7 +533,7 @@ def coalesce_outputs(tree):
             NodeVisitor.visit(self, node)
 
         def check(self, node):
-            if not ast_equals(node.func, NameX('__tk__output__')):
+            if not ast_equals(node.func, NameX('_TK_output')):
                 return
 
             for i in range(len(node.args)):
@@ -544,7 +541,7 @@ def coalesce_outputs(tree):
                 if not arg1.__class__.__name__ == 'Call':
                     continue
 
-                if not ast_equals(arg1.func, NameX('__tk__escape__')):
+                if not ast_equals(arg1.func, NameX('_TK_escape')):
                     continue
 
                 if len(arg1.args) != 1:
@@ -582,36 +579,34 @@ class PyRootNode(PyComplexNode):
         free_variables = self.get_free_variables()
         free_variables.difference_update(ALWAYS_BUILTINS)
 
-        code  = 'def __tk__mkbuffer__():\n'
-        code += '    buffer = __tonnikala__.Buffer()\n'
-        code += '    return buffer.output, buffer\n'
-        code += '__tk__escape__ = __tk__escape_g__ = __tonnikala__.escape\n'
-        code += '__tk__output_attrs__ = __tonnikala__.output_attrs\n'
+        code  = '_TK_mkbuffer = _TK_runtime.Buffer\n'
+        code += '_TK_escape = _TK_escape_g = _TK_runtime.escape\n'
+        code += '_TK_output_attrs = _TK_runtime.output_attrs\n'
 
         extended = generator.extended_href
         if extended:
-            code += '__tk__parent_template__ = __tonnikala__.load(%r)\n' % extended
+            code += '_TK_parent_template = _TK_runtime.load(%r)\n' % extended
 
-        code += 'def __tk__binder__(__tk__context__):\n'
-        code += '    __tk__bind__ = __tonnikala__.bind(__tk__context__)\n'
+        code += 'def _TK_binder(_TK_context):\n'
+        code += '    _TK_bind = _TK_runtime.bind(_TK_context)\n'
 
         if not extended:
-            code += '    @__tk__bind__\n'
+            code += '    @_TK_bind\n'
             code += '    def __main__():\n'
-            code += '        __tk__escape__ = __tk__escape_g__\n'
-            code += '        __tk__output__, __tk__buffer__ = __tk__mkbuffer__()\n'
+            code += '        _TK_escape = _TK_escape_g\n'
+            code += '        _TK_output = _TK_mkbuffer()\n'
             code += '        "template_placeholder"\n'
-            code += '        return __tk__buffer__\n'
+            code += '        return _TK_output\n'
 
         else:
             # an extended template does not have a __main__ (it is inherited)
-            code += '    __tk__parent_template__.binder_func(__tk__context__)\n'
+            code += '    _TK_parent_template.binder_func(_TK_context)\n'
 
         for i in free_variables:
-            code += '    if "%s" in __tk__context__:\n' % i
-            code += '        %s = __tk__context__["%s"]\n' % (i, i)
+            code += '    if "%s" in _TK_context:\n' % i
+            code += '        %s = _TK_context["%s"]\n' % (i, i)
 
-        code += '    return __tk__context__\n'
+        code += '    return _TK_context\n'
 
         tree = ast.parse(code)
 
@@ -623,7 +618,7 @@ class PyRootNode(PyComplexNode):
                 if node.name == '__main__' and not self.main:
                     self.main = node
 
-                if node.name == '__tk__binder__' and not self.binder:
+                if node.name == '_TK_binder' and not self.binder:
                     self.binder = node
 
                 self.generic_visit(node)
@@ -673,7 +668,7 @@ class Generator(BaseGenerator):
         self.extended_href = None
 
     def add_bind_decorator(self, block):
-        binder_call = NameX('__tk__bind__')
+        binder_call = NameX('_TK_bind')
         decors = [ binder_call ]
         block.decorator_list = decors
 

@@ -9,7 +9,7 @@ from collections import deque
 from markupsafe import escape
 
 
-class __tk__buffer__(object):
+class _TK_buffer(object):
     def __init__(self):
         self._buffer = buffer = []
         e = buffer.extend
@@ -17,7 +17,7 @@ class __tk__buffer__(object):
 
         def do_output(*objs):
             for obj in objs:
-                if obj.__class__ is __tk__buffer__:
+                if obj.__class__ is _TK_buffer:
                     e(obj._buffer)
                 else:
                     a(text_type(obj))
@@ -39,6 +39,10 @@ class __tk__buffer__(object):
         self.output_boolean_attr = output_boolean_attr
 
 
+    def __call__(self, *a):
+        self.output(*a)
+
+
     def __html__(self):
         return self
 
@@ -55,7 +59,7 @@ class __tk__buffer__(object):
         def __str__(self):
             return self.join().encode('UTF-8')
 
-Buffer = __tk__buffer__
+Buffer = _TK_buffer
 
 try:
     from ._buffer import Buffer as _Buffer
@@ -109,7 +113,7 @@ def import_defs(href):
 def bind(context):
     """
     Given the context, returns a decorator wrapper;
-    the binder replaces the wrapped func with the 
+    the binder replaces the wrapped func with the
     value from the context OR puts this function in
     the context with the name.
     """
@@ -117,7 +121,7 @@ def bind(context):
         name = func.__name__
         if name not in context:
             context[name] = func
-        return context[name]            
+        return context[name]
 
     return wrapper
 

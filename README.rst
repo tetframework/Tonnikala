@@ -30,7 +30,7 @@ Examples
             for x in range(1000)]
     }
 
-    print(template.render(ctx)).join())
+    print(template.render(ctx).join())
 
 The `render()` returns a Buffer object that you can coerce into unicode by calling the `join()` method, 
 or by implicit conversion (str() on python 3, unicode() on python 2).

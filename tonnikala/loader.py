@@ -51,11 +51,13 @@ class Template(object):
     def bind(self, context):
         self.binder_func(context)
 
-    def render(self, context, funcname='__main__'):
+    def render_to_buffer(self, context, funcname='__main__'):
         context = make_template_context(context)
         self.bind(context)
         return context[funcname]()
 
+    def render(self, context, funcname='__main__'):
+        return self.render_to_buffer(context, funcname).join()
 
 parsers = {
     'tonnikala': parse_tonnikala,
@@ -140,7 +142,3 @@ class FileLoader(Loader):
         template = self.load_string(contents, filename=path)
         self.cache[name] = template
         return template
-
-
-def load_template():
-    pass

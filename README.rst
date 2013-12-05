@@ -8,8 +8,8 @@ the internals are very different: Tonnikala writes code as Abstract Syntax Trees
 extensively. In addition, there is an optional speed-up module (currently Python 3), that provides a specialized 
 class used for output buffering.
 
-Example
-=======
+Examples
+========
 
 ::
 
@@ -35,26 +35,76 @@ Example
 The `render()` returns a Buffer object that you can coerce into unicode by calling the `join()` method, 
 or by implicit conversion (str() on python 3, unicode() on python 2).
 
+Template inheritance
+====================
+
+`base.tk`
+
+::
+    <html>
+    <title><py:block name="title_block">I am ${title}</py:block></title>
+    <h1>${title_block()}</h1>
+    </html>
+
+`child.tk`
+
+::
+    <py:extends href="base.tk">
+    <py:block name="title_block">But I am ${title} instead</py:block>
+    </py:extends>
+
+FileLoader
+==========
+
+To load templates from files, use the tonnikala.FileLoader class:
+
+::
+    loader = FileLoader(paths=['/path/to/templates'])
+    template = loader.load('child.tk')
+
+A FileLoader currently implicitly caches *all* loaded templates in memory.
+
+Template
+========
+
+To render the template:
+
+::
+    result = template.render(ctx)
+
+You can specify a block, or no-argument def to render explicitly:
+
+::
+    result = template.render(ctx, funcname='title_block')
+
 Status
 ======
 
 Alpha, working features are 
 
-  * Structural elements `py:if`, `py:unless`, `py:def`, `py:for`;
-  * Rendering an explicit `py:def` block (no arguments)
+  * Structural elements `py:if`, `py:unless`, `py:def`, `py:for`, `py:replace`, `py:content`
+  * Basic template inheritance: `py:extends` and `py:block`; the child template also inherits top level
+    function declarations from the parent template, and the child can override global functions that 
+    the parent defines and uses.
   * Expression interpolation using $simple_identifier and ${complex + python + "expression"}
   * Boolean attributes: `<tag attr="${False}">`, `<tag attr="$True">`
   * Implicit escaping
-  * Disabling implicit escaping (`literal()`) 
+  * Disabling implicit escaping (`literal()`)
+  * Python 3 speedups
 
 Upcoming features:
 
-  * Structural elements: `py:vars`
-  * Custom tags to `py:def`
+  * Structural elements: `py:vars`, `py:switch`, `py:case`; `py:else` for `for`, `if` and `switch`.
+  * Python 2 speedups
+  * Custom tags mapping to `py:def`
   * I18N with optional in-parse-tree localization
-  * Compiling into Javascript
-  * Template inheritance
+  * Javascript as the target language
+  * Pluggable frontend syntax engines
+  * Pluggable expression languages akin to Chameleon
+  * Even better template inheritance
   * Importing def blocks from another template: `py:import`
+  * Documentation
+  * Pyramid integration
 
 Contributors
 ============

@@ -7,7 +7,7 @@ import codecs
 from tonnikala.loader import Loader, FileLoader
 
 def render(template, debug=False, **args):
-    compiled = Loader(debug).load_string(template)
+    compiled = FileLoader(debug=False).load_string(template)
     return six.text_type(compiled.render(args))
 
 data_dir = os.path.abspath(os.path.dirname(__file__))
@@ -15,7 +15,7 @@ data_dir = os.path.join(data_dir, 'files')
 output_dir = os.path.join(data_dir, 'output')
 
 def get_loader(debug=False):
-    rv = FileLoader(debug=False)
+    rv = FileLoader(debug=debug)
     rv.add_path(os.path.join(data_dir, 'input'))
     return rv
 

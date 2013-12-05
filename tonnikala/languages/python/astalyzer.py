@@ -41,6 +41,7 @@ class FreeVarFinder(ast.NodeVisitor):
         self.do_visit_lambda_defaults(node.args)
         self.newly_masked = set(masked)
 
+
     def visit_FunctionDef(self, node):
         self.generated.add(node.name)
         self.visit_Lambda(node)

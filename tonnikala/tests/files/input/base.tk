@@ -1,3 +1,4 @@
 <html>
 <title><py:block name="title_block">I am ${title}</py:block></title>
+<h1>${title_block()}</h1>
 </html>

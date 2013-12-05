@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function
 
 from tonnikala.ir import nodes
 from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
-from tonnikala.languages.python.astmangle import FreeVarFinder
+from tonnikala.languages.python.astalyzer import FreeVarFinder
 import ast
 from ast import *
 import ast
@@ -34,7 +34,7 @@ except:
     def create_argument_list(arguments):
         return [ arg(arg=id, annotation=None) for id in arguments ]
 
-def SimpleFunctionDef(name, arguments=None):
+def SimpleFunctionDef(name, arguments=()):
     arguments = create_argument_list(arguments)
     return FunctionDef(
         name=name,
@@ -88,12 +88,6 @@ def static_expr_to_bool(expr):
 class PythonNode(LanguageNode):
     is_top_level = False
 
-    def __init__(self, *a, **kw):
-        super(PythonNode, self).__init__(*a, **kw)
-        self.free_variables = set()
-        self.masked_variables = set()
-        self.generated_variables = set()
-
 
     def generate_output_ast(self, code, generator, parent, escape=False):
         func = Name(id='_TK_output', ctx=Load())
@@ -125,7 +119,7 @@ class PythonNode(LanguageNode):
         return new_body
 
 
-    def make_function(self, name, body, add_buffer=False, arguments=None):
+    def make_function(self, name, body, add_buffer=False, arguments=()):
         func = SimpleFunctionDef(name, arguments=arguments)
         new_body = func.body = [ ]
 
@@ -151,14 +145,6 @@ class PythonNode(LanguageNode):
         return rv
 
 
-    def get_generated_variables(self):
-        return set(self.generated_variables)
-
-
-    def get_free_variables(self):
-        return set(self.free_variables) - set(self.masked_variables)
-
-
 class PyOutputNode(PythonNode):
     def __init__(self, text):
         super(PyOutputNode, self).__init__()
@@ -182,7 +168,6 @@ class PyExpressionNode(PythonNode):
         super(PyExpressionNode, self).__init__()
         self.expr = expression
         self.tokens = tokens
-        self.free_variables = FreeVarFinder.for_expression(self.expr).get_free_variables()
 
 
     def get_expressions(self):
@@ -232,21 +217,10 @@ class PyComplexNode(ComplexNode, PythonNode):
         return rv
 
 
-    def get_free_variables(self):
-        rv = set(self.free_variables)
-        gens = set(self.generated_variables)
-        for c in self.children:
-            rv.update(c.get_free_variables())
-            gens.update(c.get_generated_variables())
-
-        return rv - self.masked_variables - gens
-
-
 class PyIfNode(PyComplexNode):
     def __init__(self, expression):
         super(PyIfNode, self).__init__()
         self.expression = expression
-        self.free_variables = FreeVarFinder.for_expression(self.expression).get_free_variables()
 
 
     def generate_ast(self, generator, parent):
@@ -278,7 +252,6 @@ class PyImportNode(PythonNode):
         super(PyImportNode, self).__init__()
         self.href = href
         self.alias = alias
-        self.generated_variables = set([self.alias])
 
 
     def generate_ast(self, generator, parent):
@@ -343,7 +316,6 @@ class PyAttrsNode(PythonNode):
     def __init__(self, expression):
         super(PyAttrsNode, self).__init__()
         self.expression = expression
-        self.free_variables = FreeVarFinder.for_expression(expression).get_free_variables()
 
 
     def generate_ast(self, generator, parent):
@@ -362,14 +334,6 @@ class PyForNode(PyComplexNode):
         super(PyForNode, self).__init__()
         self.vars = vars
         self.expression = expression
-        self.free_variables = FreeVarFinder.for_expression(expression).get_free_variables()
-
-        # evaluate the for target as a tuple!
-        self.masked_variables  = FreeVarFinder.for_expression(vars).get_free_variables()
-        self.free_variables   -= self.masked_variables
-
-        # sic
-        self.generated_variables = self.masked_variables
 
 
     def generate_contents(self, generator, parent):
@@ -396,10 +360,6 @@ class PyDefineNode(PyComplexNode):
 
         self.funcspec = funcspec
         self.def_clause = "def %s:" % self.funcspec
-        fvf = FreeVarFinder.for_statement(self.def_clause + "pass")
-        self.generated_variables = fvf.get_generated_variables()
-        self.masked_variables = fvf.get_masked_variables()
-        self.free_variables = fvf.get_free_variables() - fvf.get_generated_variables()
 
 
     def generate_ast(self, generator, parent):
@@ -533,6 +493,10 @@ def coalesce_outputs(tree):
             NodeVisitor.visit(self, node)
 
         def check(self, node):
+            """
+            Coalesce _TK_output(_TK_escape(literal(x))) into
+            _TK_output(x).
+            """
             if not ast_equals(node.func, NameX('_TK_output')):
                 return
 
@@ -576,29 +540,42 @@ class PyRootNode(PyComplexNode):
     def generate_ast(self, generator, parent=None):
         main_body = self.generate_child_ast(generator, self)
 
-        free_variables = self.get_free_variables()
-        free_variables.difference_update(ALWAYS_BUILTINS)
+        extended = generator.extended_href
+
+        toplevel_funcs = generator.blocks + generator.top_defs
+        # do not generate __main__ for extended templates
+        if not extended:
+            main_func = self.make_function('__main__', main_body, add_buffer=True)
+            generator.add_bind_decorator(main_func)
+
+            toplevel_funcs = [ main_func ] + toplevel_funcs
+
+        # analyze the set of free variables
+        free_variables = set()
+        for i in toplevel_funcs:
+            fv_info = FreeVarFinder.for_ast(i)
+            free_variables.update(fv_info.get_free_variables())
+
+        # discard _TK_ variables, always builtin names True, False, None
+        # from free variables.
+        for i in list(free_variables):
+            if i.startswith('_TK_') or i in ALWAYS_BUILTINS:
+                free_variables.discard(i)
+
+        # discard the names of toplevel funcs from free variables
+        free_variables.difference_update(set(i.name for i in toplevel_funcs))
 
         code  = '_TK_mkbuffer = _TK_runtime.Buffer\n'
         code += '_TK_escape = _TK_escape_g = _TK_runtime.escape\n'
         code += '_TK_output_attrs = _TK_runtime.output_attrs\n'
 
-        extended = generator.extended_href
         if extended:
             code += '_TK_parent_template = _TK_runtime.load(%r)\n' % extended
 
         code += 'def _TK_binder(_TK_context):\n'
         code += '    _TK_bind = _TK_runtime.bind(_TK_context)\n'
 
-        if not extended:
-            code += '    @_TK_bind\n'
-            code += '    def __main__():\n'
-            code += '        _TK_escape = _TK_escape_g\n'
-            code += '        _TK_output = _TK_mkbuffer()\n'
-            code += '        "template_placeholder"\n'
-            code += '        return _TK_output\n'
-
-        else:
+        if extended:
             # an extended template does not have a __main__ (it is inherited)
             code += '    _TK_parent_template.binder_func(_TK_context)\n'
 
@@ -624,7 +601,6 @@ class PyRootNode(PyComplexNode):
                 self.generic_visit(node)
                 return node
 
-
         locator = LocatorAndTransformer()
         locator.visit(tree)
 
@@ -635,10 +611,7 @@ class PyRootNode(PyComplexNode):
 
         # inject the other top level funcs in the binder
         binder = locator.binder
-        toplevel_funcs = generator.blocks + generator.top_defs
         binder.body[1:1] = toplevel_funcs
-
-        pydef_func_names = [ i.name for i in toplevel_funcs ]
 
         coalesce_outputs(tree)
         ast.fix_missing_locations(tree)

@@ -19,9 +19,8 @@ speedups3k = Feature(
     ]
 )
 
-if sys.version_info[0] == 2:
-    extra_kw = dict(features={'speedups': speedups})
-else:
+extra_kw = {}
+if sys.version_info[0] == 3:
     extra_kw = dict(features={'speedups3k': speedups3k })
 
 setup(

@@ -2,6 +2,7 @@ from tonnikala import expr
 from tonnikala.languages import javascript
 from tonnikala.syntaxes.tonnikala import parse as parse_tonnikala
 from tonnikala.syntaxes.chameleon import parse as parse_chameleon
+from tonnikala.syntaxes.jinja2 import parse as parse_jinja2
 from os import path
 from tonnikala.languages.python.generator import Generator as PythonGenerator
 from tonnikala.languages.javascript.generator import Generator as JavascriptGenerator
@@ -61,7 +62,8 @@ class Template(object):
 
 parsers = {
     'tonnikala': parse_tonnikala,
-    'chameleon': parse_chameleon
+    'chameleon': parse_chameleon,
+    'jinja2':    parse_jinja2
 }
 
 class Loader(object):

@@ -7,7 +7,7 @@ import codecs
 from tonnikala.loader import Loader, FileLoader
 
 def render(template, debug=False, **args):
-    compiled = FileLoader(debug=False).load_string(template)
+    compiled = FileLoader(debug=debug).load_string(template)
     return six.text_type(compiled.render(args))
 
 data_dir = os.path.abspath(os.path.dirname(__file__))
@@ -166,6 +166,6 @@ class TestHtmlTemplates(unittest.TestCase):
     def test_file_loader(self):
         self.assert_file_rendering_equals('simple.tk', 'simple.tk', foo='bar')
 
-    def test_extension(self):      
+    def test_extension(self):
         self.assert_file_rendering_equals('base.tk', 'base.tk', title='the base')
         self.assert_file_rendering_equals('child.tk', 'child.tk', title='the child')

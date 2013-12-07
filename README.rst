@@ -92,27 +92,27 @@ Status
 
 Alpha, working features are 
 
-* Structural elements `py:if`, `py:unless`, `py:def`, `py:for`, `py:replace`, `py:content`
-* Basic template inheritance: `py:extends` and `py:block`; the child template also inherits top level
+* Structural elements ``py:if``, ``py:unless``, ``py:def``, ``py:for``, ``py:replace``, ``py:content``
+* Basic template inheritance: ``py:extends`` and ``py:block``; the child template also inherits top level
   function declarations from the parent template, and the child can override global functions that 
   the parent defines and uses.
 * Expression interpolation using $simple_identifier and ${complex + python + "expression"}
-* Boolean attributes: `<tag attr="${False}">`, `<tag attr="$True">`
+* Boolean attributes: ``<tag attr="${False}">``, ``<tag attr="$True">``
 * Implicit escaping
-* Disabling implicit escaping (`literal()`)
+* Disabling implicit escaping (``literal()``)
 * Python 3 speedups
 
 Upcoming features:
 
-* Structural elements: `py:vars`, `py:switch`, `py:case`; `py:else` for `for`, `if` and `switch`.
+* Structural elements: ``py:vars``, ``py:switch``, ``py:case``; ``py:else`` for ``for``, ``if`` and ``switch``.
 * Python 2 speedups
-* Custom tags mapping to `py:def`
+* Custom tags mapping to ``py:def``
 * I18N with optional in-parse-tree localization
 * Javascript as the target language
 * Pluggable frontend syntax engines
 * Pluggable expression languages akin to Chameleon
 * Even better template inheritance
-* Importing def blocks from another template: `py:import`
+* Importing def blocks from another template: ``py:import``
 * Documentation
 * Pyramid integration
 

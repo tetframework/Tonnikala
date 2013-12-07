@@ -12,7 +12,6 @@ Examples
 ========
 
 .. code-block:: python
-   :linenos:
 
     from tonnikala.loader import Loader
 
@@ -40,7 +39,6 @@ base.tk
 -------
 
 .. code-block:: python
-   :linenos:
 
     <html>
     <title><py:block name="title_block">I am ${title}</py:block></title>
@@ -51,7 +49,6 @@ child.tk
 --------
 
 .. code-block:: python
-   :linenos:
 
     <py:extends href="base.tk">
     <py:block name="title_block">But I am ${title} instead</py:block>
@@ -63,7 +60,6 @@ FileLoader
 To load templates from files, use the tonnikala.FileLoader class:
 
 .. code-block:: python
-   :linenos:
 
     loader = FileLoader(paths=['/path/to/templates'])
     template = loader.load('child.tk')
@@ -76,14 +72,12 @@ Template
 To render the template:
 
 .. code-block:: python
-   :linenos:
 
     result = template.render(ctx)
 
 You can specify a block, or no-argument def to render explicitly:
 
 .. code-block:: python
-   :linenos:
 
     result = template.render(ctx, funcname='title_block')
 

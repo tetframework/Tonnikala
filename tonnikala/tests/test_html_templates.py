@@ -151,7 +151,7 @@ class TestHtmlTemplates(unittest.TestCase):
 
     def test_block(self):
         fragment = '<html><py:block name="foo">a block</py:block></html>'
-        self.are('<html>a block</html>', fragment, debug=True)
+        self.are('<html>a block</html>', fragment)
 
         fragment = '<html><div py:block="foo">a block</div></html>'
         self.are('<html><div>a block</div></html>', fragment)

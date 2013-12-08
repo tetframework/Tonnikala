@@ -1,12 +1,16 @@
 Tonnikala
 =========
 
-Tonnikala is the latest reincarnation among the Python templating languages that feed on Kid-inspired XML syntax.
-It rejects the Kid and Genshi notions of tagstreams and trees, and follows in footsteps of Chameleon and Kajiki 
-in making the template to compile into Python bytecode directly. The syntax is very close to that of Kajiki, but
-the internals are very different: Tonnikala writes code as Abstract Syntax Trees and optimizes the resulting trees
-extensively. In addition, there is an optional speed-up module (currently Python 3), that provides a specialized 
-class used for output buffering.
+Tonnikala is the latest reincarnation among the Python templating 
+languages that feed on Kid-inspired XML syntax. It rejects the Kid 
+and Genshi notions of tagstreams and trees, and follows in 
+footsteps of Chameleon and Kajiki in making the template to compile 
+into Python bytecode directly. The syntax is very close to that of 
+Kajiki, but the internals are very different: Tonnikala writes code 
+as Abstract Syntax Trees and optimizes the resulting trees 
+extensively. In addition, there is an optional speed-up module 
+(currently Python 3 only), that provides a specialized class used 
+for output buffering.
 
 Examples
 --------
@@ -18,7 +22,8 @@ Examples
     template_source = u"""
     <table>
         <tr py:for="row in table">
-            <py:for each="key, value in row.items()"><td>${key}</td><td>${literal(value)}</td></py:for>
+            <py:for each="key, value in row.items()"
+                ><td>${key}</td><td>${literal(value)}</td></py:for>
         </tr>
     </table>
     """
@@ -57,14 +62,14 @@ child.tk
 FileLoader
 ----------
 
-To load templates from files, use the tonnikala.FileLoader class:
+To load templates from files, use the ``tonnikala.FileLoader`` class:
 
 .. code-block:: python
 
     loader = FileLoader(paths=['/path/to/templates'])
     template = loader.load('child.tk')
 
-A FileLoader currently implicitly caches *all* loaded templates in memory.
+A ``FileLoader`` currently implicitly caches **all** loaded templates in memory.
 
 Template
 --------
@@ -86,11 +91,13 @@ Status
 
 Alpha, working features are 
 
-* Structural elements ``py:if``, ``py:unless``, ``py:def``, ``py:for``, ``py:replace``, ``py:content``
-* Basic template inheritance: ``py:extends`` and ``py:block``; the child template also inherits top level
-  function declarations from the parent template, and the child can override global functions that 
-  the parent defines and uses.
-* Expression interpolation using $simple_identifier and ${complex + python + "expression"}
+* Structural elements ``py:if``, ``py:unless``, ``py:def``, ``py:for``, 
+  ``py:replace``, ``py:content``
+* Basic template inheritance: ``py:extends`` and ``py:block``; the child
+  template also inherits top level function declarations from the parent
+  template, and the child can override global functions that the parent
+  defines and uses.
+* Expression interpolation using ``$simple_identifier`` and ``${complex + python + "expression"}``
 * Boolean attributes: ``<tag attr="${False}">``, ``<tag attr="$True">``
 * Implicit escaping
 * Disabling implicit escaping (``literal()``)

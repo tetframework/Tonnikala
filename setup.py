@@ -25,7 +25,7 @@ if sys.version_info[0] == 3:
 
 setup(
     name='tonnikala',
-    version='0.13',
+    version='0.14',
     description='Python templating engine - the one ton solution',
     author='Antti Haapala',
     author_email='antti@haapala.name',

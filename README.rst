@@ -1,6 +1,6 @@
-=========
 Tonnikala
 =========
+
 Tonnikala is the latest reincarnation among the Python templating languages that feed on Kid-inspired XML syntax.
 It rejects the Kid and Genshi notions of tagstreams and trees, and follows in footsteps of Chameleon and Kajiki 
 in making the template to compile into Python bytecode directly. The syntax is very close to that of Kajiki, but
@@ -9,7 +9,7 @@ extensively. In addition, there is an optional speed-up module (currently Python
 class used for output buffering.
 
 Examples
-========
+--------
 
 .. code-block:: python
 
@@ -33,10 +33,10 @@ Examples
     print(template.render(ctx))
 
 Template inheritance
-====================
+--------------------
 
 base.tk
--------
++++++++
 
 .. code-block:: python
 
@@ -46,7 +46,7 @@ base.tk
     </html>
 
 child.tk
---------
+++++++++
 
 .. code-block:: python
 
@@ -55,7 +55,7 @@ child.tk
     </py:extends>
 
 FileLoader
-==========
+----------
 
 To load templates from files, use the tonnikala.FileLoader class:
 
@@ -67,7 +67,7 @@ To load templates from files, use the tonnikala.FileLoader class:
 A FileLoader currently implicitly caches *all* loaded templates in memory.
 
 Template
-========
+--------
 
 To render the template:
 
@@ -111,6 +111,6 @@ Upcoming features:
 * Pyramid integration
 
 Contributors
-============
+------------
 
 Antti Haapala

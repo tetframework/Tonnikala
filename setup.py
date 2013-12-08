@@ -11,7 +11,7 @@ from setuptools import Extension, Feature
 import platform
 import sys
 
-speedups3k = Feature(
+speedups = Feature(
     "optional C speed-enhancements",
     standard = True,
     ext_modules = [
@@ -19,9 +19,7 @@ speedups3k = Feature(
     ]
 )
 
-extra_kw = {}
-if sys.version_info[0] == 3:
-    extra_kw = dict(features={'speedups3k': speedups3k })
+extra_kw = dict(features={'speedups': speedups })
 
 setup(
     name='tonnikala',

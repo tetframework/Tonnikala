@@ -2,6 +2,12 @@
 #include <structmember.h>
 #include <stdio.h>
 
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3 1
+#else
+#define IS_PY3 0
+#endif
+
 typedef struct {
     PyObject_HEAD
     PyObject *buffer_list;
@@ -29,9 +35,9 @@ Buffer_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(self);
             return NULL;
         }
-        self->output_boolean_attr = Py_None;
-        self->output = self;
         Py_INCREF(Py_None);
+        self->output_boolean_attr = Py_None;
+        self->output = (PyObject *)self;
     }
 
     return (PyObject *)self;
@@ -87,15 +93,18 @@ Buffer_call(Buffer *self, PyObject *args, PyObject *other)
     return Py_None;
 }
 
-
 static PyObject *
-Buffer_join(Buffer *self, PyObject *args) {
-    PyObject *sep = PyUnicode_InternFromString("");
-    PyObject *rv = PyUnicode_Join(sep, self->buffer_list);
+Buffer_join(PyObject *self, PyObject *args) {
+    PyObject *sep, *rv;
+#if IS_PY3
+    sep = PyUnicode_InternFromString("");
+#else
+    sep = PyUnicode_FromString("");
+#endif
+    rv = PyUnicode_Join(sep, ((Buffer*)self)->buffer_list);
     Py_DECREF(sep);
     return rv;
 }
-
 
 static PyObject *
 Buffer__html__(PyObject* self) {
@@ -163,12 +172,19 @@ static PyTypeObject buffer_BufferType = {
     Buffer_new,                /* tp_new */
 };
 
+#define BUFFER_DOC "Accelerated Buffer type for speeding up output ops on Tonnikala templates"
+
+#if IS_PY3
 static PyModuleDef buffermodule = {
     PyModuleDef_HEAD_INIT,
     "buffer",
-    "Example module that creates an extension type.",
+    BUFFER_DOC,
     -1,
-    NULL, NULL, NULL, NULL, NULL
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC
@@ -176,14 +192,31 @@ PyInit__buffer(void)
 {
     PyObject* m;
 
-    if (PyType_Ready(&buffer_BufferType) < 0)
-        return NULL;
-
     m = PyModule_Create(&buffermodule);
     if (m == NULL)
+        return NULL;
+
+    if (PyType_Ready(&buffer_BufferType) < 0)
         return NULL;
 
     Py_INCREF(&buffer_BufferType);
     PyModule_AddObject(m, "Buffer", (PyObject *)&buffer_BufferType);
     return m;
 }
+#else // Python 2
+
+PyMODINIT_FUNC
+init_buffer(void) {
+    PyObject *m;
+    m = Py_InitModule3("_buffer", NULL, BUFFER_DOC);
+    if (m == NULL)
+        return;
+
+    if (PyType_Ready(&buffer_BufferType) < 0)
+        return;
+
+    Py_INCREF(&buffer_BufferType);
+    PyModule_AddObject(m, "Buffer", (PyObject *)&buffer_BufferType);
+}
+
+#endif

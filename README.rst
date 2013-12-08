@@ -43,7 +43,7 @@ Template inheritance
 base.tk
 +++++++
 
-.. code-block:: python
+.. code-block:: xml
 
     <html>
     <title><py:block name="title_block">I am ${title}</py:block></title>
@@ -53,7 +53,7 @@ base.tk
 child.tk
 ++++++++
 
-.. code-block:: python
+.. code-block:: xml
 
     <py:extends href="base.tk">
     <py:block name="title_block">But I am ${title} instead</py:block>

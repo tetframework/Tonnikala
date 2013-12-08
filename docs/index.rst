@@ -10,6 +10,13 @@ Welcome to Tonnikala's documentation!
     :start-after: Tonnikala
     :end-before: Contributors
 
+
+Contents
+========
+
+.. toctree::
+   :maxdepth: 2
+
 Indices and tables
 ==================
 

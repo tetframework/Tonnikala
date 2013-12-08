@@ -6,11 +6,6 @@
 Welcome to Tonnikala's documentation!
 =====================================
 
-Contents:
-
-.. toctree::
-   :maxdepth: 2
-
 .. include:: ../README.rst
     :start-after: Tonnikala
     :end-before: Contributors

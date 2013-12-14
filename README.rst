@@ -101,20 +101,21 @@ Alpha, working features are
 * Boolean attributes: ``<tag attr="${False}">``, ``<tag attr="$True">``
 * Implicit escaping
 * Disabling implicit escaping (``literal()``)
-* Python 3 speedups
+* C speedups for both Python 2 and Python 3
 
 Upcoming features:
 
 * Structural elements: ``py:vars``, ``py:switch``, ``py:case``; ``py:else`` for ``for``, ``if`` and ``switch``.
-* Python 2 speedups
+* Overriding attributes, setting attrs from dictionary: ``py:attrs``
 * Custom tags mapping to ``py:def``
 * I18N with optional in-parse-tree localization
 * Javascript as the target language
-* Pluggable frontend syntax engines
+* Pluggable frontend syntax engines (partially done)
+* METAL-like macros
 * Pluggable expression languages akin to Chameleon
 * Even better template inheritance
 * Importing def blocks from another template: ``py:import``
-* Documentation
+* Documentation (started)
 * Pyramid integration
 
 Contributors

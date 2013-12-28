@@ -17,7 +17,7 @@ from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, \
     EscapedText, MutableAttribute, ContainerNode, Block, Extends, \
     Root, DynamicAttributes, Unless, Expression, Comment
 
-from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
+from tonnikala.expr     import handle_text_node  # TODO: move this elsewhere.
 from xml.dom.minidom    import Node
 from tonnikala.ir.tree  import IRTree
 from tonnikala.ir.generate import BaseDOMIRGenerator
@@ -25,24 +25,35 @@ from tonnikala.syntaxes.docparser import TonnikalaXMLParser, TonnikalaHTMLParser
 
 
 class TonnikalaIRGenerator(BaseDOMIRGenerator):
-    def __init__(self, *a, **kw):
-        super(TonnikalaIRGenerator, self).__init__(*a, **kw)
+    translatable_attributes = set([
+        "alt",
+        "placeholder",
+        "title",
+    ])
 
+    def __init__(self, translatable=True, **kw):
+        super(TonnikalaIRGenerator, self).__init__(**kw)
+
+        self.translate = translatable
 
     def get_guard_expression(self, dom_node):
         return self.grab_and_remove_control_attr(dom_node, 'strip')
 
-
     def generate_attributes_for_node(self, dom_node, ir_node):
         attrs_node = self.grab_and_remove_control_attr(dom_node, 'attrs')
-        attrs = [ (k, handle_text_node(v)) for (k, v) in dom_node.attributes.items() ]
+        attrs = [
+            (k, handle_text_node(v, translatable=self.is_attr_translatable(k)))
+            for (k, v)
+            in dom_node.attributes.items()
+        ]
+
         self.generate_attributes(ir_node, attrs=attrs, dynamic_attrs=attrs_node)
 
-
+    # noinspection PyMethodMayBeStatic
     def is_control_name(self, name, to_match):
         return 'py:' + to_match == name
 
-
+    # noinspection PyMethodMayBeStatic
     def grab_and_remove_control_attr(self, dom_node, name):
         name = 'py:' + name
         if dom_node.hasAttribute(name):
@@ -51,7 +62,6 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             return value
 
         return None
-
 
     def create_control_nodes(self, dom_node):
         name = dom_node.tagName
@@ -173,7 +183,11 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             return self.generate_element_node(dom_node)
 
         if node_t == Node.TEXT_NODE:
-            ir_node = handle_text_node(dom_node.nodeValue, is_cdata=self.is_cdata)
+            ir_node = handle_text_node(
+                dom_node.nodeValue,
+                is_cdata=self.is_cdata,
+                translatable=self.translate
+            )
             return ir_node
 
         if node_t == Node.COMMENT_NODE:
@@ -182,13 +196,15 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
 
         raise ValueError("Unhandled node type %d" % node_t)
 
+    def is_attr_translatable(self, attr_name):
+        return attr_name in self.translatable_attributes
+
 
 def parse(filename, string):
     parser = TonnikalaHTMLParser(filename, string)
     parsed = parser.parse()
-    generator = TonnikalaIRGenerator(parsed)
+    generator = TonnikalaIRGenerator(document=parsed, translatable=True)
     tree = generator.generate_tree()
-
     tree = generator.flatten_element_nodes(tree)
     tree = generator.merge_text_nodes(tree)
     return tree

@@ -163,6 +163,28 @@ class PyOutputNode(PythonNode):
         return self.generate_output_ast(self.get_expression(), generator, parent)
 
 
+class PyTranslatableOutputNode(PyOutputNode):
+    def __init__(self, text, needs_escape=False):
+        super(PyTranslatableOutputNode, self).__init__(text)
+        self.needs_escape = needs_escape
+
+
+    def get_expressions(self):
+        return [ self.get_expression() ]
+
+
+    def get_expression(self):
+        name = 'gettext'
+        if self.needs_escape:
+            name = 'egettext'
+
+        expr = SimpleCall(
+            NameX(name),
+            [Str(s=self.text)],
+        )
+        return expr
+
+
 class PyExpressionNode(PythonNode):
     def __init__(self, expression, tokens):
         super(PyExpressionNode, self).__init__()
@@ -382,7 +404,15 @@ class PyDefineNode(PyComplexNode):
 
 class PyComplexExprNode(PyComplexNode):
     def get_expressions(self):
-        return [ i.get_expression() for i in self.children ]
+        rv = []
+        for i in self.children:
+            if hasattr(i, 'get_expression'):
+                rv.append(i.get_expression())
+
+            else:
+                rv.extend(i.get_expressions())
+
+        return rv
 
 
     def generate_ast(self, generator, parent=None):
@@ -579,6 +609,17 @@ class PyRootNode(PyComplexNode):
             # an extended template does not have a __main__ (it is inherited)
             code += '    _TK_parent_template.binder_func(_TK_context)\n'
 
+        
+        for i in [ 'egettext' ]:
+            if i in free_variables:
+                free_variables.add('gettext')
+                free_variables.discard(i)
+
+        if 'gettext' in free_variables:
+            code += '    def egettext(msg):\n'
+            code += '        return _TK_escape(gettext(msg))\n'
+
+
         for i in free_variables:
             code += '    if "%s" in _TK_context:\n' % i
             code += '        %s = _TK_context["%s"]\n' % (i, i)
@@ -620,7 +661,9 @@ class PyRootNode(PyComplexNode):
 
 
 class Generator(BaseGenerator):
-    OutputNode      = PyOutputNode
+    OutputNode             = PyOutputNode
+    TranslatableOutputNode = PyTranslatableOutputNode
+
     IfNode          = PyIfNode
     ForNode         = PyForNode
     DefineNode      = PyDefineNode

@@ -34,7 +34,7 @@ class TestHtmlTemplates(unittest.TestCase):
 
     def test_simple(self):
         self.are('<html></html>', '<html></html>')
-        self.are('<html attr="&amp;&lt;&quot;">&amp;&lt;&quot;</html>',
+        self.are('<html attr="&amp;&lt;&#34;">&amp;&lt;&#34;</html>',
             '<html attr="&amp;&lt;&#34;">&amp;&lt;&#34;</html>')
         self.are('<html></html>', '<html ></html >')
         fragment = '<html><nested>a</nested>b<nested>c</nested></html>'
@@ -151,10 +151,25 @@ class TestHtmlTemplates(unittest.TestCase):
 
     def test_block(self):
         fragment = '<html><py:block name="foo">a block</py:block></html>'
-        self.are('<html>a block</html>', fragment, debug=True)
+        self.are('<html>a block</html>', fragment, debug=False)
 
         fragment = '<html><div py:block="foo">a block</div></html>'
         self.are('<html><div>a block</div></html>', fragment)
+
+    def test_translation(self):
+        fragment = '<html alt="foo"> abc </html>'
+        self.are('<html alt="foo"> abc </html>', fragment, debug=False, translateable=True)
+
+        def gettext(x):
+            return '<"%s&>' % x
+
+        self.are('<html alt="&lt;&#34;foo&amp;&gt;"> &lt;&#34;abc&amp;&gt; </html>',
+            fragment, debug=False, translateable=True, gettext=gettext)
+
+        def gettext(x):
+            return '<%s' % x
+
+        self.are('<html>&lt;&gt;</html>', '<html>&gt;</html>', debug=False, translateable=True, gettext=gettext)
 
     def assert_file_rendering_equals(self, input_file, output_file, debug=False, **context):
         loader = get_loader(debug=debug)

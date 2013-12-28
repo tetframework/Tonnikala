@@ -83,8 +83,8 @@ class BaseIRGenerator(object):
 
 
 class BaseDOMIRGenerator(BaseIRGenerator):
-    def __init__(self, document, mode='html5'):
-        super(BaseDOMIRGenerator, self).__init__()
+    def __init__(self, document=None, mode='html5', *a, **kw):
+        super(BaseDOMIRGenerator, self).__init__(*a, **kw)
         self.dom_document = document
         self.mode = mode
         self.is_cdata = False
@@ -104,6 +104,7 @@ class BaseDOMIRGenerator(BaseIRGenerator):
 
 
     def child_iter(self, node):
+#            pdb.set_trace()
         if not node.firstChild:
             return
 
@@ -130,7 +131,7 @@ class BaseDOMIRGenerator(BaseIRGenerator):
 
         for dom_node in children:
             node = self.generate_ir_node(dom_node)
-            if node != None:
+            if node:
                 ir_node.add_child(node)
 
         self.is_cdata = is_cdata_save

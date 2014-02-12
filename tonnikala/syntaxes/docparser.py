@@ -6,7 +6,7 @@ __docformat__ = "epytext"
 """XML parser"""
 
 import six
-from six.moves import html_entities
+from six.moves import html_entities, html_parser
 from six import text_type
 
 entitydefs = html_entities.entitydefs
@@ -14,17 +14,8 @@ entitydefs = html_entities.entitydefs
 from xml import sax
 from xml.dom import minidom as dom
 
-from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless, Expression, Comment
-
-from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
-from xml.dom.minidom    import Node
-from tonnikala.ir.tree  import IRTree
-from tonnikala.ir.generate import BaseDOMIRGenerator
-
-
 impl = dom.getDOMImplementation(' ')
 
-from six.moves import html_parser
 
 class TonnikalaXMLParser(sax.ContentHandler):
     def __init__(self, filename, source):
@@ -32,7 +23,7 @@ class TonnikalaXMLParser(sax.ContentHandler):
         self.source = source
         self.doc = None
         self.elements = []
-        self.characters = None
+        self._characters = None
 
     def parse(self):
         self._parser = parser = sax.make_parser()
@@ -59,12 +50,12 @@ class TonnikalaXMLParser(sax.ContentHandler):
         self.elements.append(self.doc)
 
     def _checkAndClearChrs(self):
-        if self.characters:
-            node = self.doc.createTextNode(''.join(self.characters[1]))
-            node.lineno = self.characters[0]
+        if self._characters:
+            node = self.doc.createTextNode(''.join(self._characters[1]))
+            node.lineno = self._characters[0]
             self.elements[-1].appendChild(node)
 
-        self.characters = None
+        self._characters = None
 
     def startElement(self, name, attrs):
         self.flush_character_data()
@@ -82,10 +73,10 @@ class TonnikalaXMLParser(sax.ContentHandler):
         assert name == popped.tagName
 
     def characters(self, content):
-        if not self.characters:
-            self.characters = (self._parser.getLineNumber(), [])
+        if not self._characters:
+            self._characters = (self._parser.getLineNumber(), [])
 
-        self.characters[1].append(content)
+        self._characters[1].append(content)
 
     def processingInstruction(self, target, data):
         self.flush_character_data()

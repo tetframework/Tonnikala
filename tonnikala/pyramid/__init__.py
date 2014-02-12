@@ -103,11 +103,13 @@ def enable_tonnikala(config, extensions=('.txt', '.xml', '.html', '.html5'), sea
     for extension in extensions:
         config.add_renderer(extension, renderer_factory)
 
-def add_tonnikala_extension(config, extension):
+
+def add_tonnikala_extension(config, extension, search_path=None):
     if not extension.startswith('.'):
         extension = '.' + extension
 
-    enable_tonnikala(config, extensions=(extension,), search_path="adusso:templates")
+    enable_tonnikala(config, extensions=(extension,), search_path=search_path)
+
 
 def includeme(config):
     add_tonnikala_extension(config, '.tk')

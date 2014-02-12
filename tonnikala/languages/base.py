@@ -2,6 +2,7 @@ from tonnikala.ir import nodes
 
 name_counter = 0
 
+
 class LanguageNode(object):
     def __init__(self):
         self.indent_level = None
@@ -36,8 +37,10 @@ class ComplexNode(LanguageNode):
             for j in i.generate():
                 yield j
 
+
 def unimplemented(self, *a, **kw):
     raise NotImplementedError("Error: unimplemented")
+
 
 class BaseGenerator(object):
     OutputNode        = unimplemented
@@ -102,6 +105,9 @@ class BaseGenerator(object):
 
         elif isinstance(ir_node, nodes.Block):
             new_node = self.BlockNode(ir_node.name)
+
+        elif isinstance(ir_node, nodes.Code):
+            new_node = self.CodeNode(ir_node.source)
 
         else:
             raise ValueError("Unknown node type, %s" % (target), ir_node.__class__.__name__)

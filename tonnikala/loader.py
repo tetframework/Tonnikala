@@ -79,7 +79,7 @@ class Loader(object):
         parser_func = parsers.get(self.syntax)
         if not parser_func:
             raise ValueError("Invalid parser syntax %s: valid syntaxes: %r"
-                % sorted(parser.keys))
+                % sorted(parsers.keys()))
 
         tree = parser_func(filename, string)
         code = PythonGenerator(tree).generate_ast()

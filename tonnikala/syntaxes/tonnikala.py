@@ -15,7 +15,7 @@ from xml import sax
 
 from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, \
     EscapedText, MutableAttribute, ContainerNode, Block, Extends, \
-    Root, DynamicAttributes, Unless, Expression, Comment
+    Root, DynamicAttributes, Unless, Expression, Comment, Code
 
 from tonnikala.expr     import handle_text_node  # TODO: move this elsewhere.
 from xml.dom.minidom    import Node
@@ -25,11 +25,22 @@ from tonnikala.syntaxes.docparser import TonnikalaXMLParser, TonnikalaHTMLParser
 
 
 class TonnikalaIRGenerator(BaseDOMIRGenerator):
-    translatable_attributes = set([
-        "alt",
-        "placeholder",
-        "title",
+    TRANSLATABLE_ATTRS = set([
+        'title',
+        'alt',
+        'placeholder',
     ])
+    def __init__(self, *a, **kw):
+        super(TonnikalaIRGenerator, self).__init__(*a, **kw)
+        self.state['translatable'] = True
+
+
+    def is_translatable(self):
+        return bool(self.state.translatable.get('translatable'))
+
+
+    def set_translatable(self, is_translatable):
+        self.push_state()['translatable'] = is_translatable
 
     def __init__(self, translatable=True, **kw):
         super(TonnikalaIRGenerator, self).__init__(**kw)
@@ -194,10 +205,18 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             ir_node = EscapedText(u'<!--' + dom_node.nodeValue + u'-->')
             return ir_node
 
+        if node_t == Node.PROCESSING_INSTRUCTION_NODE:
+            ir_node = Code(dom_node.nodeValue.strip())
+            return ir_node
+
+        if node_t == Node.DOCUMENT_TYPE_NODE:
+            ir_node = EscapedText(dom_node.toxml())
+            return ir_node
+
         raise ValueError("Unhandled node type %d" % node_t)
 
     def is_attr_translatable(self, attr_name):
-        return attr_name in self.translatable_attributes
+        return attr_name in self.TRANSLATABLE_ATTRS
 
 
 def parse(filename, string):

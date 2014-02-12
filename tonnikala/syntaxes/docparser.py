@@ -147,7 +147,20 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
 
     def flush_character_data(self):
         if self.characters:
-            node = self.doc.createTextNode(''.join(self.characters))
+            text = ''.join(self.characters)
+
+            if isinstance(self.elements[-1], dom.Document):
+                # Special case: just skip adding whitespace to document root,
+                # but raise hell, if trying to add other characters
+                if len(text.strip()) > 0:
+                    raise RuntimeError("Text data outside of elements: %s"
+                                       % text)
+
+                else:
+                    self.characters = None
+                    return
+
+            node = self.doc.createTextNode()
             node.lineno = self.getpos()
             self.elements[-1].appendChild(node)
 

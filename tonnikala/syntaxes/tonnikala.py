@@ -25,11 +25,22 @@ from tonnikala.syntaxes.docparser import TonnikalaXMLParser, TonnikalaHTMLParser
 
 
 class TonnikalaIRGenerator(BaseDOMIRGenerator):
-    translatable_attributes = set([
-        "alt",
-        "placeholder",
-        "title",
+    TRANSLATABLE_ATTRS = set([
+        'title',
+        'alt',
+        'placeholder',
     ])
+    def __init__(self, *a, **kw):
+        super(TonnikalaIRGenerator, self).__init__(*a, **kw)
+        self.state['translatable'] = True
+
+
+    def is_translatable(self):
+        return bool(self.state.translatable.get('translatable'))
+
+
+    def set_translatable(self, is_translatable):
+        self.push_state()['translatable'] = is_translatable
 
     def __init__(self, translatable=True, **kw):
         super(TonnikalaIRGenerator, self).__init__(**kw)
@@ -201,7 +212,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         raise ValueError("Unhandled node type %d" % node_t)
 
     def is_attr_translatable(self, attr_name):
-        return attr_name in self.translatable_attributes
+        return attr_name in self.TRANSLATABLE_ATTRS
 
 
 def parse(filename, string):

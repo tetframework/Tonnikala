@@ -209,6 +209,10 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             ir_node = Code(dom_node.nodeValue.strip())
             return ir_node
 
+        if node_t == Node.DOCUMENT_TYPE_NODE:
+            ir_node = EscapedText(dom_node.toxml())
+            return ir_node
+
         raise ValueError("Unhandled node type %d" % node_t)
 
     def is_attr_translatable(self, attr_name):

@@ -146,7 +146,6 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         self.characters = None
         self.characters_start = None
 
-
     def parse(self):
         self.doc = dom.Document()
         self.elements.append(self.doc)
@@ -155,7 +154,6 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         self.close()
         return self.doc
 
-
     def flush_character_data(self):
         if self.characters:
             node = self.doc.createTextNode(''.join(self.characters))
@@ -163,7 +161,6 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
             self.elements[-1].appendChild(node)
 
         self.characters = None
-
 
     def handle_starttag(self, name, attrs):
         self.flush_character_data()
@@ -178,7 +175,6 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         self.elements[-1].appendChild(el)
         self.elements.append(el)
 
-
     def handle_endtag(self, name):
         self.flush_character_data()
         popped = self.elements.pop()
@@ -186,14 +182,12 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         if name != popped.name:
             raise RuntimeError("Invalid end tag </%s> (expected </%s>)" % (name, popped.name))
 
-
     def handle_data(self, content):
         if not self.characters:
             self.characters = []
             self.characters_start = self.getpos()
 
         self.characters.append(content)
-
 
     def handle_pi(self, data):
         self.flush_character_data()
@@ -209,7 +203,6 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         node.position = self.getpos()
         self.elements[-1].appendChild(node)
 
-
     def handle_entityref(self, name):
         # Encoding?
         content = text_type(entitydefs.get(name))
@@ -217,7 +210,6 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
             raise RuntimeError("Unknown HTML entity &%s;" % name)
 
         self.handle_data(content)
-
 
     def handle_charref(self, code):
         # Encoding?
@@ -232,7 +224,6 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         except Exception as e:
             raise RuntimeError("Invalid HTML charref &#%s;: %s" % (code, e))
 
-
     # LexicalHandler implementation
     def handle_comment(self, text):
         self.flush_character_data()
@@ -242,6 +233,9 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
             node.position = self.getpos()
             self.elements[-1].appendChild(node)
 
-
     def handle_decl(self, decl):
-        self.doc.doctype = decl
+        dt = dom.parseString("<!%s><html/>" % decl).doctype
+        self.elements[-1].appendChild(dt)
+
+    def unknown_decl(self, decl):
+        raise RuntimeError("Unknown declaration: %s" % decl)

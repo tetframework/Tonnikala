@@ -48,6 +48,7 @@ class all_set(object):
 class BaseIRGenerator(object):
     def __init__(self, *a, **kw):
         super(BaseIRGenerator, self).__init__(*a, **kw)
+        self.states = [ {} ]
         self.tree = IRTree()
 
     def merge_text_nodes_on(self, node):
@@ -75,11 +76,37 @@ class BaseIRGenerator(object):
         for i in node.children:
             self.merge_text_nodes_on(i)
 
-
     def merge_text_nodes(self, tree):
         root = tree.root
         self.merge_text_nodes_on(root)
         return tree
+
+    @property
+    def state(self):
+        """
+        Return the current state from the state stack
+        """
+
+        return self.states[-1]
+
+    def push_state(self):
+        """
+        Push a copy of the topmost state on top of the state stack,
+        returns the new top.
+        """
+
+        new = dict(self.states[-1])
+        self.states.append(new)
+        return self.state
+
+    def pop_state(self):
+        """
+        Pop the topmost state from the state stack, return
+        the *new* top
+        """
+
+        self.states.pop()
+        return self.state
 
 
 class BaseDOMIRGenerator(BaseIRGenerator):

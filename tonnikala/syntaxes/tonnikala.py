@@ -25,8 +25,22 @@ from tonnikala.syntaxes.docparser import TonnikalaXMLParser, TonnikalaHTMLParser
 
 
 class TonnikalaIRGenerator(BaseDOMIRGenerator):
+    TRANSLATABLE_ATTRS = set([
+        'title',
+        'alt',
+        'placeholder',
+    ])
     def __init__(self, *a, **kw):
         super(TonnikalaIRGenerator, self).__init__(*a, **kw)
+        self.state['translatable'] = True
+
+
+    def is_translatable(self):
+        return bool(self.state.translatable.get('translatable'))
+
+
+    def set_translatable(self, is_translatable):
+        self.push_state()['translatable'] = is_translatable
 
 
     def get_guard_expression(self, dom_node):

@@ -160,7 +160,7 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
                     self.characters = None
                     return
 
-            node = self.doc.createTextNode()
+            node = self.doc.createTextNode(text)
             node.lineno = self.getpos()
             self.elements[-1].appendChild(node)
 

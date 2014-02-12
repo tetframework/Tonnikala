@@ -6,8 +6,10 @@ import re
 __docformat__ = "epytext"
 
 try:
+    # noinspection PyUnresolvedReferences
     unicode
-except:
+
+except NameError:
     unicode = str
 
 
@@ -146,7 +148,7 @@ class DynamicAttributes(BaseNode):
         self.expression = expression
 
     def __str__(self):
-        return str(expression)
+        return str(self.expression)
 
 
 class ComplexExpression(ContainerNode):

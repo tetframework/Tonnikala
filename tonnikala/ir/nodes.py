@@ -6,7 +6,7 @@ import re
 __docformat__ = "epytext"
 
 try:
-    # noinspection PyUnresolvedReferences
+    # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
     unicode
 
 except NameError:
@@ -33,7 +33,6 @@ class Text(BaseNode):
 
     def __str__(self):
         return self.text
-
 
     def escaped(self):
         if self.is_cdata:
@@ -97,6 +96,16 @@ class Expression(BaseNode):
 
     def __str__(self):
         return self.expression
+
+
+class Code(BaseNode):
+    is_cdata = False
+
+    def __init__(self, source):
+        self.source = source
+
+    def __str__(self):
+        return self.source
 
 
 class InterpolatedExpression(Expression):
@@ -163,7 +172,7 @@ class ComplexExpression(ContainerNode):
 class Element(ContainerNode):
     def __init__(self, name, guard_expression=None):
         super(Element, self).__init__()
-        self.name       = name
+        self.name = name
         self.guard_expression = guard_expression
         self.constant_attributes = {}
         self.mutable_attributes  = {}
@@ -296,7 +305,7 @@ class Extends(ContainerNode):
         if not isinstance(child, Block):
             raise IRTemplateSyntaxError(
                 "Child of type %s is not allowed within an Extend block" %
-                     child.__class__.__name__,
+                    child.__class__.__name__,
                 child
             )
 

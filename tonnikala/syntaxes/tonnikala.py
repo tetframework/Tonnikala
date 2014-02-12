@@ -15,7 +15,7 @@ from xml import sax
 
 from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, \
     EscapedText, MutableAttribute, ContainerNode, Block, Extends, \
-    Root, DynamicAttributes, Unless, Expression, Comment
+    Root, DynamicAttributes, Unless, Expression, Comment, Code
 
 from tonnikala.expr     import handle_text_node  # TODO: move this elsewhere.
 from xml.dom.minidom    import Node
@@ -195,7 +195,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             return ir_node
 
         if node_t == Node.PROCESSING_INSTRUCTION_NODE:
-            ir_node = EscapedText(u'<!--' + dom_node.nodeValue + u'-->')
+            ir_node = Code(dom_node.nodeValue)
             return ir_node
 
         raise ValueError("Unhandled node type %d" % node_t)

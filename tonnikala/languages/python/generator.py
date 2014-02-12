@@ -8,7 +8,6 @@ from __future__ import absolute_import, division, print_function
 from tonnikala.ir import nodes
 from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 from tonnikala.languages.python.astalyzer import FreeVarFinder
-import ast
 from ast import *
 import ast
 from six import string_types

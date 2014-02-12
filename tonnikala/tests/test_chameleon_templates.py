@@ -17,7 +17,7 @@ class TestHtmlTemplates(unittest.TestCase):
 
     def test_simple(self):
         self.are('<html></html>', '<html></html>')
-        self.are('<html attr="&amp;&lt;&quot;">&amp;&lt;&quot;</html>',
+        self.are('<html attr="&amp;&lt;&#34;">&amp;&lt;&#34;</html>',
             '<html attr="&amp;&lt;&#34;">&amp;&lt;&#34;</html>')
         self.are('<html></html>', '<html ></html >')
         fragment = '<html><nested>a</nested>b<nested>c</nested></html>'

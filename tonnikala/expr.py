@@ -7,7 +7,7 @@ __docformat__ = "epytext"
 
 import re
 
-from tonnikala.ir.nodes import Text, ComplexExpression
+from tonnikala.ir.nodes import Text, ComplexExpression, TranslatableText
 from tonnikala.languages import javascript, python
 from tonnikala.exceptions import ParseError
 
@@ -33,16 +33,48 @@ _expr_find_code = re.compile(r"""
 | (\$)
 """, re.VERBOSE | re.DOTALL)
 
+_strip_ws_re = re.compile(r"""
+    (\s*)
+    (.*?)
+    (\s*)$
+""", re.VERBOSE | re.DOTALL)
 
-def create_text_node(text, is_cdata=False):
-    rv = Text(text)
-    rv.is_cdata = is_cdata
+def partition_translatable_text(text):
+    m = _strip_ws_re.match(text)
+    return m.groups()
 
-    return rv
 
-def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False):
+def create_text_nodes(text, is_cdata=False, translatable=False):
+    if not translatable:
+        rv = Text(text)
+        rv.is_cdata = is_cdata
+        return rv
+
+    prefix, this, suffix = partition_translatable_text(text)
+
+    rv = []
+    if prefix:
+        rv.append(Text(prefix, is_cdata=is_cdata))
+
+    if this:
+        rv.append(TranslatableText(this, is_cdata=is_cdata))
+
+    if suffix:
+        rv.append(Text(suffix, is_cdata=is_cdata))
+
+    if len(rv) == 1:
+        return rv[0]
+
+    node = ComplexExpression()
+    for i in rv:
+        node.add_child(i)
+
+    return node
+
+def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False, translatable=False, whole_translatable=False):
     try:
-        return create_text_node(_strip_dollars_fast(text), is_cdata)
+        text = _strip_dollars_fast(text)
+        return create_text_nodes(text, is_cdata=is_cdata, translatable=translatable)
 
     except HasExprException:
         pass
@@ -64,7 +96,7 @@ def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False):
 
         elif m.group(3):
             if stringrun:
-                nodes.append(create_text_node(''.join(stringrun)))
+                nodes.append(create_text_nodes(''.join(stringrun), translatable=translatable))
 
             stringrun = []
             expr = expr_parser(text, m.start(3))
@@ -75,7 +107,7 @@ def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False):
             stringrun.append('$')
 
     if stringrun:
-        nodes.append(create_text_node(''.join(stringrun)))
+        nodes.append(create_text_nodes(''.join(stringrun), translatable=translatable))
 
     if len(nodes) == 1:
         return nodes[0]
@@ -84,9 +116,12 @@ def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False):
     for i in nodes:
         node.add_child(i)
 
-    if is_cdata:
-        node.is_cdata = True
-        for i in nodes:
-            i.is_cdata = True
+    node.is_cdata = is_cdata
+    for i in nodes:
+        i.is_cdata = is_cdata
+        i.translatable = translatable
+
+    if whole_translatable:
+        node.translatable = True
 
     return node

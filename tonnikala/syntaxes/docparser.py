@@ -198,7 +198,14 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
     def handle_pi(self, data):
         self.flush_character_data()
 
-        node = self.doc.createProcessingInstruction(data)
+        # The HTMLParser spits processing instructions as is with type and all
+        type_, data = data.split(maxsplit=1)
+
+        if data.endswith('?'):
+            # XML syntax parsed as SGML, remove trailing '?'
+            data = data[:-1]
+
+        node = self.doc.createProcessingInstruction(type_, data)
         node.position = self.getpos()
         self.elements[-1].appendChild(node)
 

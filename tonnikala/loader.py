@@ -17,8 +17,12 @@ else:
 class Helpers():
     pass
 
+escape = python.escape
+
 helpers = Helpers()
-helpers.literal = lambda x: x
+helpers.literal  = lambda x: x
+helpers.gettext  = lambda x: x
+helpers.egettext = lambda x: escape(x) 
 
 def get_builtins_with_chain(chain=[ helpers ]):
     builtins = {}
@@ -97,7 +101,7 @@ class Loader(object):
 
         glob = {
             '_TK_runtime': runtime,
-            'literal':       lambda x: x
+            'literal':     lambda x: x
         }
 
         compiled = compile(code, '<string>', 'exec')

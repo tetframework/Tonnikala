@@ -53,6 +53,7 @@ class BaseGenerator(object):
     DynamicAttributes = unimplemented
     ExtendsNode       = unimplemented
     BlockNode         = unimplemented
+    TranslatableOutputNode = unimplemented
 
     def __init__(self, ir_tree):
         self.tree = ir_tree
@@ -62,7 +63,11 @@ class BaseGenerator(object):
             self.add_child(i, target)
 
     def add_child(self, ir_node, target):
-        if   isinstance(ir_node, nodes.Text):
+        if   isinstance(ir_node, nodes.TranslatableText):
+            new_node = self.TranslatableOutputNode(
+                ir_node.text, needs_escape=ir_node.needs_escape)
+
+        elif   isinstance(ir_node, nodes.Text):
             new_node = self.OutputNode(ir_node.escaped())
 
         elif isinstance(ir_node, nodes.If):
@@ -99,7 +104,7 @@ class BaseGenerator(object):
             new_node = self.BlockNode(ir_node.name)
 
         else:
-            raise ValueError("Unknown node type", ir_node.__class__.__name__)
+            raise ValueError("Unknown node type, %s" % (target), ir_node.__class__.__name__)
 
         target.add_child(new_node)
 

@@ -6,8 +6,10 @@ import re
 __docformat__ = "epytext"
 
 try:
+    # noinspection PyUnresolvedReferences
     unicode
-except:
+
+except NameError:
     unicode = str
 
 
@@ -25,11 +27,33 @@ class Text(BaseNode):
     is_cdata = False
     translatable = False
 
-    def __init__(self, text):
+    def __init__(self, text, is_cdata=False):
         self.text = text
+        self.is_cdata = is_cdata
 
     def __str__(self):
         return self.text
+
+
+    def escaped(self):
+        if self.is_cdata:
+            return self.text
+
+        return escape(self.text)
+
+
+class TranslatableText(Text):
+    translatable = True
+
+    def __init__(self, text, is_cdata=False):
+        super(TranslatableText, self).__init__(text, is_cdata=is_cdata)
+
+    def __str__(self):
+        return '_t(%s)' % self.text
+
+    @property
+    def needs_escape(self):
+        return not self.is_cdata
 
     def escaped(self):
         if self.is_cdata:
@@ -124,7 +148,7 @@ class DynamicAttributes(BaseNode):
         self.expression = expression
 
     def __str__(self):
-        return str(expression)
+        return str(self.expression)
 
 
 class ComplexExpression(ContainerNode):
@@ -155,7 +179,7 @@ class Element(ContainerNode):
         return self.guard_expression
 
     def set_attribute(self, name, value):
-        if isinstance(value, Text):
+        if isinstance(value, Text) and not value.translatable:
             self.constant_attributes[name] = value
         else:
             self.mutable_attributes[name] = value

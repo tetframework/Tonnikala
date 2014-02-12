@@ -206,7 +206,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             return ir_node
 
         if node_t == Node.PROCESSING_INSTRUCTION_NODE:
-            ir_node = Code(dom_node.nodeValue)
+            ir_node = Code(dom_node.nodeValue.strip())
             return ir_node
 
         raise ValueError("Unhandled node type %d" % node_t)

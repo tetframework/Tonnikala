@@ -5,7 +5,6 @@
 # both python2 and 3
 from __future__ import absolute_import, division, print_function
 
-from tonnikala.ir import nodes
 from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 from tonnikala.languages.python.astalyzer import FreeVarFinder
 from ast import *
@@ -208,6 +207,16 @@ class PyExpressionNode(PythonNode):
 
     def generate_ast(self, generator, parent):
         return self.generate_output_ast(self.get_expression(), generator, parent)
+
+
+class PyCodeNode(PythonNode):
+
+    def __init__(self, source):
+        super(PyCodeNode, self).__init__()
+        self.source = source
+
+    def generate_ast(self, generator, parent):
+        return get_expression_ast(self.source, mode='exec')
 
 
 def coalesce_strings(args):
@@ -675,6 +684,7 @@ class Generator(BaseGenerator):
     UnlessNode      = PyUnlessNode
     ExtendsNode     = PyExtendsNode
     BlockNode       = PyBlockNode
+    CodeNode        = PyCodeNode
 
     def __init__(self, ir_tree):
         super(Generator, self).__init__(ir_tree)

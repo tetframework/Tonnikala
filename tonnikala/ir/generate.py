@@ -34,16 +34,22 @@ html5_cdata_elements = frozenset('''
 
 
 try:
+    # noinspection PyUnresolvedReferences,PyStatementEffect
     unicode
+
     def u(s):
+        # noinspection PyUnresolvedReferences
         return unicode(s)
-except:
+
+except NameError:
     def u(s):
         return s
+
 
 class all_set(object):
     def __contains__(self, value):
         return True
+
 
 class BaseIRGenerator(object):
     def __init__(self, *a, **kw):
@@ -75,7 +81,6 @@ class BaseIRGenerator(object):
         for i in node.children:
             self.merge_text_nodes_on(i)
 
-
     def merge_text_nodes(self, tree):
         root = tree.root
         self.merge_text_nodes_on(root)
@@ -102,7 +107,6 @@ class BaseDOMIRGenerator(BaseIRGenerator):
         else:
             raise ValueError("Unknown render mode '%s'" % mode)
 
-
     def child_iter(self, node):
 #            pdb.set_trace()
         if not node.firstChild:
@@ -113,7 +117,6 @@ class BaseDOMIRGenerator(BaseIRGenerator):
             yield current
             current = current.nextSibling
 
-
     def generate_attributes(self, ir_node, attrs=[], dynamic_attrs=None):
         if dynamic_attrs:
             ir_node.set_dynamic_attrs(dynamic_attrs)
@@ -121,6 +124,8 @@ class BaseDOMIRGenerator(BaseIRGenerator):
         for name, value in attrs:
             ir_node.set_attribute(name, value)
 
+    def generate_ir_node(self, dom_node):
+        raise NotImplementedError('abstract method not implemented')
 
     def add_children(self, children, ir_node):
         is_cdata_save = self.is_cdata
@@ -136,13 +141,11 @@ class BaseDOMIRGenerator(BaseIRGenerator):
 
         self.is_cdata = is_cdata_save
 
-
     def generate_tree(self):
         root = Root()
         self.tree.add_child(root)
         self.add_children(self.child_iter(self.dom_document), root)
         return self.tree
-
 
     def render_constant_attributes(self, element):
         cattr = element.get_constant_attributes()
@@ -151,7 +154,6 @@ class BaseDOMIRGenerator(BaseIRGenerator):
             code.append(' %s="%s"' % (name, value.escaped()))
 
         return ''.join(code)
-
 
     def get_start_tag_nodes(self, element):
         start_tag_nodes = []
@@ -168,7 +170,6 @@ class BaseDOMIRGenerator(BaseIRGenerator):
             start_tag_nodes.append(DynamicAttributes(element.dynamic_attrs))
 
         return start_tag_nodes
-
 
     def flatten_element_nodes_on(self, node):
         new_children = []
@@ -230,7 +231,6 @@ class BaseDOMIRGenerator(BaseIRGenerator):
         for i in node.children:
             if hasattr(i, 'children') and i.children:
                 self.flatten_element_nodes_on(i)
-
 
     def flatten_element_nodes(self, tree):
         root = tree.root

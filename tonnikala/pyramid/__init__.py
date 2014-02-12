@@ -38,6 +38,7 @@ from pyramid.resource import abspath_from_resource_spec
 import pkg_resources
 import tonnikala
 import tonnikala.loader
+import six
 
 @implementer(ITemplateRenderer)
 class TonnikalaTemplateRenderer(object):
@@ -62,6 +63,9 @@ class TonnikalaTemplateRenderer(object):
 
         template_name = os.path.join(self.settings['base_dir'], system['renderer_name'])
         template_string = pkg_resources.resource_string(self.settings['module'], template_name)
+        if six.PY3:
+            if isinstance(template_string, bytes):
+                template_string = template_string.decode('UTF-8')
 
         compiled = tonnikala.loader.Loader(debug=True).load_string(template_string)
         try:

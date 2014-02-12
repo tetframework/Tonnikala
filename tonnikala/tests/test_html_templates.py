@@ -184,3 +184,18 @@ class TestHtmlTemplates(unittest.TestCase):
     def test_extension(self):
         self.assert_file_rendering_equals('base.tk', 'base.tk', title='the base')
         self.assert_file_rendering_equals('child.tk', 'child.tk', title='the child')
+
+    def test_python_processing_instruction(self):
+        result = []
+
+        def bar(arg):
+            result.append(arg)
+
+        self.are(
+            '<html></html>',
+            '<html><?python foo("baz")?></html>',
+            debug=False,
+            foo=bar
+        )
+        self.assertEqual(['baz'], result)
+

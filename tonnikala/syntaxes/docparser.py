@@ -197,7 +197,8 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         self.flush_character_data()
 
         # The HTMLParser spits processing instructions as is with type and all
-        type_, data = data.split(maxsplit=1)
+        # (python 2 split does not take keyword arguments :( )
+        type_, data = data.split(None, 1)
 
         if data.endswith('?'):
             # XML syntax parsed as SGML, remove trailing '?'

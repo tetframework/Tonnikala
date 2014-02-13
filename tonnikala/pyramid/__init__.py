@@ -3,29 +3,9 @@
 
 '''This module allows the tonnikala templating language --
 http://pypi.python.org/pypi/tonnikala/
+
 -- to be used in the Pyramid web framework --
 http://docs.pylonshq.com/
-
-To enable the pyramid_tonnikala extension, do this:
-
-.. code-block:: python
-
-    from mootiro_web.pyramid_tonnikala import enable_tonnikala
-    enable_tonnikala(config)
-
-After this, files with these file extensions are considered to be
-tonnikala templates: '.txt', '.xml', '.html', '.html5'.
-
-Once the template loader is active, add the following to the
-application section of your Pyramid application’s .ini file::
-
-    [app:yourapp]
-    # ... other stuff ...
-    tonnikala.directory = myapp:templates
-
-The tonnikala FileLoader class supports searching only one directory for
-templates. As of 2011-01, if you want a search path, you must roll your own.
-If you do... let us know.
 '''
 
 from __future__ import (absolute_import, division, print_function,
@@ -40,11 +20,27 @@ import tonnikala
 import tonnikala.loader
 import six
 
+
+class PyramidTonnikalaLoader(tonnikala.loader.FileLoader):
+    def __init__(self, settings):
+        super(PyramidTonnikalaLoader, self).__init__()
+        self.settings = settings
+
+    def resolve(self, name):
+        template_name = os.path.join(self.settings['base_dir'], name)
+        path = pkg_resources.resource_filename(self.settings['module'], template_name)
+
+        if os.path.exists(path):
+            return path
+
+        return super(PyramidTonnikalaLoader, self).resolve(name)
+
+
 @implementer(ITemplateRenderer)
 class TonnikalaTemplateRenderer(object):
-    def __init__(self, info, settings, debug=True):
+    def __init__(self, info, loader, debug=True):
         self.info = info
-        self.settings = settings
+        self.loader = loader
         self.debug = debug
 
     def implementation(self):
@@ -62,13 +58,8 @@ class TonnikalaTemplateRenderer(object):
         * ``request`` (the request object passed to the view).
         """
 
-        template_name = os.path.join(self.settings['base_dir'], system['renderer_name'])
-        template_string = pkg_resources.resource_string(self.settings['module'], template_name)
-        if six.PY3:
-            if isinstance(template_string, bytes):
-                template_string = template_string.decode('UTF-8')
+        compiled = self.loader.load(system['renderer_name'])
 
-        compiled = tonnikala.loader.Loader(debug=self.debug).load_string(template_string)
         try:
             system.update(value)
         except (TypeError, ValueError):
@@ -99,8 +90,10 @@ def enable_tonnikala(config, extensions=('.txt', '.xml', '.html', '.html5'),
         'base_dir' : base_dir
     }
 
+    loader = PyramidTonnikalaLoader(settings)
+
     def renderer_factory(info):
-        return TonnikalaTemplateRenderer(info, settings, debug=debug)
+        return TonnikalaTemplateRenderer(info, loader, debug=debug)
 
     for extension in extensions:
         config.add_renderer(extension, renderer_factory)

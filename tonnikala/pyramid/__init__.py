@@ -42,9 +42,10 @@ import six
 
 @implementer(ITemplateRenderer)
 class TonnikalaTemplateRenderer(object):
-    def __init__(self, info, settings):
+    def __init__(self, info, settings, debug=True):
         self.info = info
         self.settings = settings
+        self.debug = debug
 
     def implementation(self):
         return self
@@ -67,7 +68,7 @@ class TonnikalaTemplateRenderer(object):
             if isinstance(template_string, bytes):
                 template_string = template_string.decode('UTF-8')
 
-        compiled = tonnikala.loader.Loader(debug=True).load_string(template_string)
+        compiled = tonnikala.loader.Loader(debug=self.debug).load_string(template_string)
         try:
             system.update(value)
         except (TypeError, ValueError):
@@ -85,7 +86,8 @@ class TonnikalaTemplateRenderer(object):
         return self(value, system, fragment=True)
 
 
-def enable_tonnikala(config, extensions=('.txt', '.xml', '.html', '.html5'), search_path=None):
+def enable_tonnikala(config, extensions=('.txt', '.xml', '.html', '.html5'),
+                     search_path=None, debug=False):
     '''Sets up the tonnikala templating language for the specified
     file extensions.
     '''
@@ -98,7 +100,7 @@ def enable_tonnikala(config, extensions=('.txt', '.xml', '.html', '.html5'), sea
     }
 
     def renderer_factory(info):
-        return TonnikalaTemplateRenderer(info, settings)
+        return TonnikalaTemplateRenderer(info, settings, debug=debug)
 
     for extension in extensions:
         config.add_renderer(extension, renderer_factory)

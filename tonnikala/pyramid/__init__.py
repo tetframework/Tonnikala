@@ -114,5 +114,4 @@ def add_tonnikala_extension(config, extension, search_path=None):
 
 
 def includeme(config):
-    add_tonnikala_extension(config, '.tk')
     config.add_directive('add_tonnikala_extension', add_tonnikala_extension)

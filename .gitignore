@@ -3,4 +3,5 @@ tonnikala.egg-info/
 venv*
 .venv-path
 *.so
+build
 

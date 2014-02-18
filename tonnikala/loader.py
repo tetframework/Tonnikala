@@ -121,6 +121,7 @@ class FileLoader(Loader):
 
         self.cache = {}
         self.paths = list(paths)
+        self.reload = False
 
     def add_path(self, *a):
         self.paths.extend(a)
@@ -132,6 +133,9 @@ class FileLoader(Loader):
                 return path
 
         return None
+
+    def set_reload(self, flag):
+        self.reload = flag
 
     def load(self, name):
         template = self.cache.get(name)

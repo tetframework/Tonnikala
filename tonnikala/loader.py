@@ -22,7 +22,7 @@ escape = python.escape
 helpers = Helpers()
 helpers.literal  = lambda x: x
 helpers.gettext  = lambda x: x
-helpers.egettext = lambda x: escape(x) 
+helpers.egettext = lambda x: escape(x)
 
 def get_builtins_with_chain(chain=[ helpers ]):
     builtins = {}
@@ -64,11 +64,13 @@ class Template(object):
     def render(self, context, funcname='__main__'):
         return self.render_to_buffer(context, funcname).join()
 
+
 parsers = {
     'tonnikala': parse_tonnikala,
     'chameleon': parse_chameleon,
     'jinja2':    parse_jinja2
 }
+
 
 class Loader(object):
     def __init__(self, debug=False, syntax='tonnikala'):
@@ -113,7 +115,9 @@ class Loader(object):
 import codecs
 import os
 from errno import ENOENT
+import time
 
+MIN_CHECK_INTERVAL = 0.25
 
 class FileLoader(Loader):
     def __init__(self, paths=[], debug=False, syntax='tonnikala'):
@@ -122,6 +126,7 @@ class FileLoader(Loader):
         self.cache = {}
         self.paths = list(paths)
         self.reload = False
+        self.last_reload_check = time.time()
 
     def add_path(self, *a):
         self.paths.extend(a)
@@ -137,7 +142,25 @@ class FileLoader(Loader):
     def set_reload(self, flag):
         self.reload = flag
 
+    def check_reload(self):
+        if self.last_reload_check + MIN_CHECK_INTERVAL > time.time():
+            return
+
+        for name, tmpl in list(self.cache.items()):
+            if not os.stat(tmpl.path):
+                self.cache.pop(name)
+                continue
+
+            if os.stat(tmpl.path).st_mtime > tmpl.mtime:
+                self.cache.pop(name)
+                continue
+
+        self.last_reload_check = time.time()
+
     def load(self, name):
+        if self.reload:
+            self.check_reload()
+
         template = self.cache.get(name)
         if template:
             return template
@@ -148,7 +171,11 @@ class FileLoader(Loader):
 
         with codecs.open(path, 'r', encoding='UTF-8') as f:
            contents = f.read()
+           mtime = os.fstat(f.fileno()).st_mtime
 
         template = self.load_string(contents, filename=path)
+        template.mtime = mtime
+        template.path  = path
+
         self.cache[name] = template
         return template

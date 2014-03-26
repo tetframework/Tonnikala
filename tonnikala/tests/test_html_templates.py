@@ -58,6 +58,14 @@ class TestHtmlTemplates(unittest.TestCase):
     def test_escapes_in_expression(self):
         self.are('<html>&lt;&amp;&#34;</html>', '<html>${i}</html>', i='<&"')
 
+    def test_if_else_expression(self):
+        """
+        There was a bug in Tonnikala that caused the expression to not work
+        This test is to make sure that there will be no regression
+        """
+
+        self.are('<html>foo</html>', '<html>${"foo" if True else "bar"}</html>')
+
     def test_for(self):
         fragment = '<html><py:for each="i in values">${i}</py:for></html>'
         self.are('<html></html>', fragment, values=[])

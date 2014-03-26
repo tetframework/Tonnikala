@@ -47,7 +47,9 @@ base.tk
 
     <html>
     <title><py:block name="title_block">I am ${title}</py:block></title>
+    <py:def function="foo()">I can be overridden too!</py:def>
     <h1>${title_block()}</h1>
+    ${foo()}
     </html>
 
 child.tk
@@ -57,7 +59,30 @@ child.tk
 
     <py:extends href="base.tk">
     <py:block name="title_block">But I am ${title} instead</py:block>
+    <py:def function="foo()">I have overridden the function in parent template</py:def>
     </py:extends>
+
+Template imports
+----------------
+
+importable.tk
++++++++++++++
+
+.. code-block:: xml
+
+    <html>
+    <py:def function="foo()">I am an importable function</py:def>
+    </html>
+
+importer.tk
++++++++++++
+
+.. code-block:: xml
+
+    <html>
+    <py:import href="importable.tk" alias="imp" />
+    ${imp.foo()}
+    </html>
 
 FileLoader
 ----------
@@ -102,19 +127,20 @@ Alpha, working features are
 * Implicit escaping
 * Disabling implicit escaping (``literal()``)
 * C speedups for both Python 2 and Python 3
+* Importing def blocks from another template: ``py:import``
+* Basic I18N using gettext.
 
 Upcoming features:
 
 * Structural elements: ``py:vars``, ``py:switch``, ``py:case``; ``py:else`` for ``for``, ``if`` and ``switch``.
 * Overriding attributes, setting attrs from dictionary: ``py:attrs``
 * Custom tags mapping to ``py:def``
-* I18N with optional in-parse-tree localization
+* I18N with optional in-parse-tree localization (partially done)
 * Javascript as the target language
 * Pluggable frontend syntax engines (partially done)
 * METAL-like macros
 * Pluggable expression languages akin to Chameleon
 * Even better template inheritance
-* Importing def blocks from another template: ``py:import``
 * Documentation (started)
 * Pyramid integration
 

@@ -1,0 +1,3 @@
+<html>
+   <py:def function="imported_func()">I am the imported function. $foo</py:def>
+</html>

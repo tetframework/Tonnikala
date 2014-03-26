@@ -1,0 +1,4 @@
+<html>
+<py:import href="imported.tk" alias="imp" />
+${imp.imported_func()}
+</html>

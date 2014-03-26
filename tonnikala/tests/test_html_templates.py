@@ -185,6 +185,9 @@ class TestHtmlTemplates(unittest.TestCase):
         self.assert_file_rendering_equals('base.tk', 'base.tk', title='the base')
         self.assert_file_rendering_equals('child.tk', 'child.tk', title='the child')
 
+    def test_import(self):
+        self.assert_file_rendering_equals('importing.tk', 'importing.tk', foo='bar')
+
     def test_python_processing_instruction(self):
         result = []
 

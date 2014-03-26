@@ -125,6 +125,15 @@ def bind(context):
 
     return wrapper
 
+
+class ImportedTemplate(object):
+    def __init__(self, name):
+        self.__name = name
+
+    def __repr__(self):
+        return "<ImportedTemplate '%r'>" % self.name
+
+
 class TonnikalaRuntime(object):
     bind         = staticmethod(bind)
     Buffer       = staticmethod(Buffer)
@@ -136,3 +145,17 @@ class TonnikalaRuntime(object):
 
     def load(self, href):
         return self.loader.load(href)
+
+    def import_defs(self, context, href):
+        modified_context = context.copy()
+        self.loader.load(href).bind(modified_context)
+        container = ImportedTemplate(href)
+
+        for k, v in modified_context.items():
+            # modified
+            if k in context and context[k] is v:
+                continue
+
+            setattr(container, k, v)
+
+        return container

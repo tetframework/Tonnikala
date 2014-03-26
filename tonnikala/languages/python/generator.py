@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 from tonnikala.languages.python.astalyzer import FreeVarFinder
 from ast import *
+from collections import Iterable
 import ast
 from six import string_types
 
@@ -286,16 +287,24 @@ class PyImportNode(PythonNode):
 
     def generate_ast(self, generator, parent):
         node = Assign(
-            targets = [NameX(self.alias)],
+            targets = [NameX(str(self.alias), store=True)],
             value =
                 SimpleCall(
                     func=
-                        Attribute(value=NameX('_TK_runtime'),
+                        Attribute(value=NameX('_TK_runtime', store=False),
                                   attr='import_defs', ctx=Load()),
-                    args=[Str(s=self.href)]
+                    args=[
+                        NameX('_TK_original_context'),
+                        Str(s=self.href)
+                    ]
                 )
         )
-        return node
+
+        if parent.is_top_level:
+            generator.add_top_level_import(str(self.alias), node)
+            return []
+
+        return [ node ]
 
 
 class PyAttributeNode(PyComplexNode):
@@ -404,7 +413,7 @@ class PyDefineNode(PyComplexNode):
 
         # move the function out of the closure
         if parent.is_top_level:
-            generator.add_top_def(def_node)
+            generator.add_top_def(def_node.name, def_node)
             return []
 
         return [ def_node ]
@@ -448,7 +457,7 @@ class PyBlockNode(PyComplexNode):
             self.generate_child_ast(generator, self)
         )
 
-        generator.add_block(def_node)
+        generator.add_block(self.name, def_node)
 
         if not is_extended:
             # call the block in place
@@ -501,7 +510,8 @@ def coalesce_outputs(tree):
 
     class OutputCoalescer(NodeVisitor):
         def visit(self, node):
-            if hasattr(node, 'body'):
+            # if - else expression also has a body! it is not we want, though.
+            if hasattr(node, 'body') and isinstance(node.body, Iterable):
                 # coalesce continuous string output nodes
                 new_body = []
                 output_node = None
@@ -601,7 +611,7 @@ class PyRootNode(PyComplexNode):
                 free_variables.discard(i)
 
         # discard the names of toplevel funcs from free variables
-        free_variables.difference_update(set(i.name for i in toplevel_funcs))
+        free_variables.difference_update(generator.top_level_names)
 
         code  = '_TK_mkbuffer = _TK_runtime.Buffer\n'
         code += '_TK_escape = _TK_escape_g = _TK_runtime.escape\n'
@@ -611,13 +621,13 @@ class PyRootNode(PyComplexNode):
             code += '_TK_parent_template = _TK_runtime.load(%r)\n' % extended
 
         code += 'def _TK_binder(_TK_context):\n'
+        code += '    _TK_original_context = _TK_context.copy()\n'
         code += '    _TK_bind = _TK_runtime.bind(_TK_context)\n'
 
         if extended:
             # an extended template does not have a __main__ (it is inherited)
             code += '    _TK_parent_template.binder_func(_TK_context)\n'
 
-        
         for i in [ 'egettext' ]:
             if i in free_variables:
                 free_variables.add('gettext')
@@ -626,7 +636,6 @@ class PyRootNode(PyComplexNode):
         if 'gettext' in free_variables:
             code += '    def egettext(msg):\n'
             code += '        return _TK_escape(gettext(msg))\n'
-
 
         for i in free_variables:
             code += '    if "%s" in _TK_context:\n' % i
@@ -660,7 +669,8 @@ class PyRootNode(PyComplexNode):
 
         # inject the other top level funcs in the binder
         binder = locator.binder
-        binder.body[1:1] = toplevel_funcs
+        binder.body[2:2] = toplevel_funcs
+        binder.body[2:2] = generator.imports
 
         coalesce_outputs(tree)
         ast.fix_missing_locations(tree)
@@ -688,22 +698,31 @@ class Generator(BaseGenerator):
 
     def __init__(self, ir_tree):
         super(Generator, self).__init__(ir_tree)
-        self.blocks        = []
-        self.top_defs      = []
-        self.extended_href = None
+        self.blocks          = []
+        self.top_defs        = []
+        self.top_level_names = set()
+        self.extended_href   = None
+        self.imports         = []
 
     def add_bind_decorator(self, block):
         binder_call = NameX('_TK_bind')
         decors = [ binder_call ]
         block.decorator_list = decors
 
-    def add_block(self, block):
+    def add_block(self, name, block):
+        self.top_level_names.add(name)
         self.add_bind_decorator(block)
         self.blocks.append(block)
 
-    def add_top_def(self, defblock):
+    def add_top_def(self, name, defblock):
+        self.top_level_names.add(name)
         self.add_bind_decorator(defblock)
         self.top_defs.append(defblock)
 
+    def add_top_level_import(self, name, node):
+        self.top_level_names.add(name)
+        self.imports.append(node)
+
     def make_extended_template(self, href):
         self.extended_href = href
+

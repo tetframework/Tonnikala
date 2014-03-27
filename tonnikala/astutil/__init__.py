@@ -332,7 +332,7 @@ class Return(Statement):
 if __name__ == '__main__':
     forri = For(Name('a'), [ 1, 2, 3 ])
     forri.body += Name('print')(Name('a'))
-   
+
     iffi = If(True)
     iffi.body += forri
 

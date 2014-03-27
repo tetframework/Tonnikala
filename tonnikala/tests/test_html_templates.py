@@ -137,6 +137,10 @@ class TestHtmlTemplates(unittest.TestCase):
         fragment = '<html a="$foo"></html>'
         self.are('<html></html>', fragment, foo=None)
         self.are('<html></html>', fragment, foo=False)
+
+        # these must not be confused with boolean vars :)
+        self.are('<html a="1"></html>', fragment, foo=1)
+        self.are('<html a="0"></html>', fragment, foo=0)
         self.are('<html a="a"></html>', fragment, foo=True)
         self.are('<html a=""></html>', fragment, foo="")
         self.are('<html a="abc"></html>', fragment, foo="abc")

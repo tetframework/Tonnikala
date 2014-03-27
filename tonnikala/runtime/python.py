@@ -64,12 +64,11 @@ Buffer = _TK_buffer
 try:
     from ._buffer import Buffer as _Buffer
 
-    ftn = (False, True, None)
     def Buffer():
         b = _Buffer()
 
         def output_boolean_attr(name, value):
-            if value in ftn:
+            if value is True or value is False or value is None:
                 value and b(' ' + name + '="' + name + '"')
 
                 # skip on false, None

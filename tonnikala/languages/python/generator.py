@@ -5,12 +5,20 @@
 # both python2 and 3
 from __future__ import absolute_import, division, print_function
 
+import warnings
 from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 from tonnikala.languages.python.astalyzer import FreeVarFinder
 from ast import *
 from collections import Iterable
 import ast
 from six import string_types
+
+HAS_ASSERT = False
+try:
+    import sysconfig
+    HAS_ASSERT = bool(sysconfig.get_config_var('Py_DEBUG'))
+except:
+    pass
 
 name_counter = 0
 ALWAYS_BUILTINS = '''
@@ -578,6 +586,28 @@ def coalesce_outputs(tree):
     OutputCoalescer().visit(tree)
 
 
+def remove_locations(node):
+    """
+    When you compile a node tree with compile(), the compiler expects lineno and
+    col_offset attributes for every node that supports them.  This is rather
+    tedious to fill in for generated nodes, so this helper adds these attributes
+    recursively where not already set, by setting them to the values of the
+    parent node.  It works recursively starting at *node*.
+    """
+
+    def _fix(node):
+        if 'lineno' in node._attributes:
+            node.lineno = 1
+
+        if 'col_offset' in node._attributes:
+            node.col_offset = 0
+
+        for child in iter_child_nodes(node):
+            _fix(child)
+
+    _fix(node)
+
+
 class PyRootNode(PyComplexNode):
     def __init__(self):
         super(PyRootNode, self).__init__()
@@ -673,7 +703,10 @@ class PyRootNode(PyComplexNode):
         binder.body[2:2] = generator.imports
 
         coalesce_outputs(tree)
-        ast.fix_missing_locations(tree)
+        if HAS_ASSERT:
+            remove_locations(tree)
+        else:
+            fix_missing_locations(tree)
 
         return tree
 

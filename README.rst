@@ -111,6 +111,25 @@ You can specify a block, or no-argument def to render explicitly:
 
     result = template.render(ctx, funcname='title_block')
 
+Pyramid integration
+-------------------
+
+Include `'tonnikala.pyramid'` into your config to enable Tonnikala. When included, tonnikala adds the following configuration directives:
+
+`add_tonnikala_extensions(*extensions)`
+    Registers tonnikala renderer for these template extensions. By default Tonnikala is not registered as a renderer for any extension.
+    For example: `config.add_tonnikala_extensions('.html', '.tk')` would enable Tonnikala renderer for templates with either of these extensions.
+
+`add_tonnikala_search_paths(*paths)`
+    Adds the given paths to the end of Tonnikala search paths that are searched for templates. These can be absolute paths, or
+    `package.module:directory/subdirectory`-style asset specs. By default no paths are searched explicitly (but you can always
+    use an asset spec for template.
+
+`set_tonnikala_reload(reload)`
+    If `True`, makes tonnikala not cache templates. Default is `False`.
+
+These 3 can also be controlled by `tonnikala.extensions`, `tonnikala.search_paths` and `tonnikala.reload` in .ini settings.
+
 Status
 ======
 
@@ -129,6 +148,7 @@ Alpha, working features are
 * C speedups for both Python 2 and Python 3
 * Importing def blocks from another template: ``py:import``
 * Basic I18N using gettext.
+* Pyramid integration
 
 Upcoming features:
 
@@ -141,8 +161,7 @@ Upcoming features:
 * METAL-like macros
 * Pluggable expression languages akin to Chameleon
 * Even better template inheritance
-* Documentation (started)
-* Pyramid integration
+* Better documentation
 
 Contributors
 ------------

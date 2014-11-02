@@ -23,7 +23,7 @@ extra_kw = dict(features={'speedups': speedups })
 
 setup(
     name='tonnikala',
-    version='0.15',
+    version='0.16',
     description='Python templating engine - the one ton solution',
     author='Antti Haapala',
     author_email='antti@haapala.name',

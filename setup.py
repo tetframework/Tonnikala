@@ -46,6 +46,7 @@ setup(
     """.split(),
     setup_requires=[],
     include_package_data=True,
+    packages=find_packages(),
     test_suite = "tonnikala.tests.test_all",
     tests_require=[],
     **extra_kw

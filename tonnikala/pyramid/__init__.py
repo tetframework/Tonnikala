@@ -41,6 +41,16 @@ class PyramidTonnikalaLoader(tonnikala.loader.FileLoader):
         Resolve the name using the given search paths.
         """
 
+        if ':' in name:
+            try:
+                module, path = name.split(':', 1)
+                name = pkg_resources.resource_filename(module, path)
+                if name and os.path.exists(name):
+                    return name
+
+            except Exception:
+                pass
+
         for module, directory in self.search_paths:
             path = os.path.join(directory, name)
             if module:
@@ -73,7 +83,8 @@ class TonnikalaTemplateRenderer(object):
         * ``request`` (the request object passed to the view).
         """
 
-        compiled = self.loader.load(system['renderer_name'])
+        name = system['renderer_name']
+        compiled = self.loader.load(name)
 
         try:
             system.update(value)

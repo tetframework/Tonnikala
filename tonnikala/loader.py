@@ -132,6 +132,10 @@ class FileLoader(Loader):
         self.paths.extend(a)
 
     def resolve(self, name):
+        if os.path.isabs(name):
+            if os.path.exists(name):
+                return name
+
         for i in self.paths:
             path = os.path.abspath(os.path.join(i, name))
             if os.path.exists(path):

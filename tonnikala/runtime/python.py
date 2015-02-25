@@ -62,25 +62,13 @@ class _TK_buffer(object):
 Buffer = _TK_buffer
 
 try:
-    from ._buffer import Buffer as _Buffer
-
-    def Buffer():
-        b = _Buffer()
-
-        def output_boolean_attr(name, value):
-            if value is True or value is False or value is None:
-                value and b(' ' + name + '="' + name + '"')
-
-                # skip on false, None
-                return
-
-            b(' ' + name + '="', escape(value), '"')
-
-        b.output_boolean_attr = output_boolean_attr
-
-        return b
-except:
-    pass
+    from ._buffer import Buffer as _Buffer, _set_escape_method
+    _set_escape_method(escape)
+    Buffer = _Buffer
+    del _Buffer
+    del _set_escape_method
+except Exception as e:
+    print(e)
 
 
 def output_attrs(values):

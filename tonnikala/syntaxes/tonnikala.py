@@ -25,27 +25,26 @@ from tonnikala.syntaxes.docparser import TonnikalaXMLParser, TonnikalaHTMLParser
 
 
 class TonnikalaIRGenerator(BaseDOMIRGenerator):
+    control_prefix = 'py:'
+
     TRANSLATABLE_ATTRS = set([
         'title',
         'alt',
         'placeholder',
     ])
-    def __init__(self, *a, **kw):
-        super(TonnikalaIRGenerator, self).__init__(*a, **kw)
-        self.state['translatable'] = True
 
+    def __init__(self, translatable=True, *a, **kw):
+        if 'control_prefix' in kw:
+            self.control_prefix = kw.pop('control_prefix') + ':'
+
+        super(TonnikalaIRGenerator, self).__init__(*a, **kw)
+        self.state['translatable'] = translatable
 
     def is_translatable(self):
-        return bool(self.state.translatable.get('translatable'))
-
+        return bool(self.state.get('translatable'))
 
     def set_translatable(self, is_translatable):
         self.push_state()['translatable'] = is_translatable
-
-    def __init__(self, translatable=True, **kw):
-        super(TonnikalaIRGenerator, self).__init__(**kw)
-
-        self.translate = translatable
 
     def get_guard_expression(self, dom_node):
         return self.grab_and_remove_control_attr(dom_node, 'strip')
@@ -62,11 +61,11 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
 
     # noinspection PyMethodMayBeStatic
     def is_control_name(self, name, to_match):
-        return 'py:' + to_match == name
+        return self.control_prefix + to_match == name
 
     # noinspection PyMethodMayBeStatic
     def grab_and_remove_control_attr(self, dom_node, name):
-        name = 'py:' + name
+        name = self.control_prefix + name
         if dom_node.hasAttribute(name):
             value = dom_node.getAttribute(name)
             dom_node.removeAttribute(name)
@@ -140,7 +139,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         guard_expression = self.get_guard_expression(dom_node)
 
 
-        # on py:strip="" the expression is to be set to "1"
+        # on :strip="" the expression is to be set to "1"
         if guard_expression is not None and not guard_expression.strip():
             guard_expression = '1'
 
@@ -197,7 +196,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             ir_node = handle_text_node(
                 dom_node.nodeValue,
                 is_cdata=self.is_cdata,
-                translatable=self.translate
+                translatable=self.is_translatable()
             )
             return ir_node
 
@@ -223,6 +222,16 @@ def parse(filename, string):
     parser = TonnikalaHTMLParser(filename, string)
     parsed = parser.parse()
     generator = TonnikalaIRGenerator(document=parsed, translatable=True)
+    tree = generator.generate_tree()
+    tree = generator.flatten_element_nodes(tree)
+    tree = generator.merge_text_nodes(tree)
+    return tree
+
+
+def parse_js(filename, string):
+    parser = TonnikalaHTMLParser(filename, string)
+    parsed = parser.parse()
+    generator = TonnikalaIRGenerator(document=parsed, translatable=False, control_prefix='js')
     tree = generator.generate_tree()
     tree = generator.flatten_element_nodes(tree)
     tree = generator.merge_text_nodes(tree)

@@ -43,6 +43,7 @@ setup(
     install_requires="""
         six>=1.4.1
         markupsafe>=0.18
+        slimit>=0.8.1
     """.split(),
     setup_requires=[],
     include_package_data=True,

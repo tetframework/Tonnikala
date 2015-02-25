@@ -49,7 +49,7 @@ function tmpl(__tonnikala__) {
 
         });
 
-        var foo = function foo(arg, arg2) {
+        function foo(arg, arg2) {
 
             var __tonnikala__output__ = __tonnikala__Buffer();
 
@@ -59,7 +59,7 @@ function tmpl(__tonnikala__) {
 
             return __tonnikala__output__;
 
-        };
+        }
 
         __tonnikala__output__('</html>');
 
@@ -67,7 +67,7 @@ function tmpl(__tonnikala__) {
 
     };
 
-}
+};
 
 // Should not throw
 console.log(String(tmpl(tkr)({cls: "asdf", foobar: ['a', 'b', 'c']})));

@@ -119,6 +119,10 @@ define([], function () {
         return rv;
     }
 
+    function foreach(list, fn) {
+        list.forEach(fn);
+    }
+
     return {
 
         // A magical factory for creating a callable with attrs
@@ -137,7 +141,9 @@ define([], function () {
 
         outputAttrs: outputAttrs,
 
-        escape: doEscape
+        escape: doEscape,
+
+        foreach: foreach
 
     };
 

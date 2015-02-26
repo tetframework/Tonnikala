@@ -1,6 +1,6 @@
 from tonnikala import expr
 from tonnikala.languages import javascript
-from tonnikala.syntaxes.tonnikala import parse as parse_tonnikala
+from tonnikala.syntaxes.tonnikala import parse as parse_tonnikala, parse_js as parse_js_tonnikala
 from tonnikala.syntaxes.chameleon import parse as parse_chameleon
 from tonnikala.syntaxes.jinja2 import parse as parse_jinja2
 from os import path
@@ -8,6 +8,13 @@ from tonnikala.languages.python.generator import Generator as PythonGenerator
 from tonnikala.languages.javascript.generator import Generator as JavascriptGenerator
 from tonnikala.runtime import python
 import six
+import codecs
+import os
+from errno import ENOENT
+import time
+
+
+MIN_CHECK_INTERVAL = 0.25
 
 if six.PY3:
     import builtins as __builtin__
@@ -66,9 +73,10 @@ class Template(object):
 
 
 parsers = {
-    'tonnikala': parse_tonnikala,
-    'chameleon': parse_chameleon,
-    'jinja2':    parse_jinja2
+    'tonnikala':    parse_tonnikala,
+    'js_tonnikala': parse_js_tonnikala,
+    'chameleon':    parse_chameleon,
+    'jinja2':       parse_jinja2
 }
 
 
@@ -111,13 +119,6 @@ class Loader(object):
         template_func = glob['_TK_binder']
         return Template(template_func)
 
-
-import codecs
-import os
-from errno import ENOENT
-import time
-
-MIN_CHECK_INTERVAL = 0.25
 
 class FileLoader(Loader):
     def __init__(self, paths=[], debug=False, syntax='tonnikala'):
@@ -183,3 +184,29 @@ class FileLoader(Loader):
 
         self.cache[name] = template
         return template
+
+
+class JSLoader(object):
+    def __init__(self, debug=False, syntax='js_tonnikala', minify=False):
+        self.debug = debug
+        self.syntax = syntax
+        self.minify = minify
+
+    def load_string(self, string, filename="<string>"):
+        parser_func = parsers.get(self.syntax)
+        if not parser_func:
+            raise ValueError("Invalid parser syntax %s: valid syntaxes: %r"
+                % sorted(parsers.keys()))
+
+        tree = parser_func(filename, string)
+        code = JavascriptGenerator(tree).generate()
+
+        if self.debug:
+            print("JS template output code for %s" % filename)
+            print(code)
+
+        if self.minify:
+            from slimit import minify
+            code = minify(code, mangle=True)
+
+        return code

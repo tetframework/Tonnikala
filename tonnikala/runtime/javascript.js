@@ -123,8 +123,15 @@ define([], function () {
         list.forEach(fn);
     }
 
-    return {
+    function ctxbind(ctx, name) {
+        if (name in ctx) {
+            return ctx[name];
+        }
 
+        return window[name];
+    }
+
+    return {
         // A magical factory for creating a callable with attrs
         Buffer: function () {
             var buffer = new Buffer(),
@@ -143,8 +150,9 @@ define([], function () {
 
         escape: doEscape,
 
-        foreach: foreach
+        foreach: foreach,
 
+        ctxbind: ctxbind
     };
 
 });

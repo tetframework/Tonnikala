@@ -40,6 +40,7 @@ setup(
         "Topic :: Text Processing :: Markup",
         "Topic :: Text Processing :: Markup :: HTML"
     ],
+    scripts=['bin/tonnikala-compile-jstemplate'],
     install_requires="""
         six>=1.4.1
         markupsafe>=0.18

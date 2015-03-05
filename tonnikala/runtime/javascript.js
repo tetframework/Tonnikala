@@ -32,6 +32,10 @@ define([], function () {
         appendTo: function () {
             var fragment = $(this.template().toString());
             return fragment.appendTo.apply(fragment, arguments);
+        },
+        prependTo: function () {
+            var fragment = $(this.template().toString());
+            return fragment.prependTo.apply(fragment, arguments);
         }
     };
 

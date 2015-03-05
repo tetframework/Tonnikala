@@ -1,6 +1,9 @@
 Tonnikala
 =========
 
+.. image:: https://next.travis-ci.org/ztane/Tonnikala.svg?branch=master
+    :target: https://next.travis-ci.org/ztane/Tonnikala
+
 Tonnikala is the latest reincarnation among the Python templating 
 languages that feed on Kid-inspired XML syntax. It rejects the Kid 
 and Genshi notions of tagstreams and trees, and follows in 

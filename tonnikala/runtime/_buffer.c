@@ -2,8 +2,6 @@
 #include <structmember.h>
 #include <stdio.h>
 
-static PyModuleDef buffermodule;
-
 struct Buffer_module_state {
     PyObject *escape;
     PyObject *equals_quot;
@@ -12,6 +10,8 @@ struct Buffer_module_state {
 };
 
 #if PY_MAJOR_VERSION >= 3
+
+static PyModuleDef buffermodule;
 
 #define GETSTATE(m) ((struct Buffer_module_state*)PyModule_GetState(m))
 #define IS_PY3 1
@@ -52,7 +52,6 @@ Buffer_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #if IS_PY3
         PyObject* module = PyState_FindModule(&buffermodule);
 #else
-        PyObject* module = NULL;
 #endif
         self->buffer_list = PyList_New(0);
         if (self->buffer_list == NULL) {
@@ -120,7 +119,7 @@ _do_append(Buffer *self, PyObject *args) {
 }
 
 static PyObject *
-Buffer_call(Buffer *self, PyObject *args, PyObject *other)
+Buffer_call(PyObject *self, PyObject *args, PyObject *other)
 {
     if (other != NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -129,11 +128,11 @@ Buffer_call(Buffer *self, PyObject *args, PyObject *other)
         return NULL;
     }
 
-    return _do_append(self, args);
+    return _do_append((Buffer*)self, args);
 }
 
 static PyObject *
-Buffer_output_boolean_attr(Buffer *self, PyObject *args, PyObject *other) {
+Buffer_output_boolean_attr(Buffer *self, PyObject *args) {
     ternaryfunc call;
     Py_ssize_t tuple_size;
 
@@ -218,7 +217,12 @@ Buffer_join(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
-Buffer__html__(PyObject* self) {
+Buffer_str(PyObject *self) {
+    return Buffer_join(self, NULL);
+}
+
+static PyObject *
+Buffer__html__(PyObject* self, PyObject *arg) {
     Py_INCREF(self);
     return self;
 }
@@ -254,12 +258,12 @@ static PyMemberDef Buffer_members[] = {
 };
 
 static PyMethodDef Buffer_methods[] = {
-    { "__html__", (PyCFunction)Buffer__html__, METH_NOARGS,
+    { "__html__", Buffer__html__, METH_NOARGS,
         "Returns self unmodified" },
-    { "join", (PyCFunction)Buffer_join, METH_NOARGS,
+    { "join", Buffer_join, METH_NOARGS,
         "Returns the contents of the buffer as a string" },
     { "output_boolean_attr", (PyCFunction)Buffer_output_boolean_attr, METH_VARARGS,
-        "Outputs a boolean or string attribute" },
+        "Outputs a bool	ean or string attribute" },
     {NULL}  /* Sentinel */
 };
 
@@ -285,8 +289,8 @@ static PyTypeObject buffer_BufferType = {
     0,                         /* tp_as_sequence */
     0,                         /* tp_as_mapping */
     0,                         /* tp_hash  */
-    (ternaryfunc)Buffer_call,  /* tp_call */
-    (PyCFunction)Buffer_join,  /* tp_str */
+    Buffer_call,               /* tp_call */
+    Buffer_str,                /* tp_str (is a reprfunc) */
     0,                         /* tp_getattro */
     0,                         /* tp_setattro */
     0,                         /* tp_as_buffer */

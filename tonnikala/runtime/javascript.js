@@ -19,6 +19,24 @@ define([], function () {
 
     };
 
+    function Renderer(template) {
+        this.template = template;
+    }
+
+    Renderer.prototype = {
+        html: function () {
+            return this.template();
+        },
+        toString: function () {
+            return this.template();
+        },
+        appendTo: function () {
+            var fragment = $(this.toString());
+            return fragment.appendTo.apply(fragment, arguments);
+        }
+    };
+
+
     function doEscape(s) {
         if (s && s.html) {
             return s.html();
@@ -151,6 +169,10 @@ define([], function () {
         escape: doEscape,
 
         foreach: foreach,
+
+        renderer: Renderer,
+
+        literal: function (val) { return new Markup(String(val)); },
 
         ctxbind: ctxbind
     };

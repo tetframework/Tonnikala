@@ -19,7 +19,7 @@ struct Buffer_module_state {
 #else
 
 #define GETSTATE(m) (&_state)
-static struct module_state _state;
+static struct Buffer_module_state _state;
 
 #define IS_PY3 0
 #endif
@@ -341,7 +341,7 @@ init_buffer(void) {
     PyObject *m;
     m = Py_InitModule3("_buffer", Buffer_module_methods, BUFFER_DOC);
 
-#define ERROR_RET;
+#define ERROR_RET
 #endif
 
     if (m == NULL)

@@ -232,7 +232,7 @@ class JsRootNode(JsComplexNode):
         yield '        literal = __tonnikala__.literal,\n'
         yield '        __tonnikala__ctxbind = __tonnikala__.ctxbind;\n'
         yield '    return function (__tonnikala__context) {\n'
-        yield '        return __tonnikala__.renderer(function() {\n'
+        yield '        return new __tonnikala__.renderer(function() {\n'
         yield '            var ' + ',\n                '.join(var_items) + ';\n';
 
         yield code

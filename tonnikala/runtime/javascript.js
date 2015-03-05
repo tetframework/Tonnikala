@@ -1,5 +1,4 @@
 define([], function () {
-
     'use strict';
 
     var map = Array.prototype.map;
@@ -25,17 +24,16 @@ define([], function () {
 
     Renderer.prototype = {
         html: function () {
-            return this.template();
+            return this.template().toString();
         },
         toString: function () {
-            return this.template();
+            return this.template().toString();
         },
         appendTo: function () {
-            var fragment = $(this.toString());
+            var fragment = $(this.template().toString());
             return fragment.appendTo.apply(fragment, arguments);
         }
     };
-
 
     function doEscape(s) {
         if (s && s.html) {

@@ -6,8 +6,8 @@ define([], function () {
     function Markup(s) {
         this.s = s;
     }
-    Markup.prototype = {
 
+    Markup.prototype = {
         html: function () {
             return this;
         },
@@ -15,26 +15,28 @@ define([], function () {
         toString: function () {
             return this.s;
         }
-
     };
 
-    function Renderer(template) {
-        this.template = template;
+    function BoundTemplate(templateContext) {
+        this.templateContext = templateContext;
     }
 
-    Renderer.prototype = {
+    BoundTemplate.prototype = {
+        render: function () {
+            return this.templateContext.__main__().toString();
+        },
         html: function () {
-            return this.template().toString();
+            return this.render();
         },
         toString: function () {
-            return this.template().toString();
+            return this.render();
         },
         appendTo: function () {
-            var fragment = $(this.template().toString());
+            var fragment = $(this.render());
             return fragment.appendTo.apply(fragment, arguments);
         },
         prependTo: function () {
-            var fragment = $(this.template().toString());
+            var fragment = $(this.render());
             return fragment.prependTo.apply(fragment, arguments);
         }
     };
@@ -143,8 +145,14 @@ define([], function () {
         list.forEach(fn);
     }
 
-    function ctxbind(ctx, name) {
-        if (name in ctx) {
+    function addToContext(ctx, name, value) {
+        if (! ctx.hasOwnProperty(name)) {
+            ctx[name] = value;
+        }
+    }
+
+    function bindFromContext(ctx, name) {
+        if (ctx.hasOwnProperty(name)) {
             return ctx[name];
         }
 
@@ -172,11 +180,13 @@ define([], function () {
 
         foreach: foreach,
 
-        renderer: Renderer,
+        BoundTemplate: BoundTemplate,
 
         literal: function (val) { return new Markup(String(val)); },
 
-        ctxbind: ctxbind
+        addToContext: addToContext,
+
+        bindFromContext: bindFromContext
     };
 
 });

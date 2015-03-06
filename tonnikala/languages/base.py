@@ -30,11 +30,11 @@ class LanguageNode(object):
 
 
 class ComplexNode(LanguageNode):
-    def indented_children(self, increment=1):
+    def indented_children(self, generator, increment=1):
         child_indent = self.indent_level + increment
         for i in self.children:
             i.set_indent_level(child_indent)
-            for j in i.generate():
+            for j in i.generate(generator):
                 yield j
 
 

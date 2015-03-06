@@ -5,7 +5,7 @@ from tonnikala.syntaxes.chameleon import parse as parse_chameleon
 from tonnikala.syntaxes.jinja2 import parse as parse_jinja2
 from os import path
 from tonnikala.languages.python.generator import Generator as PythonGenerator
-from tonnikala.languages.javascript.generator import Generator as JavascriptGenerator
+from tonnikala.languages.javascript.newgenerator import Generator as JavascriptGenerator
 from tonnikala.runtime import python
 import six
 import codecs
@@ -110,13 +110,13 @@ class Loader(object):
         runtime.loader = self
 
         glob = {
-            '_TK_runtime': runtime,
+            '__TK__runtime': runtime,
             'literal':     lambda x: x
         }
 
         compiled = compile(code, '<string>', 'exec')
         exec(compiled, glob, glob)
-        template_func = glob['_TK_binder']
+        template_func = glob['__TK__binder']
         return Template(template_func)
 
 
@@ -199,7 +199,7 @@ class JSLoader(object):
                 % sorted(parsers.keys()))
 
         tree = parser_func(filename, string)
-        code = JavascriptGenerator(tree).generate()
+        code = JavascriptGenerator(tree).generate_ast()
 
         if self.debug:
             print("JS template output code for %s" % filename)

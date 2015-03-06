@@ -5,6 +5,8 @@ __docformat__ = "epytext"
 
 """XML parser"""
 
+import sys
+
 import six
 from six.moves import html_entities, html_parser
 from six import text_type
@@ -16,9 +18,14 @@ from xml.dom import minidom as dom
 
 impl = dom.getDOMImplementation(' ')
 
+html_parser_extra_kw = {}
+if sys.version_info >= (3, 4):
+    html_parser_extra_kw['convert_charrefs'] = False
+
 
 class TonnikalaXMLParser(sax.ContentHandler):
     def __init__(self, filename, source):
+        super(TonnikalaXMLParser, self).__init__()
         self.filename = filename
         self.source = source
         self.doc = None
@@ -129,7 +136,7 @@ class TonnikalaXMLParser(sax.ContentHandler):
 # object to force a new-style class!
 class TonnikalaHTMLParser(html_parser.HTMLParser, object):
     def __init__(self, filename, source):
-        super(TonnikalaHTMLParser, self).__init__()
+        super(TonnikalaHTMLParser, self).__init__(**html_parser_extra_kw)
         self.filename = filename
         self.source = source
         self.doc = None

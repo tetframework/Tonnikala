@@ -1,17 +1,27 @@
 # -*- coding: utf-8 -*-
 
-# notice: this module cannot be sanely written to take use of
-# unicode_literals, bc some of the arguments need to be str on
-# both python2 and 3
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
+import json
 import warnings
 from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
-from tonnikala.languages.python.astalyzer import FreeVarFinder
-from ast import *
+
+from .generator import FreeVariableAnalyzerVisitor
+from slimit.parser import Parser
+from slimit import ast
+from slimit.ast import *
 from collections import Iterable
-import ast
 from six import string_types
+from slimit.scope import SymbolTable
+from slimit.parser import Parser
+from slimit.visitors.scopevisitor import (
+    Visitor,
+    ScopeTreeVisitor,
+    fill_scope_references,
+    mangle_scope_tree,
+    NameManglerVisitor,
+    )
+
 
 HAS_ASSERT = False
 try:
@@ -22,54 +32,112 @@ except:
 
 name_counter = 0
 ALWAYS_BUILTINS = '''
-    False
-    True
-    None
+    undefined
 '''.split()
 
 
+def Str(s):
+    if not isinstance(s, str):
+        raise TypeError("s must be a string")
+
+    return String(json.dumps(str(s)))
+
+def Name(id, ctx=None):
+    return Identifier(id)
+
+def Load():
+    pass
+
+Store = Load
+Expr = ExprStatement
+
+
+def fix_missing_locations(tree):
+    pass
+
+def Attribute(value, attr, ctx=None):
+    return DotAccessor(value, Name(attr))
+
+
 def SimpleCall(func, args=None):
-    return Call(func=func, args=args or [], keywords=[], starargs=None, kwargs=None)
+    # bad naming?
+    return FunctionCall(identifier=func, args=args)
 
+JSAssign = Assign
+def Assign(targets, value):
+    if len(targets) != 1:
+        raise TypeError("Only single assignments supported")
 
-try:
-    unicode
-    def create_argument_list(arguments):
-        return [ Name(id=id, ctx=Param()) for id in arguments ]
+    return JSAssign(op='=', left=targets[0], right=value)
 
-except:
-    def create_argument_list(arguments):
-        return [ arg(arg=id, annotation=None) for id in arguments ]
+def AssignNewVariable(targets, value):
+    return VarStatement([VarDecl(targets[0], value)])
+
+JSReturn = Return
+def Return(value=None):
+    return JSReturn(expr=value)
+
 
 def SimpleFunctionDef(name, arguments=()):
-    arguments = create_argument_list(arguments)
-    return FunctionDef(
-        name=name,
-        args=ast.arguments(
-            args=arguments,
-            vararg=None,
-            varargannotation=None,
-            kwonlyargs=[],
-            kwarg=None,
-            kwargannotation=None,
-            defaults=[],
-            kw_defaults=[]),
-        body=[Pass()],
-        decorator_list=[],
-        returns=None
+    arguments = list(arguments)
+    return FuncDecl(
+        identifier=Name(name),
+        parameters=arguments,
+        elements=[]
     )
+
+
+def assign_func_body(funcdecl, new_body=None):
+    funcdecl.elements = [] if new_body is None else new_body 
+    return new_body
+
+
+def get_body(funcdecl):
+    return funcdecl.elements
 
 
 def NameX(id, store=False):
     return Name(id=id, ctx=Load() if not store else Store())
 
 
+class FreeVarFinder(object):
+    def __init__(self, tree):
+        self.tree = tree
+
+    @classmethod
+    def for_ast(cls, tree):
+        return cls(tree)
+
+    def get_free_variables(self):
+        sym_table = SymbolTable()
+        visitor = ScopeTreeVisitor(sym_table)
+        visitor.visit(self.tree)
+        fill_scope_references(self.tree)
+
+        free_var_analysis = FreeVariableAnalyzerVisitor()
+        free_var_analysis.visit(self.tree)
+        return free_var_analysis.free_variables
+
+
+def parse(expression, mode='eval'):
+    if mode == 'eval':
+        return Parser().parse(expression).children()[0].expr
+    elif mode == 'exec':
+        return Parser().parse(expression).children()
+    
+    raise TypeError("Only eval, exec modes allowed")
+
+
 def get_expression_ast(expression, mode='eval'):
     if not isinstance(expression, string_types):
         return expression
 
-    tree = ast.parse(expression, mode=mode)
-    return tree.body
+    tree = parse(expression, mode=mode)
+    return tree
+
+
+def get_func_name(func):
+    return func.identifier.value
 
 
 def gen_name():
@@ -92,9 +160,8 @@ def static_expr_to_bool(expr):
         return None
 
 
-class PythonNode(LanguageNode):
+class JavascriptNode(LanguageNode):
     is_top_level = False
-
 
     def generate_output_ast(self, code, generator, parent, escape=False):
         func = Name(id='__TK__output', ctx=Load())
@@ -109,10 +176,9 @@ class PythonNode(LanguageNode):
             rv.append(e)
         return rv
 
-
     def make_buffer_frame(self, body):
         new_body = []
-        new_body.append(Assign(
+        new_body.append(AssignNewVariable(
             targets=[
                  NameX('__TK__output', store=True),
             ],
@@ -128,7 +194,7 @@ class PythonNode(LanguageNode):
 
     def make_function(self, name, body, add_buffer=False, arguments=()):
         func = SimpleFunctionDef(name, arguments=arguments)
-        new_body = func.body = [ ]
+        new_body = assign_func_body(func, [])
 
         if add_buffer:
             new_body.extend(self.make_buffer_frame(body))
@@ -152,9 +218,9 @@ class PythonNode(LanguageNode):
         return rv
 
 
-class PyOutputNode(PythonNode):
+class JsOutputNode(JavascriptNode):
     def __init__(self, text):
-        super(PyOutputNode, self).__init__()
+        super(JsOutputNode, self).__init__()
         self.text = text
 
 
@@ -170,9 +236,9 @@ class PyOutputNode(PythonNode):
         return self.generate_output_ast(self.get_expression(), generator, parent)
 
 
-class PyTranslatableOutputNode(PyOutputNode):
+class JsTranslatableOutputNode(JsOutputNode):
     def __init__(self, text, needs_escape=False):
-        super(PyTranslatableOutputNode, self).__init__(text)
+        super(JsTranslatableOutputNode, self).__init__(text)
         self.needs_escape = needs_escape
 
 
@@ -192,9 +258,9 @@ class PyTranslatableOutputNode(PyOutputNode):
         return expr
 
 
-class PyExpressionNode(PythonNode):
+class JsExpressionNode(JavascriptNode):
     def __init__(self, expression, tokens):
-        super(PyExpressionNode, self).__init__()
+        super(JsExpressionNode, self).__init__()
         self.expr = expression
         self.tokens = tokens
 
@@ -218,9 +284,9 @@ class PyExpressionNode(PythonNode):
         return self.generate_output_ast(self.get_expression(), generator, parent)
 
 
-class PyCodeNode(PythonNode):
+class JsCodeNode(JavascriptNode):
     def __init__(self, source):
-        super(PyCodeNode, self).__init__()
+        super(JsCodeNode, self).__init__()
         self.source = source
 
     def generate_ast(self, generator, parent):
@@ -247,7 +313,7 @@ def coalesce_strings(args):
     return rv
 
 
-class PyComplexNode(ComplexNode, PythonNode):
+class JsComplexNode(ComplexNode, JavascriptNode):
     def generate_child_ast(self, generator, parent_for_children):
         rv = []
         for i in self.children:
@@ -256,9 +322,9 @@ class PyComplexNode(ComplexNode, PythonNode):
         return rv
 
 
-class PyIfNode(PyComplexNode):
+class JsIfNode(JsComplexNode):
     def __init__(self, expression):
-        super(PyIfNode, self).__init__()
+        super(JsIfNode, self).__init__()
         self.expression = expression
 
 
@@ -280,17 +346,17 @@ class PyIfNode(PyComplexNode):
         return [ node ]
 
 
-def PyUnlessNode(self, expression):
+def JsUnlessNode(self, expression):
     expression = get_expression_ast(expression)
     expression = UnaryOp(op=Not(), operand=expression)
-    return PyIfNode(expression)
+    return JsIfNode(expression)
 
 
-class PyImportNode(PythonNode):
+class JsImportNode(JavascriptNode):
     def __init__(self, href, alias):
-        super(PyImportNode, self).__init__()
-        self.href = href
+        super(JsImportNode, self).__init__()
         self.alias = alias
+        self.href = href
 
 
     def generate_ast(self, generator, parent):
@@ -299,15 +365,16 @@ class PyImportNode(PythonNode):
             value =
                 SimpleCall(
                     func=
-                        Attribute(value=NameX('__TK__runtime', store=False),
-                                  attr='import_defs', ctx=Load()),
+                        Attribute(value=NameX('__TK__', store=False),
+                                  attr='importDefs', ctx=Load()),
                     args=[
-                        NameX('__TK__original_context'),
+                        NameX('__TK__context'),
                         Str(s=self.href)
                     ]
                 )
         )
 
+        generator.add_import_source(self.href)
         if parent.is_top_level:
             generator.add_top_level_import(str(self.alias), node)
             return []
@@ -315,9 +382,9 @@ class PyImportNode(PythonNode):
         return [ node ]
 
 
-class PyAttributeNode(PyComplexNode):
+class JsAttributeNode(JsComplexNode):
     def __init__(self, name, value):
-        super(PyAttributeNode, self).__init__()
+        super(JsAttributeNode, self).__init__()
         self.name = name
 
 
@@ -331,11 +398,11 @@ class PyAttributeNode(PyComplexNode):
 
     def generate_ast(self, generator, parent):
         if len(self.children) == 1 and \
-                isinstance(self.children[0], PyExpressionNode):
+                isinstance(self.children[0], JsExpressionNode):
 
             # special case, the attribute contains a single
             # expression, these are handled by
-            # __TK__output.output_boolean_attr,
+            # _TK_output.output_boolean_attr,
             # given the name, and unescaped expression!
             return [ Expr(SimpleCall(
                 func=Attribute(
@@ -359,9 +426,9 @@ class PyAttributeNode(PyComplexNode):
         )
 
 
-class PyAttrsNode(PythonNode):
+class JsAttrsNode(JavascriptNode):
     def __init__(self, expression):
-        super(PyAttrsNode, self).__init__()
+        super(JsAttrsNode, self).__init__()
         self.expression = expression
 
 
@@ -376,21 +443,23 @@ class PyAttrsNode(PythonNode):
         return self.generate_output_ast(output, generator, parent)
 
 
-class PyForNode(PyComplexNode):
+class JsForNode(JsComplexNode):
     def __init__(self, vars, expression):
-        super(PyForNode, self).__init__()
+        super(JsForNode, self).__init__()
         self.vars = vars
         self.expression = expression
 
 
     def generate_contents(self, generator, parent):
         body = get_expression_ast(
-            "for %s in %s: pass" %
-            (self.vars, self.expression),
+            "__TK__foreach(%s, function (%s) { });" %
+            (self.expression, self.vars),
             'exec'
         )
-        for_node      = body[0]
-        for_node.body = self.generate_child_ast(generator, self)
+
+        for_node   = body[0]
+        func_frame = for_node.expr.args[1]
+        func_frame.elements = self.generate_child_ast(generator, self)
         return [ for_node ]
 
 
@@ -399,35 +468,34 @@ class PyForNode(PyComplexNode):
         return self.generate_contents(generator, parent)
 
 
-class PyDefineNode(PyComplexNode):
+class JsDefineNode(JsComplexNode):
     def __init__(self, funcspec):
-        super(PyDefineNode, self).__init__()
+        super(JsDefineNode, self).__init__()
         if '(' not in funcspec:
             funcspec += '()'
 
         self.funcspec = funcspec
-        self.def_clause = "def %s:" % self.funcspec
-
 
     def generate_ast(self, generator, parent):
         body = get_expression_ast(
-            "def %s:pass" % self.funcspec,
+            "function %s{}" % self.funcspec,
             "exec"
         )
+
         def_node = body[0]
-        def_node.body = self.make_buffer_frame(
+        assign_func_body(def_node, self.make_buffer_frame(
             self.generate_child_ast(generator, self),
-        )
+        ))
 
         # move the function out of the closure
         if parent.is_top_level:
-            generator.add_top_def(def_node.name, def_node)
+            generator.add_top_def(get_func_name(def_node), def_node)
             return []
 
         return [ def_node ]
 
 
-class PyComplexExprNode(PyComplexNode):
+class JsComplexExprNode(JsComplexNode):
     def get_expressions(self):
         rv = []
         for i in self.children:
@@ -444,9 +512,9 @@ class PyComplexExprNode(PyComplexNode):
         return self.generate_output_ast(self.get_expressions(), generator, parent)
 
 
-class PyBlockNode(PyComplexNode):
+class JsBlockNode(JsComplexNode):
     def __init__(self, name):
-        super(PyBlockNode, self).__init__()
+        super(JsBlockNode, self).__init__()
         if not isinstance(name, str):
             name = name.encode('UTF-8') # python 2
 
@@ -454,7 +522,7 @@ class PyBlockNode(PyComplexNode):
 
 
     def generate_ast(self, generator, parent):
-        is_extended = isinstance(parent, PyExtendsNode)
+        is_extended = isinstance(parent, JsExtendsNode)
 
         body = get_expression_ast(
             "def %s():pass" % self.name,
@@ -478,11 +546,11 @@ class PyBlockNode(PyComplexNode):
             return [ ]
 
 
-class PyExtendsNode(PyComplexNode):
+class JsExtendsNode(JsComplexNode):
     is_top_level = True
 
     def __init__(self, href):
-        super(PyExtendsNode, self).__init__()
+        super(JsExtendsNode, self).__init__()
         self.href = href
 
     def generate_ast(self, generator, parent=None):
@@ -509,6 +577,8 @@ def coalesce_outputs(tree):
 
         __output__('foobar', baz, 'xyzzy')
     """
+
+    return tree
 
     coalesce_all_outputs = True
     if coalesce_all_outputs:
@@ -550,8 +620,8 @@ def coalesce_outputs(tree):
 
         def check(self, node):
             """
-            Coalesce __TK__output(__TK__escape(literal(x))) into
-            __TK__output(x).
+            Coalesce _TK_output(_TK_escape(literal(x))) into
+            _TK_output(x).
             """
             if not ast_equals(node.func, NameX('__TK__output')):
                 return
@@ -586,32 +656,9 @@ def coalesce_outputs(tree):
     OutputCoalescer().visit(tree)
 
 
-def remove_locations(node):
-    """
-    When you compile a node tree with compile(), the compiler expects lineno and
-    col_offset attributes for every node that supports them.  This is rather
-    tedious to fill in for generated nodes, so this helper adds these attributes
-    recursively where not already set, by setting them to the values of the
-    parent node.  It works recursively starting at *node*.
-    """
-
-    def _fix(node):
-        if 'lineno' in node._attributes:
-            node.lineno = 1
-
-        if 'col_offset' in node._attributes:
-            node.col_offset = 0
-
-        for child in iter_child_nodes(node):
-            _fix(child)
-
-    _fix(node)
-
-
-class PyRootNode(PyComplexNode):
+class JsRootNode(JsComplexNode):
     def __init__(self):
-        super(PyRootNode, self).__init__()
-
+        super(JsRootNode, self).__init__()
 
     is_top_level = True
 
@@ -620,13 +667,12 @@ class PyRootNode(PyComplexNode):
 
         extended = generator.extended_href
 
-        toplevel_funcs = generator.blocks + generator.top_defs
         # do not generate __main__ for extended templates
         if not extended:
             main_func = self.make_function('__main__', main_body, add_buffer=True)
-            generator.add_bind_decorator(main_func)
+            generator.add_top_def('__main__', main_func)
 
-            toplevel_funcs = [ main_func ] + toplevel_funcs
+        toplevel_funcs = generator.blocks + generator.top_defs
 
         # analyze the set of free variables
         free_variables = set()
@@ -634,53 +680,62 @@ class PyRootNode(PyComplexNode):
             fv_info = FreeVarFinder.for_ast(i)
             free_variables.update(fv_info.get_free_variables())
 
-        # discard __TK__ variables, always builtin names True, False, None
+        free_variables |= generator.top_level_names
+
+        # discard _TK_ variables, always builtin names undefined
         # from free variables.
         for i in list(free_variables):
             if i.startswith('__TK__') or i in ALWAYS_BUILTINS:
                 free_variables.discard(i)
 
         # discard the names of toplevel funcs from free variables
-        free_variables.difference_update(generator.top_level_names)
+        # free_variables.difference_update(generator.top_level_names)
 
-        code  = '__TK__mkbuffer = __TK__runtime.Buffer\n'
-        code += '__TK__escape = __TK__escape_g = __TK__runtime.escape\n'
-        code += '__TK__output_attrs = __TK__runtime.output_attrs\n'
+        modules = ['tonnikala/runtime.js'] + list(generator.import_sources)
+
+        # var_statement_vars = set(free_variables)|set(
+
+        code = 'define(%s, function(__TK__) {\n' % json.dumps(modules)
+        code += '    "use strict";\n'
+        code += '    var __TK__mkbuffer = __TK__.Buffer,\n'
+        code += '        __TK__escape = __TK__.escape,\n'
+        code += '        __TK__foreach = __TK__.foreach,\n'
+        code += '        literal = __TK__.literal,\n'
 
         if extended:
-            code += '__TK__parent_template = __TK__runtime.load(%r)\n' % extended
+            code += '        __TK__parent_template = __TK__.load(%s)\n' % json.dumps(extended)
 
-        code += 'def __TK__binder(__TK__context):\n'
-        code += '    __TK__original_context = __TK__context.copy()\n'
-        code += '    __TK__bind = __TK__runtime.bind(__TK__context)\n'
+        code += '        __TK__output_attrs = __TK__.outputAttrs,\n'
+        code += '        __TK__ctxadd = __TK__.addToContext,\n'
+        code += '        __TK__ctxbind = __TK__.bindFromContext;\n'
+        code += '    return function __TK__binder (__TK__context) {\n'
+        code += '        var %s;\n' % ',\n            '.join(free_variables)
 
         if extended:
             # an extended template does not have a __main__ (it is inherited)
-            code += '    __TK__parent_template.binder_func(__TK__context)\n'
-
-        for i in [ 'egettext' ]:
-            if i in free_variables:
-                free_variables.add('gettext')
-                free_variables.discard(i)
-
-        if 'gettext' in free_variables:
-            code += '    def egettext(msg):\n'
-            code += '        return __TK__escape(gettext(msg))\n'
+            code += '        __TK__parent_template.binder_func(___TK__context)\n'
 
         for i in free_variables:
-            code += '    if "%s" in __TK__context:\n' % i
-            code += '        %s = __TK__context["%s"]\n' % (i, i)
+            code += '        %s = __TK__ctxbind(__TK__context, "%s");\n' % (i, i)
 
-        code += '    return __TK__context\n'
+        code += '        return new __TK__.BoundTemplate(__TK__context);\n'
+        code += '    };\n'
+        code += '});\n'
 
-        tree = ast.parse(code)
+        tree = parse(code)
 
-        class LocatorAndTransformer(ast.NodeTransformer):
+        class LocatorAndTransformer(Visitor):
             binder = None
 
-            def visit_FunctionDef(self, node):
-                if node.name == '__TK__binder' and not self.binder:
+            def visit_FuncExpr(self, node):
+                if not node.identifier:
+                    self.generic_visit(node)
+                    return
+
+                name = node.identifier.value
+                if name == '__TK__binder' and not self.binder:
                     self.binder = node
+                    return
 
                 self.generic_visit(node)
                 return node
@@ -690,36 +745,30 @@ class PyRootNode(PyComplexNode):
 
         # inject the other top level funcs in the binder
         binder = locator.binder
-        binder.body[2:2] = toplevel_funcs
-        binder.body[2:2] = generator.imports
+        get_body(binder)[1:1] = toplevel_funcs
+        get_body(binder)[1:1] = generator.imports
 
         coalesce_outputs(tree)
-
-        if HAS_ASSERT:
-            remove_locations(tree)
-        else:
-            fix_missing_locations(tree)
-
-        return tree
+        return tree.to_ecma()
 
 
 class Generator(BaseGenerator):
-    OutputNode             = PyOutputNode
-    TranslatableOutputNode = PyTranslatableOutputNode
+    OutputNode             = JsOutputNode
+    TranslatableOutputNode = JsTranslatableOutputNode
 
-    IfNode          = PyIfNode
-    ForNode         = PyForNode
-    DefineNode      = PyDefineNode
-    ComplexExprNode = PyComplexExprNode
-    ExpressionNode  = PyExpressionNode
-    ImportNode      = PyImportNode
-    RootNode        = PyRootNode
-    AttributeNode   = PyAttributeNode
-    AttrsNode       = PyAttrsNode
-    UnlessNode      = PyUnlessNode
-    ExtendsNode     = PyExtendsNode
-    BlockNode       = PyBlockNode
-    CodeNode        = PyCodeNode
+    IfNode          = JsIfNode
+    ForNode         = JsForNode
+    DefineNode      = JsDefineNode
+    ComplexExprNode = JsComplexExprNode
+    ExpressionNode  = JsExpressionNode
+    ImportNode      = JsImportNode
+    RootNode        = JsRootNode
+    AttributeNode   = JsAttributeNode
+    AttrsNode       = JsAttrsNode
+    UnlessNode      = JsUnlessNode
+    ExtendsNode     = JsExtendsNode
+    BlockNode       = JsBlockNode
+    CodeNode        = JsCodeNode
 
     def __init__(self, ir_tree):
         super(Generator, self).__init__(ir_tree)
@@ -728,20 +777,20 @@ class Generator(BaseGenerator):
         self.top_level_names = set()
         self.extended_href   = None
         self.imports         = []
+        self.import_sources  = []
 
     def add_bind_decorator(self, block):
-        binder_call = NameX('__TK__bind')
-        decors = [ binder_call ]
-        block.decorator_list = decors
+        name = block.identifier.value
+        return Expr(SimpleCall(Name('__TK__ctxadd'), [ Name('__TK__context'), Str(name), block ]))
 
     def add_block(self, name, block):
         self.top_level_names.add(name)
-        self.add_bind_decorator(block)
+        block = self.add_bind_decorator(block)
         self.blocks.append(block)
 
     def add_top_def(self, name, defblock):
         self.top_level_names.add(name)
-        self.add_bind_decorator(defblock)
+        defblock = self.add_bind_decorator(defblock)
         self.top_defs.append(defblock)
 
     def add_top_level_import(self, name, node):
@@ -751,3 +800,5 @@ class Generator(BaseGenerator):
     def make_extended_template(self, href):
         self.extended_href = href
 
+    def add_import_source(self, href):
+        self.import_sources.append(href)

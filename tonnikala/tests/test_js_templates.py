@@ -16,6 +16,9 @@ js_driver = os.path.join(js_dir, 'runner.js')
 
 
 def compile_js_template(contents, target_filename):
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
+
     compiled_js = JSLoader().load_string(contents)
     with open(os.path.join(output_dir, target_filename), 'w') as f:
         f.write(compiled_js)
@@ -40,10 +43,6 @@ def render(template, debug=False, **args):
 
 
 class TestJsTemplates(unittest.TestCase):
-    def __init__(self):
-        if not os.path.isdir(output_dir):
-            os.makedirs(output_dir)
-
     def are(self, result, template, **args):
         """assert rendered equals"""
 

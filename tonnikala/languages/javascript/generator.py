@@ -6,7 +6,6 @@ import json
 import warnings
 from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 
-from .generator import FreeVariableAnalyzerVisitor
 from slimit.parser import Parser
 from slimit import ast
 from slimit.ast import *
@@ -21,6 +20,41 @@ from slimit.visitors.scopevisitor import (
     mangle_scope_tree,
     NameManglerVisitor,
     )
+
+
+class FreeVariableAnalyzerVisitor(Visitor):
+    """Mangles names.
+
+    Walks over a parsed tree and changes ID values to corresponding
+    mangled names.
+    """
+
+    def __init__(self):
+        self.free_variables = set()
+
+    @staticmethod
+    def _is_mangle_candidate(id_node):
+        """Return True if Identifier node is a candidate for mangling.
+
+        There are 5 cases when Identifier is a mangling candidate:
+        1. Function declaration identifier
+        2. Function expression identifier
+        3. Function declaration/expression parameter
+        4. Variable declaration identifier
+        5. Identifier is a part of an expression (primary_expr_no_brace rule)
+        """
+        return getattr(id_node, '_mangle_candidate', False)
+
+    def visit_Identifier(self, node):
+        """Mangle names."""
+
+        if not self._is_mangle_candidate(node):
+            return
+
+        name = node.value
+        symbol = node.scope.resolve(node.value)
+        if symbol is None:
+            self.free_variables.add(name)
 
 
 HAS_ASSERT = False

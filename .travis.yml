@@ -9,6 +9,7 @@ python:
 before_install:
   - sudo apt-get update
   - sudo apt-get install nodejs
+  - ls /usr/bin/no*
 
 # command to install dependencies
 install: "python setup.py develop"

@@ -8,11 +8,14 @@ from tonnikala.loader import JSLoader
 import subprocess
 import json
 import os.path
-
+from distutils.spawn import find_executable
 
 js_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'js')
 output_dir = os.path.join(js_dir, 'tmp')
 js_driver = os.path.join(js_dir, 'runner.js')
+
+
+node_exe = find_executable('nodejs') or find_executable('node')
 
 
 def compile_js_template(contents, target_filename):
@@ -28,7 +31,7 @@ def execute_nodejs_runner(template_name, context):
     template_name = os.path.join('tmp', template_name)
 
     context = json.dumps(context, ensure_ascii=True)
-    process = subprocess.Popen(['nodejs', js_driver, template_name, context], stdout=subprocess.PIPE)
+    process = subprocess.Popen([node_exe, js_driver, template_name, context], stdout=subprocess.PIPE)
     output, _ = process.communicate()
     rc = process.poll()
     if rc != 0:
@@ -182,6 +185,7 @@ class TestJsTemplates(unittest.TestCase):
         fragment = '<html><div js:block="foo">a block</div></html>'
         self.are('<html><div>a block</div></html>', fragment)
 
+# THESE TESTS ARE NOT YET ENABLED
 """
     def test_translation(self):
         fragment = '<html alt="foo"> abc </html>'

@@ -1,7 +1,7 @@
 define([], function () {
     'use strict';
-
-    var map = Array.prototype.map;
+    var globals = typeof window == 'undefined' ? global : window,
+        map = Array.prototype.map;
 
     function Markup(s) {
         this.s = s;
@@ -156,7 +156,7 @@ define([], function () {
             return ctx[name];
         }
 
-        return window[name];
+        return globals[name];
     }
 
     return {
@@ -186,7 +186,10 @@ define([], function () {
 
         addToContext: addToContext,
 
-        bindFromContext: bindFromContext
-    };
+        bindFromContext: bindFromContext,
 
+        load: function (template) {
+            return require(template);
+        }
+    };
 });

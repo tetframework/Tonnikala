@@ -5,7 +5,7 @@ from tonnikala.syntaxes.chameleon import parse as parse_chameleon
 from tonnikala.syntaxes.jinja2 import parse as parse_jinja2
 from os import path
 from tonnikala.languages.python.generator import Generator as PythonGenerator
-from tonnikala.languages.javascript.newgenerator import Generator as JavascriptGenerator
+from tonnikala.languages.javascript.generator import Generator as JavascriptGenerator
 from tonnikala.runtime import python
 import six
 import codecs

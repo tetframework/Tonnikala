@@ -302,7 +302,7 @@ class Extends(ContainerNode):
 
             return
 
-        if not isinstance(child, Block):
+        if not isinstance(child, (Block, Define)):
             raise IRTemplateSyntaxError(
                 "Child of type %s is not allowed within an Extend block" %
                     child.__class__.__name__,

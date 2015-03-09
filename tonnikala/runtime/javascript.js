@@ -38,6 +38,14 @@ define([], function () {
         prependTo: function () {
             var fragment = $(this.render());
             return fragment.prependTo.apply(fragment, arguments);
+        },
+        insertAfter: function () {
+            var fragment = $(this.template().toString());
+            return fragment.insertAfter.apply(fragment, arguments);
+        },
+        insertBefore: function () {
+            var fragment = $(this.template().toString());
+            return fragment.insertBefore.apply(fragment, arguments);
         }
     };
 

@@ -71,10 +71,7 @@ ALWAYS_BUILTINS = '''
 
 
 def Str(s):
-    if not isinstance(s, str):
-        raise TypeError("s must be a string")
-
-    return String(json.dumps(str(s)))
+    return String(json.dumps(s, ensure_ascii=False))
 
 def Name(id, ctx=None):
     return Identifier(id)

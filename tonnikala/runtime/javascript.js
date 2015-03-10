@@ -40,11 +40,11 @@ define([], function () {
             return fragment.prependTo.apply(fragment, arguments);
         },
         insertAfter: function () {
-            var fragment = $(this.template().toString());
+            var fragment = $(this.render());
             return fragment.insertAfter.apply(fragment, arguments);
         },
         insertBefore: function () {
-            var fragment = $(this.template().toString());
+            var fragment = $(this.render());
             return fragment.insertBefore.apply(fragment, arguments);
         }
     };
@@ -75,7 +75,7 @@ define([], function () {
 
     function Buffer() {
         this.buffer = [];
-    };
+    }
     Buffer.prototype = {
 
         e: function (list) {
@@ -141,9 +141,9 @@ define([], function () {
 
         rv = new Buffer();
         for (i = 0, vn = values.length; i < vn; i++) {
-            name = values[i][0];
+            key = values[i][0];
             value = values[i][1];
-            rv.outputBooleanAttr(name, value);
+            rv.outputBooleanAttr(key, value);
         }
 
         return rv;
@@ -154,7 +154,7 @@ define([], function () {
     }
 
     function addToContext(ctx, name, value) {
-        if (! ctx.hasOwnProperty(name)) {
+        if (!ctx.hasOwnProperty(name)) {
             ctx[name] = value;
         }
     }

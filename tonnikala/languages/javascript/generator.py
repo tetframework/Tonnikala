@@ -719,7 +719,7 @@ class JsRootNode(JsComplexNode):
         # discard the names of toplevel funcs from free variables
         # free_variables.difference_update(generator.top_level_names)
 
-        modules = ['tonnikala/runtime.js'] + list(generator.import_sources)
+        modules = ['tonnikala/runtime'] + list(generator.import_sources)
 
         # var_statement_vars = set(free_variables)|set(
 

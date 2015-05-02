@@ -135,7 +135,8 @@ Include `'tonnikala.pyramid'` into your config to enable Tonnikala. When include
 `set_tonnikala_reload(reload)`
     If `True`, makes tonnikala not cache templates. Default is `False`.
 
-These 3 can also be controlled by `tonnikala.extensions`, `tonnikala.search_paths` and `tonnikala.reload` in .ini settings.
+These 3 can also be controlled by `tonnikala.extensions`, `tonnikala.search_paths` and `tonnikala.reload` in .ini settings. 
+If `tonnikala.reload` is not present, Tonnikala follows the `pyramid.reload_templates`.
 
 Status
 ======

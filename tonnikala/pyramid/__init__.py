@@ -171,4 +171,9 @@ def includeme(config):
 
         config.add_tonnikala_search_paths(*paths)
 
-    config.set_tonnikala_reload(asbool(settings.get('tonnikala.reload')))
+
+    tk_reload = settings.get('tonnikala.reload')
+    if tk_reload is None:
+        tk_reload = settings.get('pyramid.reload_templates')
+
+    config.set_tonnikala_reload(asbool(tk_reload))

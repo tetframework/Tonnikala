@@ -140,7 +140,7 @@ class TestJsTemplates(unittest.TestCase):
         self.are('<html><div>baz</div></html>', fragment, foo='baz')
 
     def test_empty_tags(self):
-        fragment = '<html><script/><script></script><br/><br></br></html>'
+        fragment = '<html><script/><script></script><br/><br></html>'
         self.are('<html><script></script><script></script><br /><br /></html>', fragment)
 
     def test_closures(self):

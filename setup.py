@@ -46,6 +46,7 @@ setup(
         six>=1.4.1
         markupsafe>=0.18
         slimit>=0.8.1
+        ply<3.6.0
     """.split(),
     setup_requires=[],
     include_package_data=True,

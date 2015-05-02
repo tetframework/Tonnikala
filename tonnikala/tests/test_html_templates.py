@@ -123,7 +123,7 @@ class TestHtmlTemplates(unittest.TestCase):
         self.are('<html><div>baz</div></html>', fragment, foo='baz')
 
     def test_empty_tags(self):
-        fragment = '<html><script/><script></script><br/><br></br></html>'
+        fragment = '<html><script/><script></script><br/><br></html>'
         self.are('<html><script></script><script></script><br /><br /></html>', fragment)
 
     def test_closures(self):
@@ -182,6 +182,12 @@ class TestHtmlTemplates(unittest.TestCase):
             return '<%s' % x
 
         self.are('<html>&lt;&gt;</html>', '<html>&gt;</html>', debug=False, translateable=True, gettext=gettext)
+
+    def test_case_folding(self):
+        self.are('<html></html>', '<html></HTML>', debug=False)
+
+    def test_void_elements(self):
+        self.are('<html><img title="foo" /></html>', '<html><img title="foo"></html>', debug=False)
 
     def assert_file_rendering_equals(self, input_file, output_file, debug=False, **context):
         loader = get_loader(debug=debug)

@@ -135,6 +135,12 @@ class TonnikalaXMLParser(sax.ContentHandler):
 
 # object to force a new-style class!
 class TonnikalaHTMLParser(html_parser.HTMLParser, object):
+    void_elements = set([
+        'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 
+        'keygen', 'link', 'meta', 'param', 'source', 'track', 'wbr'
+    ])
+
+
     def __init__(self, filename, source):
         super(TonnikalaHTMLParser, self).__init__(**html_parser_extra_kw)
         self.filename = filename
@@ -173,7 +179,7 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
 
         self.characters = None
 
-    def handle_starttag(self, name, attrs):
+    def handle_starttag(self, name, attrs, self_closing=False):
         self.flush_character_data()
 
         el = self.doc.createElement(name)
@@ -186,12 +192,18 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         self.elements[-1].appendChild(el)
         self.elements.append(el)
 
+        if self_closing or name.lower() in self.void_elements:
+            self.handle_endtag(name)
+
     def handle_endtag(self, name):
         self.flush_character_data()
         popped = self.elements.pop()
 
-        if name != popped.name:
+        if name.lower() != popped.name.lower():
             raise RuntimeError("Invalid end tag </%s> (expected </%s>)" % (name, popped.name))
+
+    def handle_startendtag(self, name, attrs):
+        self.handle_starttag(name, attrs, self_closing=True)
 
     def handle_data(self, content):
         if not self.characters:

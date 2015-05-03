@@ -133,13 +133,23 @@ class TonnikalaXMLParser(sax.ContentHandler):
         pass
 
 
+class StringWithLocation(str):
+    def __new__(cls, value, lineno, offset):
+        val = str.__new__(cls, value)
+        val.lineno = lineno
+        val.offset = offset
+        return val
+
+
+attrfind = getattr(html_parser, 'attrfind_tolerant', html_parser.attrfind)
+tagfind = getattr(html_parser, 'tagfind_tolerant', html_parser.tagfind)
+
 # object to force a new-style class!
 class TonnikalaHTMLParser(html_parser.HTMLParser, object):
     void_elements = set([
         'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 
         'keygen', 'link', 'meta', 'param', 'source', 'track', 'wbr'
     ])
-
 
     def __init__(self, filename, source):
         super(TonnikalaHTMLParser, self).__init__(**html_parser_extra_kw)
@@ -179,14 +189,64 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
 
         self.characters = None
 
+    def delta(self, row, col):
+        orow, ocol = self.getpos()
+        if row:
+            orow += row
+            ocol = col
+        else:
+            ocol += col
+
+        return orow, ocol
+
+    def find_attr_positions(self, attrs):
+        if not attrs:
+            return {}
+
+        source = self.get_starttag_text()
+        match = tagfind.match(source, 1)
+        start = match.end()
+        attr_pos = {}
+
+        lineoffset = source[:start].count('\n')
+        colpos = start - source[:start].rfind('\n') if lineoffset else start + 1
+
+        for m in attrfind.finditer(source, start, len(source) - 1):
+            if not m.group(2):
+                continue
+
+            attrstart = m.start(3)
+            if source[attrstart] in ("'", '"'):
+                attrstart += 1
+
+            advance = source[start:attrstart]
+            linedelta = advance.count('\n')
+            if linedelta:
+                colpos = len(advance) - advance.rfind('\n')
+            else:
+                colpos += len(advance)
+
+            lineoffset += linedelta
+
+            attrname = m.group(1).lower()
+            attr_pos[attrname] = self.delta(lineoffset, colpos)
+            start = attrstart
+
+        return attr_pos
+
     def handle_starttag(self, name, attrs, self_closing=False):
         self.flush_character_data()
 
+        attr_pos = self.find_attr_positions(attrs)
         el = self.doc.createElement(name)
         el.name = name
         el.position = self.getpos()
 
         for k, v in attrs:
+            if k in attr_pos:
+                l, o = attr_pos[k]
+                v = StringWithLocation(v, l, o)
+
             el.setAttribute(k, v)
 
         self.elements[-1].appendChild(el)

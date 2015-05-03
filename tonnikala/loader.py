@@ -1,28 +1,34 @@
-from tonnikala import expr
-from tonnikala.languages import javascript
-from tonnikala.syntaxes.tonnikala import parse as parse_tonnikala, parse_js as parse_js_tonnikala
-from tonnikala.syntaxes.chameleon import parse as parse_chameleon
-from tonnikala.syntaxes.jinja2 import parse as parse_jinja2
-from os import path
-from tonnikala.languages.python.generator import Generator as PythonGenerator
-from tonnikala.languages.javascript.generator import Generator as JavascriptGenerator
-from tonnikala.runtime import python
+import sys
 import six
 import codecs
 import os
-from errno import ENOENT
+import errno
 import time
 
+from . import expr
+from .languages import javascript
+from .syntaxes.tonnikala import parse as parse_tonnikala, \
+                                parse_js as parse_js_tonnikala
+from .syntaxes.chameleon import parse as parse_chameleon
+from .syntaxes.jinja2 import parse as parse_jinja2
+from .languages.python.generator import Generator as PythonGenerator
+from .languages.javascript.generator import Generator as JavascriptGenerator
+from .runtime import python
 
+
+_make_traceback = None
 MIN_CHECK_INTERVAL = 0.25
 
-if six.PY3:
+
+try:
     import builtins as __builtin__
-else:
+except ImportError:
     import __builtin__
+
 
 class Helpers():
     pass
+
 
 escape = python.escape
 
@@ -33,12 +39,13 @@ helpers.egettext = lambda x: escape(x)
 
 def get_builtins_with_chain(chain=[ helpers ]):
     builtins = {}
-    for i in [ __builtin__ ] + list(reversed(chain)):
+    for i in [__builtin__] + list(reversed(chain)):
         for j in dir(i):
             if not j.startswith('__') and not j.endswith('__'):
                 builtins[j] = getattr(i, j)
 
     return builtins
+
 
 _builtins = None
 def get_builtins():
@@ -48,7 +55,9 @@ def get_builtins():
 
     return _builtins
 
+
 NOT_FOUND = object()
+
 
 def make_template_context(context):
     rv = get_builtins().copy()
@@ -64,12 +73,38 @@ class Template(object):
         self.binder_func(context)
 
     def render_to_buffer(self, context, funcname='__main__'):
-        context = make_template_context(context)
-        self.bind(context)
-        return context[funcname]()
+        try:
+            context = make_template_context(context)
+            self.bind(context)
+            return context[funcname]()
+        except Exception:
+            exc_info = sys.exc_info()
 
+        self.handle_exception(exc_info)
+        del exc_info
+        
     def render(self, context, funcname='__main__'):
         return self.render_to_buffer(context, funcname).join()
+
+    def handle_exception(self, exc_info=None, source_hint=None):
+        """Exception handling helper.  This is used internally to either raise
+        rewritten exceptions or return a rendered traceback for the template.
+        """
+
+        global _make_traceback
+        if exc_info is None:
+            exc_info = sys.exc_info()
+
+        # the debugging module is imported when it's used for the first time.
+        # we're doing a lot of stuff there and for applications that do not
+        # get any exceptions in template rendering there is no need to load
+        # all of that.
+        if _make_traceback is None:
+            from .runtime.debug import make_traceback as _make_traceback
+
+        traceback = _make_traceback(exc_info, source_hint)
+        exc_type, exc_value, tb = traceback.standard_exc_info
+        six.reraise(exc_type, exc_value, tb)
 
 
 parsers = {
@@ -78,6 +113,25 @@ parsers = {
     'chameleon':    parse_chameleon,
     'jinja2':       parse_jinja2
 }
+
+
+class TemplateInfo(object):
+    def __init__(self, filename, lnotab):
+        self.filename = filename
+        self.lnotab = lnotab
+
+    def get_corresponding_lineno(self, line):
+        return self.lnotab.get(line, 0)
+
+
+def _new_globals(runtime):
+    return {
+        '__TK__runtime': runtime,
+        '__TK__mkbuffer': runtime.Buffer,
+        '__TK__escape': runtime.escape,
+        '__TK__output_attrs': runtime.output_attrs,
+        'literal':     lambda x: x
+    }
 
 
 class Loader(object):
@@ -92,8 +146,9 @@ class Loader(object):
                 % sorted(parsers.keys()))
 
         tree = parser_func(filename, string)
-        code = PythonGenerator(tree).generate_ast()
-
+        gen = PythonGenerator(tree)
+        code = gen.generate_ast()
+        
         if self.debug:
             import ast
 
@@ -108,14 +163,13 @@ class Loader(object):
 
         runtime = python.TonnikalaRuntime()
         runtime.loader = self
+        glob = _new_globals(runtime)
 
-        glob = {
-            '__TK__runtime': runtime,
-            'literal':     lambda x: x
-        }
+        compiled = compile(code, filename, 'exec')
+        glob['__TK_template_info__'] = TemplateInfo(filename, gen.lnotab_info())
 
-        compiled = compile(code, '<string>', 'exec')
         exec(compiled, glob, glob)
+
         template_func = glob['__TK__binder']
         return Template(template_func)
 
@@ -172,7 +226,7 @@ class FileLoader(Loader):
 
         path = self.resolve(name)
         if not path:
-            raise OSError(ENOENT, "File not found: %s" % name)
+            raise OSError(errno.ENOENT, "File not found: %s" % name)
 
         with codecs.open(path, 'r', encoding='UTF-8') as f:
            contents = f.read()

@@ -72,10 +72,13 @@ def get_expression_ast(expression, mode='eval'):
     return tree.body
 
 
-def gen_name():
+def gen_name(typename=None):
     global name_counter
     name_counter += 1
-    return "__TK__%d__" % name_counter
+    if typename:
+        return "__TK__typed__%s__%d__" % (typename, name_counter)
+    else:
+        return "__TK_%d__" % (name_counter)
 
 
 def static_eval(expr):
@@ -94,7 +97,6 @@ def static_expr_to_bool(expr):
 
 class PythonNode(LanguageNode):
     is_top_level = False
-
 
     def generate_output_ast(self, code, generator, parent, escape=False):
         func = Name(id='__TK__output', ctx=Load())
@@ -127,7 +129,8 @@ class PythonNode(LanguageNode):
 
 
     def make_function(self, name, body, add_buffer=False, arguments=()):
-        func = SimpleFunctionDef(name, arguments=arguments)
+        # ensure that the function name is an str
+        func = SimpleFunctionDef(str(name), arguments=arguments)
         new_body = func.body = [ ]
 
         if add_buffer:
@@ -143,7 +146,7 @@ class PythonNode(LanguageNode):
 
 
     def generate_varscope(self, body):
-        name = gen_name()
+        name = gen_name('variable_scope')
         rv = [
             self.make_function(name, body,
                 arguments=['__TK__output', '__TK__escape']),
@@ -289,9 +292,8 @@ def PyUnlessNode(self, expression):
 class PyImportNode(PythonNode):
     def __init__(self, href, alias):
         super(PyImportNode, self).__init__()
-        self.href = href
-        self.alias = alias
-
+        self.href = str(href)
+        self.alias = str(alias)
 
     def generate_ast(self, generator, parent):
         node = Assign(
@@ -450,7 +452,8 @@ class PyBlockNode(PyComplexNode):
         if not isinstance(name, str):
             name = name.encode('UTF-8') # python 2
 
-        self.name = name
+        # ensure str
+        self.name = str(name)
 
 
     def generate_ast(self, generator, parent):
@@ -750,4 +753,9 @@ class Generator(BaseGenerator):
 
     def make_extended_template(self, href):
         self.extended_href = href
+
+    def lnotab_info(self):
+        # TODO implement
+        return {}
+
 

@@ -23,13 +23,13 @@ extra_kw = dict(features={'speedups': speedups })
 
 setup(
     name='tonnikala',
-    version='0.16',
+    version='0.20',
     description='Python templating engine - the one ton solution',
     author='Antti Haapala',
     author_email='antti@haapala.name',
     url='https://github.com/ztane/Tonnikala',
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Framework :: Pyramid",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",

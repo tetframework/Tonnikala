@@ -4,6 +4,8 @@ import unittest
 import six
 import os.path
 import codecs
+from collections import OrderedDict
+
 from tonnikala.loader import Loader, FileLoader
 
 def render(template, debug=False, **args):
@@ -182,6 +184,11 @@ class TestHtmlTemplates(unittest.TestCase):
             return '<%s' % x
 
         self.are('<html>&lt;&gt;</html>', '<html>&gt;</html>', debug=False, translateable=True, gettext=gettext)
+
+    def test_attrs(self):
+        fragment = '<html><div py:attrs="foo"></div></html>'
+        attrs = OrderedDict([('foo', 'bar'), ('baz', 42)])
+        self.are('<html><div foo="bar" baz="42"></div></html>', fragment, debug=False, foo=attrs)
 
     def test_case_folding(self):
         self.are('<html></html>', '<html></HTML>', debug=False)

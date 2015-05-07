@@ -135,13 +135,13 @@ Include `'tonnikala.pyramid'` into your config to enable Tonnikala. When include
 `set_tonnikala_reload(reload)`
     If `True`, makes tonnikala not cache templates. Default is `False`.
 
-These 3 can also be controlled by `tonnikala.extensions`, `tonnikala.search_paths` and `tonnikala.reload` in .ini settings. 
-If `tonnikala.reload` is not present, Tonnikala follows the `pyramid.reload_templates`.
+These 3 can also be controlled by `tonnikala.extensions`, `tonnikala.search_paths` and `tonnikala.reload` respectively in the deployment settings (the `.ini` files). 
+If `tonnikala.reload` is not set, Tonnikala shall follow the `pyramid.reload_templates` setting.
 
 Status
 ======
 
-Alpha, working features are 
+Beta, working features are
 
 * Structural elements ``py:if``, ``py:unless``, ``py:def``, ``py:for``, 
   ``py:replace``, ``py:content``
@@ -157,14 +157,14 @@ Alpha, working features are
 * Importing def blocks from another template: ``py:import``
 * Basic I18N using gettext.
 * Pyramid integration
+* Javascript as the target language (using ``js:`` prefix)
+* Overriding attributes, setting attrs from dictionary: ``py:attrs``
 
 Upcoming features:
 
 * Structural elements: ``py:vars``, ``py:switch``, ``py:case``; ``py:else`` for ``for``, ``if`` and ``switch``.
-* Overriding attributes, setting attrs from dictionary: ``py:attrs``
 * Custom tags mapping to ``py:def``
 * I18N with optional in-parse-tree localization (partially done)
-* Javascript as the target language
 * Pluggable frontend syntax engines (partially done)
 * METAL-like macros
 * Pluggable expression languages akin to Chameleon
@@ -174,4 +174,7 @@ Upcoming features:
 Contributors
 ------------
 
-Antti Haapala
+* Antti Haapala
+* Ilja Everilä
+* Pete Sevander
+* Hiếu Nguyễn

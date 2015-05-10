@@ -6,15 +6,16 @@ __docformat__ = "epytext"
 """XML parser"""
 
 import sys
-
 import six
+from xml import sax
+from xml.dom import minidom as dom
 from six.moves import html_entities, html_parser
 from six import text_type
 
+from ..runtime.exceptions import TemplateSyntaxError
+
 entitydefs = html_entities.entitydefs
 
-from xml import sax
-from xml.dom import minidom as dom
 
 impl = dom.getDOMImplementation(' ')
 
@@ -166,6 +167,7 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
 
         self.feed(self.source)
         self.close()
+        self.flush_character_data()
         return self.doc
 
     def flush_character_data(self):
@@ -176,15 +178,16 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
                 # Special case: just skip adding whitespace to document root,
                 # but raise hell, if trying to add other characters
                 if len(text.strip()) > 0:
-                    raise RuntimeError("Text data outside of elements: %s"
-                                       % text)
+                    self.syntax_error(
+                        "Text data outside of root element",
+                        lineno=self.characters_start[0])
 
                 else:
                     self.characters = None
                     return
 
             node = self.doc.createTextNode(text)
-            node.lineno = self.getpos()
+            node.position = self.getpos()
             self.elements[-1].appendChild(node)
 
         self.characters = None
@@ -234,6 +237,9 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
 
         return attr_pos
 
+    def getlineno(self):
+        return self.getpos()[0]
+
     def handle_starttag(self, name, attrs, self_closing=False):
         self.flush_character_data()
 
@@ -260,7 +266,8 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         popped = self.elements.pop()
 
         if name.lower() != popped.name.lower():
-            raise RuntimeError("Invalid end tag </%s> (expected </%s>)" % (name, popped.name))
+            self.syntax_error(
+                "Invalid end tag </%s> (expected </%s>)" % (name, popped.name))
 
     def handle_startendtag(self, name, attrs):
         self.handle_starttag(name, attrs, self_closing=True)
@@ -287,11 +294,19 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         node.position = self.getpos()
         self.elements[-1].appendChild(node)
 
+    def syntax_error(self, message, lineno=None):
+        raise TemplateSyntaxError(
+            message,
+            lineno or self.getlineno(),
+            source=self.source,
+            filename=self.filename)
+
     def handle_entityref(self, name):
         # Encoding?
-        content = text_type(entitydefs.get(name))
-        if not content:
-            raise RuntimeError("Unknown HTML entity &%s;" % name)
+        try:
+            content = text_type(entitydefs[name])
+        except KeyError:
+            self.syntax_error("Unknown HTML entity &%s;" % name)
 
         self.handle_data(content)
 
@@ -306,7 +321,7 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
             content = six.unichr(cp)
             return self.handle_data(content)
         except Exception as e:
-            raise RuntimeError("Invalid HTML charref &#%s;: %s" % (code, e))
+            self.syntax_error("Invalid HTML charref &#%s;: %s" % (code, e))
 
     # LexicalHandler implementation
     def handle_comment(self, text):
@@ -322,4 +337,4 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         self.elements[-1].appendChild(dt)
 
     def unknown_decl(self, decl):
-        raise RuntimeError("Unknown declaration: %s" % decl)
+        self.syntax_error("Unknown declaration: %s" % decl)

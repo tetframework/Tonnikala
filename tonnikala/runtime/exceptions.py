@@ -4,12 +4,13 @@ class TemplateError(Exception):
 class TemplateSyntaxError(TemplateError):
     """Raised to tell the user that there is a problem with the template."""
 
-    def __init__(self, message, lineno, name=None, filename=None):
+    def __init__(self, message, lineno, name=None, source=None, filename=None):
         TemplateError.__init__(self, message)
+        self.message = message
         self.lineno = lineno
         self.name = name
         self.filename = filename
-        self.source = None
+        self.source = source
 
         # this is set to True if the debug.translate_syntax_error
         # function translated the syntax error into a new traceback
@@ -23,6 +24,7 @@ class TemplateSyntaxError(TemplateError):
         # otherwise attach some stuff
         location = 'line %d' % self.lineno
         name = self.filename or self.name
+
         if name:
             location = 'File "%s", %s' % (name, location)
         lines = [self.message, '  ' + location]

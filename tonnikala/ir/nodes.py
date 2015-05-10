@@ -19,6 +19,9 @@ class IRTemplateSyntaxError(SyntaxError):
 
 
 class BaseNode(object):
+    lineno = None
+    column = None
+
     def __repr__(self):
         return self.__class__.__name__ + '(%s)' % str(self)
 

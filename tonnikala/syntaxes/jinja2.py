@@ -13,8 +13,8 @@ from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, \
     DynamicAttributes, Unless, Expression, Comment
 
 from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
-from tonnikala.ir.tree  import IRTree
 from tonnikala.ir.generate import BaseIRGenerator
+
 
 def tokenize_jinja2(contents):
     yield TOKENS

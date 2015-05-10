@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless, Expression, Comment
+from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless, Expression, Comment, IRTree
 from xml.dom.minidom    import Node
-from tonnikala.ir.tree  import IRTree
 
 __docformat__ = "epytext"
 
@@ -136,10 +135,6 @@ class BaseDOMIRGenerator(BaseIRGenerator):
             raise ValueError("Unknown render mode '%s'" % mode)
 
     def child_iter(self, node):
-#            pdb.set_trace()
-        if not node.firstChild:
-            return
-
         current = node.firstChild
         while current:
             yield current

@@ -14,6 +14,7 @@ import sys
 import traceback
 from types import TracebackType, CodeType
 from .exceptions import TemplateSyntaxError
+from ..helpers import internal_code
 from six import reraise, iteritems, PY2
 
 # on pypy we can take advantage of transparent proxies
@@ -22,14 +23,11 @@ try:
 except ImportError:
     tproxy = None
 
-
-internal_code = set()
-
 # how does the raise helper look like?
 try:
     exec("raise TypeError, 'foo'")
 except SyntaxError:
-    raise_helper = 'raise __tonnikala_exception__[1]'
+    raise_helper = '__tonnikala_exception__[1].__traceback__ = None; raise __tonnikala_exception__[1]'
 except TypeError:
     raise_helper = 'raise __tonnikala_exception__[0], __tonnikala_exception__[1]'
 

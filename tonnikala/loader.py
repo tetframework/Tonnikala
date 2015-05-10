@@ -13,8 +13,7 @@ from .syntaxes.chameleon import parse as parse_chameleon
 from .syntaxes.jinja2 import parse as parse_jinja2
 from .languages.python.generator import Generator as PythonGenerator
 from .languages.javascript.generator import Generator as JavascriptGenerator
-from .runtime import python
-
+from .runtime import python, exceptions
 
 _make_traceback = None
 MIN_CHECK_INTERVAL = 0.25
@@ -65,7 +64,36 @@ def make_template_context(context):
     return rv
 
 
+_NO = object()
+
+def handle_exception(exc_info=None, source_hint=None, tb_override=_NO):
+    """Exception handling helper.  This is used internally to either raise
+    rewritten exceptions or return a rendered traceback for the template.
+    """
+
+    global _make_traceback
+    if exc_info is None:
+        exc_info = sys.exc_info()
+
+    # the debugging module is imported when it's used for the first time.
+    # we're doing a lot of stuff there and for applications that do not
+    # get any exceptions in template rendering there is no need to load
+    # all of that.
+    if _make_traceback is None:
+        from .runtime.debug import make_traceback as _make_traceback
+    
+    exc_type, exc_value, tb = exc_info
+    if tb_override is not _NO:
+        tb = tb_override
+
+    traceback = _make_traceback((exc_type, exc_value, tb), source_hint)
+    exc_type, exc_value, tb = traceback.standard_exc_info
+    six.reraise(exc_type, exc_value, tb)
+
+
 class Template(object):
+    handle_exception = staticmethod(handle_exception)
+
     def __init__(self, binder):
         self.binder_func = binder
 
@@ -85,26 +113,6 @@ class Template(object):
         
     def render(self, context, funcname='__main__'):
         return self.render_to_buffer(context, funcname).join()
-
-    def handle_exception(self, exc_info=None, source_hint=None):
-        """Exception handling helper.  This is used internally to either raise
-        rewritten exceptions or return a rendered traceback for the template.
-        """
-
-        global _make_traceback
-        if exc_info is None:
-            exc_info = sys.exc_info()
-
-        # the debugging module is imported when it's used for the first time.
-        # we're doing a lot of stuff there and for applications that do not
-        # get any exceptions in template rendering there is no need to load
-        # all of that.
-        if _make_traceback is None:
-            from .runtime.debug import make_traceback as _make_traceback
-
-        traceback = _make_traceback(exc_info, source_hint)
-        exc_type, exc_value, tb = traceback.standard_exc_info
-        six.reraise(exc_type, exc_value, tb)
 
 
 parsers = {
@@ -135,6 +143,9 @@ def _new_globals(runtime):
 
 
 class Loader(object):
+    handle_exception = staticmethod(handle_exception)
+    runtime = python.TonnikalaRuntime
+
     def __init__(self, debug=False, syntax='tonnikala'):
         self.debug = debug
         self.syntax = syntax
@@ -145,10 +156,17 @@ class Loader(object):
             raise ValueError("Invalid parser syntax %s: valid syntaxes: %r"
                 % sorted(parsers.keys()))
 
-        tree = parser_func(filename, string)
-        gen = PythonGenerator(tree)
-        code = gen.generate_ast()
+        try:
+            tree = parser_func(filename, string)
+            gen = PythonGenerator(tree)
+            code = gen.generate_ast()
+            exc_info = None
+        except exceptions.TemplateSyntaxError as e:
+            exc_info = sys.exc_info()
         
+        if exc_info:
+            self.handle_exception(exc_info, string, tb_override=None)
+
         if self.debug:
             import ast
 
@@ -160,8 +178,7 @@ class Loader(object):
             except ImportError:
                 print("Not reversing AST to source as astor was not installed")
 
-
-        runtime = python.TonnikalaRuntime()
+        runtime = self.runtime()
         runtime.loader = self
         glob = _new_globals(runtime)
 

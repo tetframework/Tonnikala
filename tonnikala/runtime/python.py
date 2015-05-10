@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 NoneType = type(None)
 
+from collections import Mapping
 from ..helpers import escape as strescape
 from six import text_type, PY3
 from collections import deque
@@ -75,10 +76,14 @@ def output_attrs(values):
     if not values:
         return ''
 
-    values = dict(values)
+    if not isinstance(values, Mapping):
+        values = iter(values)
+    else:
+        values = values.items()
+
     rv = Buffer()
-    for k, v in values.items():
-        if isinstance(v, (bool, NoneType)):
+    for k, v in values:
+        if v in (True, False, None):
             if v:
                 v = k
             else:

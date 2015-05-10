@@ -19,7 +19,6 @@ from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, \
 
 from tonnikala.expr     import handle_text_node  # TODO: move this elsewhere.
 from xml.dom.minidom    import Node
-from tonnikala.ir.tree  import IRTree
 from tonnikala.ir.generate import BaseDOMIRGenerator
 from tonnikala.syntaxes.docparser import TonnikalaXMLParser, TonnikalaHTMLParser
 

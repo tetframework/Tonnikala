@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
-from tonnikala.helpers import escape
 import re
 
-__docformat__ = "epytext"
+from tonnikala.helpers import escape
+from collections import OrderedDict
+
 
 try:
     # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
@@ -120,7 +121,7 @@ class InterpolatedExpression(Expression):
 
 class ContainerNode(BaseNode):
     def __init__(self):
-        self.attributes = {}
+        self.attributes = OrderedDict()
         self.children   = []
 
     def add_child(self, child):
@@ -177,8 +178,8 @@ class Element(ContainerNode):
         super(Element, self).__init__()
         self.name = name
         self.guard_expression = guard_expression
-        self.constant_attributes = {}
-        self.mutable_attributes  = {}
+        self.constant_attributes = OrderedDict()
+        self.mutable_attributes  = OrderedDict()
         self.dynamic_attrs       = None
 
     def __str__(self):
@@ -314,3 +315,19 @@ class Extends(ContainerNode):
 
         super(Extends, self).add_child(child)
 
+
+class IRTree(object):
+    def __init__(self):
+        self.root = None
+
+    def add_child(self, root):
+        self.root = root
+
+    def get_root(self):
+        return self.root
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self):
+        return 'IRTree(%r)' % self.root

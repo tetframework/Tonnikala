@@ -12,6 +12,7 @@ from xml.dom import minidom as dom
 from six.moves import html_entities, html_parser
 from six import text_type
 
+from ..helpers import StringWithLocation
 from ..runtime.exceptions import TemplateSyntaxError
 
 entitydefs = html_entities.entitydefs
@@ -134,13 +135,6 @@ class TonnikalaXMLParser(sax.ContentHandler):
         pass
 
 
-class StringWithLocation(str):
-    def __new__(cls, value, lineno, offset):
-        val = str.__new__(cls, value)
-        val.position = lineno, offset
-        return val
-
-
 attrfind = getattr(html_parser, 'attrfind_tolerant', html_parser.attrfind)
 tagfind = getattr(html_parser, 'tagfind_tolerant', html_parser.tagfind)
 
@@ -186,8 +180,10 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
                     self.characters = None
                     return
 
+            line, offset = self.characters_start
+            text = StringWithLocation(text, line, offset)
             node = self.doc.createTextNode(text)
-            node.position = self.getpos()
+            node.position = line, offset
             self.elements[-1].appendChild(node)
 
         self.characters = None

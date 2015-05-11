@@ -41,7 +41,7 @@ def parse_expression(text, start_pos=0):
         length += len(content)
 
     if not valid:
-        raise ParseError("Not finished javascript expression", charpos=length)
+        raise ParseError("Unclosed braced Javascript expression", charpos=length)
 
     return JavascriptExpression(text[start_pos:start_pos + length],
                                 text[start_pos + 2: start_pos + length - 1])

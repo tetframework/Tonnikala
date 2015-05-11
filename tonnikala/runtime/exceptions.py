@@ -4,10 +4,15 @@ class TemplateError(Exception):
 class TemplateSyntaxError(TemplateError):
     """Raised to tell the user that there is a problem with the template."""
 
-    def __init__(self, message, lineno, name=None, source=None, filename=None):
+    def __init__(self, message, lineno=None, name=None, 
+                 source=None, filename=None, node=None):
         TemplateError.__init__(self, message)
         self.message = message
+
         self.lineno = lineno
+        if lineno is None and node is not None:
+            self.lineno = getattr(node, 'position', (1, 0))[0]
+
         self.name = name
         self.filename = filename
         self.source = source

@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 __docformat__ = "epytext"
 
-from tonnikala.exceptions import ParseError
-from tonnikala.ir.nodes import InterpolatedExpression
+from ...exceptions import ParseError
+from ...ir.nodes import InterpolatedExpression
 from tokenize import generate_tokens
+from ...runtime.debug import TemplateSyntaxError
 
 try:
     from StringIO import StringIO
@@ -25,7 +27,6 @@ class TokenReadLine(object):
         self.pos = pos
         self.io = StringIO(string)
         self.io.seek(pos)
-        self.length = 0
 
     def get_readline(self):
         return self.io.readline
@@ -33,7 +34,7 @@ class TokenReadLine(object):
     def get_distance(self):
         return self.io.tell() - self.pos
 
-def parse_expression(text, start_pos=0):
+def parse_expression(text, start_pos=0, position=(0, 0)):
     nodes = []
 
     if text[start_pos + 1] != '{':
@@ -62,6 +63,10 @@ def parse_expression(text, start_pos=0):
             braces += 1
 
     if not valid:
-        raise ParseError("Not finished python expression", charpos=length)
+        pos = start_pos + length
+        pos = len(text[:pos].rstrip())
+        s = text[pos:]
+        raise TemplateSyntaxError("Unclosed braced Python expression", node=s)
 
-    return PythonExpression(text[start_pos:start_pos + length], text[start_pos + 2: start_pos + length - 1])
+    return PythonExpression(text[start_pos:start_pos + length],
+                            text[start_pos + 2: start_pos + length - 1])

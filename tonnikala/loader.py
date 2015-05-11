@@ -162,6 +162,11 @@ class Loader(object):
             code = gen.generate_ast()
             exc_info = None
         except exceptions.TemplateSyntaxError as e:
+            if e.source is None:
+                e.source = string
+            if e.filename is None:
+                e.filename = filename
+
             exc_info = sys.exc_info()
         
         if exc_info:

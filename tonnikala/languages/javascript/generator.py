@@ -290,10 +290,9 @@ class JsTranslatableOutputNode(JsOutputNode):
 
 
 class JsExpressionNode(JavascriptNode):
-    def __init__(self, expression, tokens):
+    def __init__(self, expression):
         super(JsExpressionNode, self).__init__()
         self.expr = expression
-        self.tokens = tokens
 
 
     def get_expressions(self):

@@ -196,10 +196,9 @@ class PyTranslatableOutputNode(PyOutputNode):
 
 
 class PyExpressionNode(PythonNode):
-    def __init__(self, expression, tokens):
+    def __init__(self, expression):
         super(PyExpressionNode, self).__init__()
         self.expr = expression
-        self.tokens = tokens
 
 
     def get_expressions(self):

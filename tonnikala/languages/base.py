@@ -89,7 +89,7 @@ class BaseGenerator(object):
             new_node = self.ComplexExprNode()
 
         elif isinstance(ir_node, nodes.Expression):
-            new_node = self.ExpressionNode(ir_node.expression, ir_node.tokens)
+            new_node = self.ExpressionNode(ir_node.expression)
 
         elif isinstance(ir_node, nodes.Import):
             new_node = self.ImportNode(ir_node.href, ir_node.alias)

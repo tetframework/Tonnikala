@@ -90,7 +90,6 @@ class EscapedText(Text):
 
 class Expression(BaseNode):
     is_cdata = False
-    tokens = None
 
     def __init__(self, expression):
         self.expression = expression
@@ -110,10 +109,9 @@ class Code(BaseNode):
 
 
 class InterpolatedExpression(Expression):
-    def __init__(self, full_string, expression, tokens):
+    def __init__(self, full_string, expression):
         super(InterpolatedExpression, self).__init__(expression)
         self.string = full_string
-        self.tokens = tokens
 
 
 class ContainerNode(BaseNode):

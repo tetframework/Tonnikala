@@ -16,12 +16,11 @@ identifier_match = re.compile(r'[a-zA-Z_$][a-zA-Z_$0-9]*')
 
 def parse_expression(text, start_pos=0):
     lex = JsLexer()
-    nodes = []
 
     if text[start_pos + 1] != '{':
         m = identifier_match.match(text, start_pos + 1)
         identifier = m.group(0)
-        return JavascriptExpression('$' + identifier, identifier, [('id', identifier)])
+        return JavascriptExpression('$' + identifier, identifier)
 
     braces = 0
     length = 2
@@ -40,9 +39,9 @@ def parse_expression(text, start_pos=0):
             braces += 1
 
         length += len(content)
-        nodes.append((type, content))
 
     if not valid:
         raise ParseError("Not finished javascript expression", charpos=length)
 
-    return JavascriptExpression(text[start_pos:start_pos + length], text[start_pos + 2: start_pos + length - 1], nodes)
+    return JavascriptExpression(text[start_pos:start_pos + length],
+                                text[start_pos + 2: start_pos + length - 1])

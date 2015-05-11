@@ -39,7 +39,7 @@ def parse_expression(text, start_pos=0):
     if text[start_pos + 1] != '{':
         m = identifier_match.match(text, start_pos + 1)
         identifier = m.group(0)
-        return PythonExpression('$' + identifier, identifier, [('id', identifier)])
+        return PythonExpression('$' + identifier, identifier)
 
     braces = 0
     length = 2
@@ -50,20 +50,6 @@ def parse_expression(text, start_pos=0):
     binary = False
 
     for type, content, start, end, line in tokens:
-        if content in [ 'b', 'B' ]:
-            binary = True
-            binary_pos = end
-
-        elif binary and content[-1:] in '"\'':
-            binary = False
-
-            if binary_pos == start and line[binary_pos - 1] in 'bB':
-                nodes.pop()
-                nodes.append((type, line[binary_pos - 1] + content))
-
-        else:
-            binary = False
-
         if content == '}':
             if braces <= 0:
                 length += io.get_distance() - len(line) + end[1]
@@ -75,9 +61,7 @@ def parse_expression(text, start_pos=0):
         elif content == '{':
             braces += 1
 
-        nodes.append((type, content))
-
     if not valid:
         raise ParseError("Not finished python expression", charpos=length)
 
-    return PythonExpression(text[start_pos:start_pos + length], text[start_pos + 2: start_pos + length - 1], nodes)
+    return PythonExpression(text[start_pos:start_pos + length], text[start_pos + 2: start_pos + length - 1])

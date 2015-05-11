@@ -8,19 +8,20 @@ __docformat__ = "epytext"
 import six
 from six.moves import html_entities
 from six import text_type
-
-entitydefs = html_entities.entitydefs
-
+from xml.dom.minidom    import Node
 from xml import sax
 
 from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, \
     EscapedText, MutableAttribute, ContainerNode, Block, Extends, \
     Root, DynamicAttributes, Unless, Expression, Comment, Code
 
-from tonnikala.expr     import handle_text_node  # TODO: move this elsewhere.
-from xml.dom.minidom    import Node
-from tonnikala.ir.generate import BaseDOMIRGenerator
-from tonnikala.syntaxes.docparser import TonnikalaXMLParser, TonnikalaHTMLParser
+from ..expr               import handle_text_node  # TODO: move this elsewhere.
+from ..ir.generate        import BaseDOMIRGenerator
+from .docparser           import TonnikalaXMLParser, TonnikalaHTMLParser
+from ..runtime.exceptions import TemplateSyntaxError
+
+
+entitydefs = html_entities.entitydefs
 
 
 class TonnikalaIRGenerator(BaseDOMIRGenerator):
@@ -72,28 +73,49 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
 
         return None
 
+    def syntax_error(self, message, node=None, lineno=None):
+        if lineno is None:
+            if node:
+                lineno = getattr(node, 'position', (0, 0))[0]
+            else:
+                lineno = 0
+     
+        BaseDOMIRGenerator.syntax_error(
+            self,
+            message=message,
+            lineno=lineno)
+
+    def grab_mandatory_attribute(self, dom_node, name):
+        if name not in dom_node.attributes:
+            self.syntax_error(
+                message="<%s> does not have the required attribute '%s'"
+                        % (dom_node.name, name),
+                node=dom_node)
+        return dom_node.getAttribute(name)
+
     def create_control_nodes(self, dom_node):
         name = dom_node.tagName
 
         ir_node_stack = []
 
         if self.is_control_name(name, 'extends'):
-            ir_node_stack.append(Extends(dom_node.getAttribute('href')))
+            ir_node_stack.append(Extends(self.grab_mandatory_attribute(dom_node, 'href')))
 
         elif self.is_control_name(name, 'block'):
-            ir_node_stack.append(Block(dom_node.getAttribute('name')))
+            ir_node_stack.append(Block(self.grab_mandatory_attribute(dom_node, 'name')))
 
         elif self.is_control_name(name, 'if'):
-            ir_node_stack.append(If(dom_node.getAttribute('test')))
+            ir_node_stack.append(If(self.grab_mandatory_attribute(dom_node, 'test')))
 
         elif self.is_control_name(name, 'for'):
-            ir_node_stack.append(For(dom_node.getAttribute('each')))
+            ir_node_stack.append(For(self.grab_mandatory_attribute(dom_node, 'each')))
 
         elif self.is_control_name(name, 'def'):
-            ir_node_stack.append(Define(dom_node.getAttribute('function')))
+            ir_node_stack.append(Define(self.grab_mandatory_attribute(dom_node, 'function')))
 
         elif self.is_control_name(name, 'import'):
-            ir_node_stack.append(Import(dom_node.getAttribute('href'), dom_node.getAttribute('alias')))
+            ir_node_stack.append(Import(self.grab_mandatory_attribute(dom_node, 'href'),
+                                        self.grab_mandatory_attribute(dom_node, 'alias')))
 
         # TODO: add all node types in order
         generate_element = not bool(ir_node_stack)
@@ -220,7 +242,8 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
 def parse(filename, string):
     parser = TonnikalaHTMLParser(filename, string)
     parsed = parser.parse()
-    generator = TonnikalaIRGenerator(document=parsed, translatable=True)
+    generator = TonnikalaIRGenerator(document=parsed, translatable=True, 
+                                     filename=filename, source=string)
     tree = generator.generate_tree()
     tree = generator.flatten_element_nodes(tree)
     tree = generator.merge_text_nodes(tree)
@@ -230,7 +253,9 @@ def parse(filename, string):
 def parse_js(filename, string):
     parser = TonnikalaHTMLParser(filename, string)
     parsed = parser.parse()
-    generator = TonnikalaIRGenerator(document=parsed, translatable=False, control_prefix='js')
+    generator = TonnikalaIRGenerator(document=parsed, translatable=False, 
+                                     control_prefix='js', filename=filename,
+                                     source=string)
     tree = generator.generate_tree()
     tree = generator.flatten_element_nodes(tree)
     tree = generator.merge_text_nodes(tree)

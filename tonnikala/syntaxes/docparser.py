@@ -137,13 +137,13 @@ class TonnikalaXMLParser(sax.ContentHandler):
 class StringWithLocation(str):
     def __new__(cls, value, lineno, offset):
         val = str.__new__(cls, value)
-        val.lineno = lineno
-        val.offset = offset
+        val.position = lineno, offset
         return val
 
 
 attrfind = getattr(html_parser, 'attrfind_tolerant', html_parser.attrfind)
 tagfind = getattr(html_parser, 'tagfind_tolerant', html_parser.tagfind)
+
 
 # object to force a new-style class!
 class TonnikalaHTMLParser(html_parser.HTMLParser, object):

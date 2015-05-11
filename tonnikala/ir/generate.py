@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless, Expression, Comment, IRTree
-from xml.dom.minidom    import Node
+"""Generates IR nodes from DOM tree"""
 
 __docformat__ = "epytext"
 
-"""Generates IR nodes from DOM tree"""
+from xml.dom.minidom    import Node
+from .nodes import (Element, Text, If, For, Define, Import, EscapedText,
+                    MutableAttribute, ContainerNode, EscapedText, Root, 
+                    DynamicAttributes, Unless, Expression, Comment, IRTree)
+
+from ..runtime.exceptions import TemplateSyntaxError
 
 html5_empty_tags = frozenset('''
     br
@@ -25,6 +29,7 @@ html5_empty_tags = frozenset('''
     keygen
     source
 '''.split())
+
 
 html5_cdata_elements = frozenset('''
     script
@@ -51,10 +56,19 @@ class all_set(object):
 
 
 class BaseIRGenerator(object):
-    def __init__(self, *a, **kw):
+    def __init__(self, filename=None, source=None, *a, **kw):
         super(BaseIRGenerator, self).__init__(*a, **kw)
+        self.filename = filename
+        self.source = source
         self.states = [ {} ]
         self.tree = IRTree()
+
+    def syntax_error(self, message, lineno=None):
+        raise TemplateSyntaxError(
+            message,
+            lineno,
+            source=self.source,
+            filename=self.filename)
 
     def merge_text_nodes_on(self, node):
         """Merges all consecutive non-translatable text nodes into one"""

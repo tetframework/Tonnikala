@@ -229,6 +229,7 @@ def fake_exc_info(exc_info, filename, lineno):
     }
 
     # and fake the exception
+    lineno = lineno or 0
     code = compile('\n' * (lineno - 1) + raise_helper, filename, 'exec')
 
     # if it's possible, change the name of the code.  This won't work

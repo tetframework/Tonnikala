@@ -14,17 +14,14 @@ except NameError:
     unicode = str
 
 
-class IRTemplateSyntaxError(SyntaxError):
-    def __init__(self, message, node):
-        super(IRTemplateSyntaxError, self).__init__(message)
-
-
 class BaseNode(object):
-    lineno = None
-    column = None
+    position = (None, None)
 
     def __repr__(self):
         return self.__class__.__name__ + '(%s)' % str(self)
+
+    def validate(self, validator):
+        pass
 
 
 class Text(BaseNode):
@@ -139,6 +136,12 @@ class ContainerNode(BaseNode):
     def __str__(self):
         return str(self.children)
 
+    def validate(self, validator):
+        for i in self.children:
+            i.validate(validator)
+
+        super(ContainerNode, self).validate(validator)
+
 
 class Root(ContainerNode):
     pass
@@ -164,9 +167,9 @@ class DynamicAttributes(BaseNode):
         return str(self.expression)
 
 
-class ComplexExpression(ContainerNode):
+class DynamicText(ContainerNode):
     def __init__(self):
-        super(ComplexExpression, self).__init__()
+        super(DynamicText, self).__init__()
         pass
 
     def __str__(self):
@@ -218,8 +221,13 @@ class For(ContainerNode):
         self.expression = expression
         self.parts = self.IN_RE.split(self.expression, 1)
 
+    def validate(self, validator):
         if len(self.parts) != 2:
-            raise ValueError("for does not have proper format: var[, var...] in expression")
+            validator.syntax_error(
+                "for does not have proper format: var[, var...] in expression",
+                node=self)
+
+        super(For, self).validate(validator)
 
     def __str__(self):
         children = str(self.children)
@@ -299,21 +307,27 @@ class Extends(ContainerNode):
         if isinstance(child, Comment):
             return
 
-        if isinstance(child, Text):
-            if child.text.strip():
-                raise IRTemplateSyntaxError(
-                    "No Text allowed within an Extend block", child)
-
+        # ignore Text nodes with whitespace-only content
+        if isinstance(child, Text) and not child.text.strip():
             return
 
-        if not isinstance(child, (Block, Define)):
-            raise IRTemplateSyntaxError(
-                "Child of type %s is not allowed within an Extend block" %
-                    child.__class__.__name__,
-                child
-            )
-
         super(Extends, self).add_child(child)
+
+    def validate(self, validator):
+        for child in self.children:
+            if isinstance(child, Text):
+                validator.syntax_error(
+                    "No Text allowed within an Extends block", node=child)
+
+            if not isinstance(child, (Block, Define)):
+                validator.syntax_error(
+                    "Only nodes of type Block or Define "
+                    "allowed within an Extends block, not %s" %
+                        child.__class__.__name__,
+                    child
+                )
+
+        super(Extends, self).validate(validator)
 
 
 class IRTree(object):

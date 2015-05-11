@@ -7,7 +7,7 @@ __docformat__ = "epytext"
 
 import re
 
-from tonnikala.ir.nodes import Text, ComplexExpression, TranslatableText
+from tonnikala.ir.nodes import Text, DynamicText, TranslatableText
 from tonnikala.languages import javascript, python
 from tonnikala.exceptions import ParseError
 
@@ -65,7 +65,7 @@ def create_text_nodes(text, is_cdata=False, translatable=False):
     if len(rv) == 1:
         return rv[0]
 
-    node = ComplexExpression()
+    node = DynamicText()
     for i in rv:
         node.add_child(i)
 
@@ -112,7 +112,7 @@ def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False, 
     if len(nodes) == 1:
         return nodes[0]
 
-    node = ComplexExpression()
+    node = DynamicText()
     for i in nodes:
         node.add_child(i)
 

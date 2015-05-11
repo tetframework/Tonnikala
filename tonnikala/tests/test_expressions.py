@@ -22,11 +22,11 @@ class TestExpressions(unittest.TestCase):
             expr_parser=javascript.parse_expression))
 
         self.assertEqual(content,
-            'ComplexExpression([Text(a ), JavascriptExpression(1 / 0), Text( /} })])')
+            'DynamicText([Text(a ), JavascriptExpression(1 / 0), Text( /} })])')
 
         # a regexp literal
         content = repr(expr.handle_text_node('a ${1 + / 0} /} }',
             expr_parser=javascript.parse_expression))
 
         self.assertEqual(content,
-            'ComplexExpression([Text(a ), JavascriptExpression(1 + / 0} /), Text( })])')
+            'DynamicText([Text(a ), JavascriptExpression(1 + / 0} /), Text( })])')

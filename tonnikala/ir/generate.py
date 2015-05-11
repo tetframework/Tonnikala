@@ -128,6 +128,17 @@ class BaseIRGenerator(object):
         return self.state
 
 
+class Validator(object):
+    def __init__(self, domirgen):
+        self.domirgen = domirgen
+
+    def syntax_error(self, message, node=None, lineno=None):
+        source = self.domirgen.source
+        filename = self.domirgen.filename
+        lineno = node.position[0]
+        raise TemplateSyntaxError(message=message, source=source,
+                                  filename=filename, lineno=lineno)
+
 class BaseDOMIRGenerator(BaseIRGenerator):
     def __init__(self, document=None, mode='html5', *a, **kw):
         super(BaseDOMIRGenerator, self).__init__(*a, **kw)
@@ -177,12 +188,6 @@ class BaseDOMIRGenerator(BaseIRGenerator):
                 ir_node.add_child(node)
 
         self.is_cdata = is_cdata_save
-
-    def generate_tree(self):
-        root = Root()
-        self.tree.add_child(root)
-        self.add_children(self.child_iter(self.dom_document), root)
-        return self.tree
 
     def render_constant_attributes(self, element):
         cattr = element.get_constant_attributes()
@@ -273,3 +278,11 @@ class BaseDOMIRGenerator(BaseIRGenerator):
         root = tree.root
         self.flatten_element_nodes_on(root)
         return tree
+
+    def generate_tree(self):
+        root = Root()
+        self.tree.add_child(root)
+        self.add_children(self.child_iter(self.dom_document), root)
+        validator = Validator(self)
+        root.validate(validator)
+        return self.tree

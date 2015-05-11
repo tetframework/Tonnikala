@@ -85,7 +85,7 @@ class BaseGenerator(object):
         elif isinstance(ir_node, nodes.Define):
             new_node = self.DefineNode(ir_node.funcspec)
 
-        elif isinstance(ir_node, nodes.ComplexExpression):
+        elif isinstance(ir_node, nodes.DynamicText):
             new_node = self.ComplexExprNode()
 
         elif isinstance(ir_node, nodes.Expression):

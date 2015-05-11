@@ -97,43 +97,36 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         name = dom_node.tagName
 
         ir_node_stack = []
+        def make_control_node(node_name, irtype, *attrs):
+            if not self.is_control_name(name, node_name):
+                return
 
-        if self.is_control_name(name, 'extends'):
-            ir_node_stack.append(Extends(self.grab_mandatory_attribute(dom_node, 'href')))
+            args = [self.grab_mandatory_attribute(dom_node, i) for i in attrs]
+            irnode = irtype(*args)
+            irnode.position = dom_node.position
+            ir_node_stack.append(irnode)
 
-        elif self.is_control_name(name, 'block'):
-            ir_node_stack.append(Block(self.grab_mandatory_attribute(dom_node, 'name')))
-
-        elif self.is_control_name(name, 'if'):
-            ir_node_stack.append(If(self.grab_mandatory_attribute(dom_node, 'test')))
-
-        elif self.is_control_name(name, 'for'):
-            ir_node_stack.append(For(self.grab_mandatory_attribute(dom_node, 'each')))
-
-        elif self.is_control_name(name, 'def'):
-            ir_node_stack.append(Define(self.grab_mandatory_attribute(dom_node, 'function')))
-
-        elif self.is_control_name(name, 'import'):
-            ir_node_stack.append(Import(self.grab_mandatory_attribute(dom_node, 'href'),
-                                        self.grab_mandatory_attribute(dom_node, 'alias')))
+        make_control_node('extends', Extends, 'href')
+        make_control_node('block',   Block,   'name')
+        make_control_node('if',      If,      'test')
+        make_control_node('for',     For,     'each')
+        make_control_node('def',     Define,  'function')
+        make_control_node('import',  Import,  'href', 'alias')
 
         # TODO: add all node types in order
         generate_element = not bool(ir_node_stack)
-        attr = self.grab_and_remove_control_attr(dom_node, 'block')
-        if attr is not None:
-            ir_node_stack.append(Block(attr))
 
-        attr = self.grab_and_remove_control_attr(dom_node, 'if')
-        if attr is not None:
-            ir_node_stack.append(If(attr))
+        def make_control_node_of_attr(irtype, name):
+            attr = self.grab_and_remove_control_attr(dom_node, name)
+            if attr is not None:
+                irnode = irtype(attr)
+                irnode.position = getattr(attr, 'position', (0, 0))
+                ir_node_stack.append(irnode)
 
-        attr = self.grab_and_remove_control_attr(dom_node, 'for')
-        if attr is not None:
-            ir_node_stack.append(For(attr))
-
-        attr = self.grab_and_remove_control_attr(dom_node, 'def')
-        if attr is not None:
-            ir_node_stack.append(Define(attr))
+        make_control_node_of_attr(Block, 'block')
+        make_control_node_of_attr(If, 'if')
+        make_control_node_of_attr(For, 'for')
+        make_control_node_of_attr(Define, 'def')
 
         # TODO: add all control attrs in order
         if not ir_node_stack:
@@ -172,9 +165,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             overridden_children = [ Expression(content) ]
 
         if self.is_control_name(dom_node.tagName, 'replace'):
-            replace = dom_node.getAttribute('value')
-            if replace is None:
-                raise ValueError("No value attribute specified for replace tag")
+            replace = self.grab_mandatory_attribute(dom_node, 'value')
         else:
             replace = self.grab_and_remove_control_attr(dom_node, 'replace')
 
@@ -233,7 +224,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             ir_node = EscapedText(dom_node.toxml())
             return ir_node
 
-        raise ValueError("Unhandled node type %d" % node_t)
+        self.syntax_error('Unhandled node type %d' % node_t, node=dom_node)
 
     def is_attr_translatable(self, attr_name):
         return attr_name in self.TRANSLATABLE_ATTRS

@@ -4,7 +4,11 @@ import unittest
 import six
 import os.path
 import codecs
-from collections import OrderedDict
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 from tonnikala.loader import Loader, FileLoader
 

@@ -3,8 +3,10 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import re
 
 from tonnikala.helpers import escape
-from collections import OrderedDict
-
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 try:
     # noinspection PyUnresolvedReferences,PyUnboundLocalVariable

@@ -21,6 +21,17 @@ speedups = Feature(
 
 extra_kw = dict(features={'speedups': speedups })
 
+requires = """
+    six>=1.4.1
+    markupsafe>=0.18
+    slimit>=0.8.1
+    ply<3.6.0
+""".split()
+
+if sys.version_info < (2, 7):
+    requires.append('ordereddict')
+
+
 setup(
     name='tonnikala',
     version='0.20',
@@ -42,12 +53,7 @@ setup(
         "Topic :: Text Processing :: Markup :: HTML"
     ],
     scripts=['bin/tonnikala-compile-jstemplate'],
-    install_requires="""
-        six>=1.4.1
-        markupsafe>=0.18
-        slimit>=0.8.1
-        ply<3.6.0
-    """.split(),
+    install_requires=requires,
     setup_requires=[],
     include_package_data=True,
     packages=find_packages(),

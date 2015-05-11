@@ -68,8 +68,8 @@ try:
     Buffer = _Buffer
     del _Buffer
     del _set_escape_method
-except Exception as e:
-    print(e)
+except ImportError as e:
+    pass
 
 
 def output_attrs(values):

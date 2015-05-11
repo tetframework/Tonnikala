@@ -86,7 +86,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             lineno=lineno)
 
     def grab_mandatory_attribute(self, dom_node, name):
-        if name not in dom_node.attributes:
+        if not dom_node.hasAttribute(name):
             self.syntax_error(
                 message="<%s> does not have the required attribute '%s'"
                         % (dom_node.name, name),

@@ -70,26 +70,54 @@ def NameX(id, store=False):
     return Name(id=id, ctx=Load() if not store else Store())
 
 
+def adjust_locations(ast_node, first_lineno, first_offset):
+    """
+    Adjust the locations of the ast nodes, offsetting them
+    to the new lineno and column offset
+    """
+
+    line_delta = first_lineno - 1
+    def _fix(node):
+        if 'lineno' in node._attributes:
+            lineno = node.lineno
+            col    = node.col_offset
+
+            # adjust the offset on the first line
+            if lineno == 1:
+                col += first_offset
+
+            lineno += line_delta
+
+            node.lineno = lineno
+            node.col_offset = col
+
+        for child in iter_child_nodes(node):
+            _fix(child)
+
+    _fix(ast_node)
+
+
 def get_expression_ast(expression, mode='eval', adjust=(0, 0)):
     if not isinstance(expression, string_types):
         return expression
 
     t = None
+    position = getattr(expression, 'position', (1, 0))
+    position = position[0] + adjust[0], position[1] + adjust[1]
     try:
         exp = expression
         if expression[-1:] != '\n':
             exp = expression + '\n'
         tree = ast.parse(exp, mode=mode)
     except SyntaxError as e:
-        print(type(expression))
         lineno = e.lineno
-        lineno += getattr(expression, 'position', (1, 0))[0] - 1
-        lineno += adjust[0]
+        lineno += position[0] - 1
         t = TemplateSyntaxError(e.msg, lineno=lineno)
 
     if t:
         raise t
-
+    
+    adjust_locations(tree, position[0], position[1])
     return tree.body
 
 
@@ -220,7 +248,6 @@ class PyExpressionNode(PythonNode):
     def __init__(self, expression):
         super(PyExpressionNode, self).__init__()
         self.expr = expression
-        print("here", type(self.expr))
 
 
     def get_expressions(self):
@@ -782,5 +809,3 @@ class Generator(BaseGenerator):
     def lnotab_info(self):
         # TODO implement
         return {}
-
-

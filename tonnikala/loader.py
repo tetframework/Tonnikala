@@ -105,7 +105,7 @@ class Template(object):
             context = make_template_context(context)
             self.bind(context)
             return context[funcname]()
-        except Exception:
+        except Exception as e:
             exc_info = sys.exc_info()
 
         self.handle_exception(exc_info)
@@ -129,7 +129,7 @@ class TemplateInfo(object):
         self.lnotab = lnotab
 
     def get_corresponding_lineno(self, line):
-        return self.lnotab.get(line, 0)
+        return self.lnotab.get(line, line)
 
 
 def _new_globals(runtime):
@@ -175,7 +175,7 @@ class Loader(object):
         if self.debug:
             import ast
 
-            print(ast.dump(code))
+            print(ast.dump(code, True, True))
 
             try:
                 import astor

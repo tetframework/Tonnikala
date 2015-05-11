@@ -20,7 +20,7 @@ except:
 
 class StringWithLocation(unicode):
     def __new__(cls, value, lineno, offset):
-        val = str.__new__(cls, value)
+        val = unicode.__new__(cls, value)
         val.position = lineno, offset
         return val
 

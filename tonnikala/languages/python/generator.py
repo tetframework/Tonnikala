@@ -5,13 +5,18 @@
 # both python2 and 3
 from __future__ import absolute_import, division, print_function
 
-import warnings
-from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
-from tonnikala.languages.python.astalyzer import FreeVarFinder
+import ast
 from ast import *
 from collections import Iterable
-import ast
+import warnings
+
 from six import string_types
+
+from ...runtime.debug import TemplateSyntaxError
+from ...helpers import StringWithLocation
+from ..base import LanguageNode, ComplexNode, BaseGenerator
+from .astalyzer import FreeVarFinder
+
 
 HAS_ASSERT = False
 try:
@@ -19,6 +24,7 @@ try:
     HAS_ASSERT = bool(sysconfig.get_config_var('Py_DEBUG'))
 except:
     pass
+
 
 name_counter = 0
 ALWAYS_BUILTINS = '''
@@ -64,11 +70,26 @@ def NameX(id, store=False):
     return Name(id=id, ctx=Load() if not store else Store())
 
 
-def get_expression_ast(expression, mode='eval'):
+def get_expression_ast(expression, mode='eval', adjust=(0, 0)):
     if not isinstance(expression, string_types):
         return expression
 
-    tree = ast.parse(expression, mode=mode)
+    t = None
+    try:
+        exp = expression
+        if expression[-1:] != '\n':
+            exp = expression + '\n'
+        tree = ast.parse(exp, mode=mode)
+    except SyntaxError as e:
+        print(type(expression))
+        lineno = e.lineno
+        lineno += getattr(expression, 'position', (1, 0))[0] - 1
+        lineno += adjust[0]
+        t = TemplateSyntaxError(e.msg, lineno=lineno)
+
+    if t:
+        raise t
+
     return tree.body
 
 
@@ -199,6 +220,7 @@ class PyExpressionNode(PythonNode):
     def __init__(self, expression):
         super(PyExpressionNode, self).__init__()
         self.expr = expression
+        print("here", type(self.expr))
 
 
     def get_expressions(self):
@@ -378,17 +400,17 @@ class PyAttrsNode(PythonNode):
 
 
 class PyForNode(PyComplexNode):
-    def __init__(self, vars, expression):
+    def __init__(self, target_and_expression, parts):
         super(PyForNode, self).__init__()
-        self.vars = vars
-        self.expression = expression
-
+        self.target_and_expression = target_and_expression
 
     def generate_contents(self, generator, parent):
+        lineno, col = getattr(self.target_and_expression, 'position', (1, 0))
+        
         body = get_expression_ast(
-            "for %s in %s: pass" %
-            (self.vars, self.expression),
-            'exec'
+            StringWithLocation('for %s: pass' % self.target_and_expression,
+                lineno, col - 4),
+            'exec',
         )
         for_node      = body[0]
         for_node.body = self.generate_child_ast(generator, self)
@@ -403,16 +425,18 @@ class PyForNode(PyComplexNode):
 class PyDefineNode(PyComplexNode):
     def __init__(self, funcspec):
         super(PyDefineNode, self).__init__()
+
+        self.position = getattr(funcspec, 'position', (1, 0))
+
         if '(' not in funcspec:
             funcspec += '()'
 
         self.funcspec = funcspec
-        self.def_clause = "def %s:" % self.funcspec
-
 
     def generate_ast(self, generator, parent):
         body = get_expression_ast(
-            "def %s:pass" % self.funcspec,
+            StringWithLocation('def %s: pass' % self.funcspec,
+                self.position[0], self.position[1] - 4),
             "exec"
         )
         def_node = body[0]
@@ -448,18 +472,17 @@ class PyComplexExprNode(PyComplexNode):
 class PyBlockNode(PyComplexNode):
     def __init__(self, name):
         super(PyBlockNode, self).__init__()
-        if not isinstance(name, str):
-            name = name.encode('UTF-8') # python 2
-
-        # ensure str
-        self.name = str(name)
+        self.name = name
 
 
     def generate_ast(self, generator, parent):
         is_extended = isinstance(parent, PyExtendsNode)
 
+        name = self.name
+        position = getattr(name, 'position', (1, 0))
         body = get_expression_ast(
-            "def %s():pass" % self.name,
+            StringWithLocation('def %s(): pass' % name,
+                position[0], position[1] - 4),
             "exec"
         )
         def_node = body[0]
@@ -467,12 +490,15 @@ class PyBlockNode(PyComplexNode):
             self.generate_child_ast(generator, self)
         )
 
-        generator.add_block(self.name, def_node)
+        if not isinstance(name, str):
+            name = name.encode('UTF-8') # python 2
+
+        generator.add_block(str(name), def_node)
 
         if not is_extended:
             # call the block in place
             return self.generate_output_ast(
-                [ SimpleCall(NameX(self.name), []) ],
+                [ SimpleCall(NameX(str(self.name)), []) ],
                 self, parent
             )
 

@@ -152,11 +152,9 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
 
         guard_expression = self.get_guard_expression(dom_node)
 
-
         # on :strip="" the expression is to be set to "1"
         if guard_expression is not None and not guard_expression.strip():
             guard_expression = '1'
-
 
         # facility to replace children for content control attr
         overridden_children = None

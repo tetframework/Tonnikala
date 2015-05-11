@@ -80,7 +80,7 @@ class BaseGenerator(object):
             new_node = self.UnlessNode(ir_node.expression)
 
         elif isinstance(ir_node, nodes.For):
-            new_node = self.ForNode(ir_node.parts[0], ir_node.parts[1])
+            new_node = self.ForNode(ir_node.expression, ir_node.parts)
 
         elif isinstance(ir_node, nodes.Define):
             new_node = self.DefineNode(ir_node.funcspec)

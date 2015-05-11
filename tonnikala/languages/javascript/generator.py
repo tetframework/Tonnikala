@@ -473,10 +473,10 @@ class JsAttrsNode(JavascriptNode):
 
 
 class JsForNode(JsComplexNode):
-    def __init__(self, vars, expression):
+    def __init__(self, expression, parts):
         super(JsForNode, self).__init__()
-        self.vars = vars
-        self.expression = expression
+        self.vars = parts[0]
+        self.expression = parts[1]
 
 
     def generate_contents(self, generator, parent):

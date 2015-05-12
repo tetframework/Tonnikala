@@ -159,6 +159,7 @@ Beta, working features are
 * Pyramid integration
 * Javascript as the target language (using ``js:`` prefix)
 * Overriding attributes, setting attrs from dictionary: ``py:attrs``
+* Understandable exceptions and readable tracebacks on CPython
 
 Upcoming features:
 

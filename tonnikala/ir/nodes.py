@@ -319,9 +319,9 @@ class Extends(ContainerNode):
                 validator.syntax_error(
                     "No Text allowed within an Extends block", node=child)
 
-            if not isinstance(child, (Block, Define)):
+            if not isinstance(child, (Block, Define, Import)):
                 validator.syntax_error(
-                    "Only nodes of type Block or Define "
+                    "Only nodes of type Block, Import or Define "
                     "allowed within an Extends block, not %s" %
                         child.__class__.__name__,
                     child

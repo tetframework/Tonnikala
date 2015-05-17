@@ -833,5 +833,4 @@ class Generator(BaseGenerator):
         lmapper = LocationMapper()
         lmapper.map_linenos(tree)
         self.lnotab = lmapper.lineno_map
-        print(self.lnotab)
         return tree

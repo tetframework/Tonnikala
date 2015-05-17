@@ -643,24 +643,20 @@ def coalesce_outputs(tree):
 
 def remove_locations(node):
     """
-    When you compile a node tree with compile(), the compiler expects lineno and
-    col_offset attributes for every node that supports them.  This is rather
-    tedious to fill in for generated nodes, so this helper adds these attributes
-    recursively where not already set, by setting them to the values of the
-    parent node.  It works recursively starting at *node*.
+    Removes locations from the given AST tree completely
     """
 
-    def _fix(node):
-        if 'lineno' in node._attributes:
-            node.lineno = 1
+    def fix(node):
+        if 'lineno' in node._attributes and hasattr(node, 'lineno'):
+            del node.lineno
 
-        if 'col_offset' in node._attributes:
-            node.col_offset = 0
+        if 'col_offset' in node._attributes and hasattr(node, 'col_offset'):
+            del node.col_offset
 
         for child in iter_child_nodes(node):
-            _fix(child)
+            fix(child)
 
-    _fix(node)
+    fix(node)
 
 
 class PyRootNode(PyComplexNode):
@@ -729,6 +725,7 @@ class PyRootNode(PyComplexNode):
         code += '    return __TK__context\n'
 
         tree = ast.parse(code)
+        remove_locations(tree)
 
         class LocatorAndTransformer(ast.NodeTransformer):
             binder = None
@@ -749,13 +746,34 @@ class PyRootNode(PyComplexNode):
         binder.body[2:2] = generator.imports
 
         coalesce_outputs(tree)
-
-        if HAS_ASSERT:
-            remove_locations(tree)
-        else:
-            fix_missing_locations(tree)
-
         return tree
+
+
+class LocationMapper(object):
+    def __init__(self):
+        self.lineno_map = {1: 1}
+        self.prev_original_line = 1
+        self.prev_mapped_line = 1
+        self.prev_column = 0
+
+    def map_linenos(self, node):
+        if 'lineno' in node._attributes:
+            if hasattr(node, 'lineno'):
+                if node.lineno != self.prev_original_line:
+                    self.prev_mapped_line += 1
+                    self.lineno_map[self.prev_mapped_line] = node.lineno
+                    self.prev_original_line = node.lineno
+
+            node.lineno = self.prev_mapped_line
+
+        if 'col_offset' in node._attributes:
+            if hasattr(node, 'col_offset'):
+                self.prev_column = node.col_offset
+
+            node.col_offset = self.prev_column
+
+        for child in iter_child_nodes(node):
+            self.map_linenos(child)
 
 
 class Generator(BaseGenerator):
@@ -783,6 +801,7 @@ class Generator(BaseGenerator):
         self.top_level_names = set()
         self.extended_href   = None
         self.imports         = []
+        self.lnotab          = None
 
     def add_bind_decorator(self, block):
         binder_call = NameX('__TK__bind')
@@ -807,5 +826,12 @@ class Generator(BaseGenerator):
         self.extended_href = href
 
     def lnotab_info(self):
-        # TODO implement
-        return {}
+        return self.lnotab
+
+    def generate_ast(self):
+        tree = super(Generator, self).generate_ast()
+        lmapper = LocationMapper()
+        lmapper.map_linenos(tree)
+        self.lnotab = lmapper.lineno_map
+        print(self.lnotab)
+        return tree

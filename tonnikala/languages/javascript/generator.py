@@ -83,9 +83,6 @@ Store = Load
 Expr = ExprStatement
 
 
-def fix_missing_locations(tree):
-    pass
-
 def Attribute(value, attr, ctx=None):
     return DotAccessor(value, Name(attr))
 

@@ -147,7 +147,8 @@ def static_expr_to_bool(expr):
 class PythonNode(LanguageNode):
     is_top_level = False
 
-    def generate_output_ast(self, code, generator, parent, escape=False):
+    def generate_output_ast(self, code, generator, parent, escape=False,
+             position=None):
         func = Name(id='__TK__output', ctx=Load())
 
         if not isinstance(code, list):
@@ -155,9 +156,13 @@ class PythonNode(LanguageNode):
 
         rv = []
         for i in code:
+            if position is not None:
+                i.lineno, i.col_offset = position
+
             e = Expr(SimpleCall(func, [i]))
             e.output_args = [i]
             rv.append(e)
+
         return rv
 
 
@@ -199,7 +204,8 @@ class PythonNode(LanguageNode):
         rv = [
             self.make_function(name, body,
                 arguments=['__TK__output', '__TK__escape']),
-            Expr(SimpleCall(NameX(name), [ NameX('__TK__output'), NameX('__TK__escape') ]))
+            Expr(SimpleCall(NameX(name), 
+                 [ NameX('__TK__output'), NameX('__TK__escape') ]))
         ]
         return rv
 
@@ -467,8 +473,9 @@ class PyDefineNode(PyComplexNode):
             "exec"
         )
         def_node = body[0]
+        name = self.funcspec.partition('(')[0]
         def_node.body = self.make_buffer_frame(
-            self.generate_child_ast(generator, self),
+            self.generate_child_ast(generator, self)
         )
 
         # move the function out of the closure
@@ -493,7 +500,8 @@ class PyComplexExprNode(PyComplexNode):
 
 
     def generate_ast(self, generator, parent=None):
-        return self.generate_output_ast(self.get_expressions(), generator, parent)
+        return self.generate_output_ast(self.get_expressions(),
+                                        generator, parent)
 
 
 class PyBlockNode(PyComplexNode):
@@ -506,11 +514,13 @@ class PyBlockNode(PyComplexNode):
         is_extended = isinstance(parent, PyExtendsNode)
 
         name = self.name
+        blockfunc_name = '__TK__block__%s' % name
         position = getattr(name, 'position', (1, 0))
         body = get_expression_ast(
-            StringWithLocation('def %s(): pass' % name,
+            StringWithLocation(
+                'def %s():pass' % blockfunc_name,
                 position[0], position[1] - 4),
-            "exec"
+            'exec'
         )
         def_node = body[0]
         def_node.body = self.make_buffer_frame(
@@ -520,13 +530,15 @@ class PyBlockNode(PyComplexNode):
         if not isinstance(name, str):
             name = name.encode('UTF-8') # python 2
 
-        generator.add_block(str(name), def_node)
+        generator.add_block(str(name), def_node, blockfunc_name)
 
         if not is_extended:
             # call the block in place
             return self.generate_output_ast(
                 [ SimpleCall(NameX(str(self.name)), []) ],
-                self, parent
+                self,
+                parent,
+                position=position
             )
 
         else:
@@ -704,6 +716,7 @@ class PyRootNode(PyComplexNode):
         code += 'def __TK__binder(__TK__context):\n'
         code += '    __TK__original_context = __TK__context.copy()\n'
         code += '    __TK__bind = __TK__runtime.bind(__TK__context)\n'
+        code += '    __TK__bindblock = __TK__runtime.bind(__TK__context, block=True)\n'
 
         if extended:
             # an extended template does not have a __main__ (it is inherited)
@@ -742,8 +755,8 @@ class PyRootNode(PyComplexNode):
 
         # inject the other top level funcs in the binder
         binder = locator.binder
-        binder.body[2:2] = toplevel_funcs
-        binder.body[2:2] = generator.imports
+        binder.body[3:3] = toplevel_funcs
+        binder.body[3:3] = generator.imports
 
         coalesce_outputs(tree)
         return tree
@@ -803,15 +816,15 @@ class Generator(BaseGenerator):
         self.imports         = []
         self.lnotab          = None
 
-    def add_bind_decorator(self, block):
-        binder_call = NameX('__TK__bind')
+    def add_bind_decorator(self, func, block=True):
+        binder_call = NameX('__TK__bind' + ('block' if block else ''))
         decors = [ binder_call ]
-        block.decorator_list = decors
+        func.decorator_list = decors
 
-    def add_block(self, name, block):
-        self.top_level_names.add(name)
-        self.add_bind_decorator(block)
-        self.blocks.append(block)
+    def add_block(self, name, blockfunc, blockfunc_name):
+        self.top_level_names.add(blockfunc_name)
+        self.add_bind_decorator(blockfunc, block=True)
+        self.blocks.append(blockfunc)
 
     def add_top_def(self, name, defblock):
         self.top_level_names.add(name)
@@ -833,5 +846,4 @@ class Generator(BaseGenerator):
         lmapper = LocationMapper()
         lmapper.map_linenos(tree)
         self.lnotab = lmapper.lineno_map
-        print(self.lnotab)
         return tree

@@ -200,18 +200,19 @@ def fake_exc_info(exc_info, filename, lineno):
 
     # figure the real context out
     if tb is not None:
-        real_locals = tb.tb_frame.f_locals.copy()
-        ctx = real_locals.get('context')
-        if ctx:
-            locals = ctx.get_all()
-        else:
-            locals = {}
-        for name, value in iteritems(real_locals):
-            if name.startswith('l_') and value is not missing:
-                locals[name[2:]] = value
+        # real_locals = tb.tb_frame.f_locals.copy()
+        # ctx = real_locals.get('context')
+        # if ctx:
+        #     locals = ctx.get_all()
+        # else:
+        #     locals = {}
+        # for name, value in iteritems(real_locals):
+        #     if name.startswith('l_') and value is not missing:
+        #         locals[name[2:]] = value
 
         # if there is a local called __tonnikala_exception__, we get
         # rid of it to not break the debug functionality.
+        locals = tb.tb_frame.f_locals.copy()
         locals.pop('__tonnikala_exception__', None)
     else:
         locals = {}
@@ -241,8 +242,8 @@ def fake_exc_info(exc_info, filename, lineno):
             function = tb.tb_frame.f_code.co_name
             if function == '__main__':
                 location = 'top-level template code'
-            elif function.endswith('_block'):
-                location = 'block "%s"' % function[:-6]
+            elif function.startswith('__TK__block__'):
+                location = 'block "%s"' % function[13:]
             elif function.startswith('__TK__typed__'):
                 functype = function[13:].split('__')[0].replace('_', ' ')
                 location = functype

@@ -123,20 +123,23 @@ Pyramid integration
 
 Include `'tonnikala.pyramid'` into your config to enable Tonnikala. When included, tonnikala adds the following configuration directives:
 
-`add_tonnikala_extensions(*extensions)`
+``add_tonnikala_extensions(*extensions)``
     Registers tonnikala renderer for these template extensions. By default Tonnikala is not registered as a renderer for any extension.
-    For example: `config.add_tonnikala_extensions('.html', '.tk')` would enable Tonnikala renderer for templates with either of these extensions.
+    For example: ``config.add_tonnikala_extensions('.html', '.tk')`` would enable Tonnikala renderer for templates with either of these extensions.
 
-`add_tonnikala_search_paths(*paths)`
+``add_tonnikala_search_paths(*paths)``
     Adds the given paths to the end of Tonnikala search paths that are searched for templates. These can be absolute paths, or
-    `package.module:directory/subdirectory`-style asset specs. By default no paths are searched explicitly (but you can always
-    use an asset spec for template.
+    ``package.module:directory/subdirectory``-style asset specs. By default no search path is set (though of course you can
+    use an asset spec for template).
 
-`set_tonnikala_reload(reload)`
-    If `True`, makes tonnikala not cache templates. Default is `False`.
+``set_tonnikala_reload(reload)``
+    If ``True``, makes Tonnikala not cache templates. Default is ``False``.
 
-These 3 can also be controlled by `tonnikala.extensions`, `tonnikala.search_paths` and `tonnikala.reload` respectively in the deployment settings (the `.ini` files). 
-If `tonnikala.reload` is not set, Tonnikala shall follow the `pyramid.reload_templates` setting.
+``set_debug_templates(debug)``
+    If ``True``, makes Tonnikala skip some optimizations that make debugging harder.
+
+These 3 can also be controlled by ``tonnikala.extensions``, ``tonnikala.search_paths`` and ``tonnikala.reload`` respectively in the deployment settings (the ``.ini`` files). 
+If ``tonnikala.reload`` is not set, Tonnikala shall follow the ``pyramid.reload_templatea`` setting.
 
 Status
 ======

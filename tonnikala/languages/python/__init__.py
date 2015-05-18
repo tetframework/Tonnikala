@@ -10,7 +10,7 @@ from ...exceptions import ParseError
 from ...ir.nodes import InterpolatedExpression
 from tokenize import generate_tokens
 from ...runtime.debug import TemplateSyntaxError
-from ...compat import PY2
+from ...compat import PY2, next_method
 
 
 try:
@@ -48,7 +48,7 @@ class TokenReadLine(object):
         return self.io.tell()
 
     def get_readline(self):
-        return self.readline().__next__
+        return next_method(self.readline())
 
 
 def gen_tokens(text, pos):

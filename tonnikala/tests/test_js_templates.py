@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+from ..compat import text_type
 import unittest
-import six
 import os.path
 import codecs
 from tonnikala.loader import JSLoader
@@ -42,7 +42,7 @@ def execute_nodejs_runner(template_name, context):
 
 def render(template, debug=False, **args):
     compile_js_template(template, 'scratch.js')
-    return six.text_type(execute_nodejs_runner('scratch.js', args))
+    return text_type(execute_nodejs_runner('scratch.js', args))
 
 
 class TestJsTemplates(unittest.TestCase):

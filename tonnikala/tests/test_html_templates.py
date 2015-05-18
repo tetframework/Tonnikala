@@ -1,9 +1,10 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import unittest
-import six
 import os.path
 import codecs
+
+from ..compat import text_type
 
 try:
     from collections import OrderedDict
@@ -14,7 +15,7 @@ from tonnikala.loader import Loader, FileLoader
 
 def render(template, debug=False, **args):
     compiled = FileLoader(debug=debug).load_string(template)
-    return six.text_type(compiled.render(args))
+    return text_type(compiled.render(args))
 
 data_dir = os.path.abspath(os.path.dirname(__file__))
 data_dir = os.path.join(data_dir, 'files')

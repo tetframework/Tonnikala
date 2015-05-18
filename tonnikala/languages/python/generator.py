@@ -10,7 +10,7 @@ from ast import *
 from collections import Iterable
 import warnings
 
-from six import string_types
+from ...compat import string_types
 
 from ...runtime.debug import TemplateSyntaxError
 from ...helpers import StringWithLocation

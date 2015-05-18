@@ -15,13 +15,15 @@ import traceback
 from types import TracebackType, CodeType
 from .exceptions import TemplateSyntaxError
 from ..helpers import internal_code
-from six import reraise, iteritems, PY2
+from ..compat import reraise, PY2
+
 
 # on pypy we can take advantage of transparent proxies
 try:
     from __pypy__ import tproxy
 except ImportError:
     tproxy = None
+
 
 # how does the raise helper look like?
 try:

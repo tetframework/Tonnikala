@@ -22,7 +22,6 @@ speedups = Feature(
 extra_kw = dict(features={'speedups': speedups })
 
 requires = """
-    six>=1.4.1
     markupsafe>=0.18
     slimit>=0.8.1
     ply<3.6.0

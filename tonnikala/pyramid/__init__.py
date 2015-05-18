@@ -18,7 +18,6 @@ from pyramid.resource import abspath_from_resource_spec
 import pkg_resources
 import tonnikala
 import tonnikala.loader
-import six
 from pyramid.compat import is_nonstr_iter
 from pyramid.settings import asbool, aslist
 

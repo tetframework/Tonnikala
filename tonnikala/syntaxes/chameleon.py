@@ -5,11 +5,7 @@ __docformat__ = "epytext"
 
 """XML parser"""
 
-import six
-from six.moves import html_entities
-from six import text_type
-
-entitydefs = html_entities.entitydefs
+from ..compat import text_type
 
 from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless, Expression, Comment
 from xml.dom.minidom import Node

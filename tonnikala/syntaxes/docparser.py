@@ -6,16 +6,13 @@ __docformat__ = "epytext"
 """XML parser"""
 
 import sys
-import six
 from xml import sax
 from xml.dom import minidom as dom
-from six.moves import html_entities, html_parser
-from six import text_type
 
+from ..compat import (html_entity_defs, html_parser, 
+                      text_type, unichr, BytesIO, StringIO)
 from ..helpers import StringWithLocation
 from ..runtime.exceptions import TemplateSyntaxError
-
-entitydefs = html_entities.entitydefs
 
 
 impl = dom.getDOMImplementation(' ')
@@ -43,10 +40,10 @@ class TonnikalaXMLParser(sax.ContentHandler):
         parser.setContentHandler(self)
         source = sax.xmlreader.InputSource()
 
-        if isinstance(self.source, six.binary_type):
-            stream = six.BytesIO(self.source)
+        if isinstance(self.source, bytes):
+            stream = BytesIO(self.source)
         else:
-            stream = six.StringIO(self.source)
+            stream = StringIO(self.source)
 
         source.setByteStream(stream)
         source.setSystemId(self.filename)
@@ -95,11 +92,11 @@ class TonnikalaXMLParser(sax.ContentHandler):
 
     def skippedEntity(self, name):
         # Encoding?
-        content = text_type(entitydefs.get(name))
+        content = html_entity_defs.get(name)
         if not content:
             raise RuntimeError("Unknown HTML entity &%s;" % name)
 
-        return self.characters(content)
+        return self.characters(text_type(content))
 
     def startElementNS(self, name, qname, attrs): # pragma no cover
         raise NotImplementedError('startElementNS')
@@ -300,7 +297,7 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
     def handle_entityref(self, name):
         # Encoding?
         try:
-            content = text_type(entitydefs[name])
+            content = text_type(html_entity_defs[name])
         except KeyError:
             self.syntax_error("Unknown HTML entity &%s;" % name)
 
@@ -314,7 +311,7 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
             else:
                 cp = int(code, 10)
 
-            content = six.unichr(cp)
+            content = unichr(cp)
             return self.handle_data(content)
         except Exception as e:
             self.syntax_error("Invalid HTML charref &#%s;: %s" % (code, e))

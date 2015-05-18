@@ -4,13 +4,14 @@ from __future__ import (absolute_import, division, print_function,
 
 __docformat__ = "epytext"
 
-import six 
 import token
 
 from ...exceptions import ParseError
 from ...ir.nodes import InterpolatedExpression
 from tokenize import generate_tokens
 from ...runtime.debug import TemplateSyntaxError
+from ...compat import PY2
+
 
 try:
     from StringIO import StringIO
@@ -23,7 +24,7 @@ class PythonExpression(InterpolatedExpression):
     pass
 
 
-if six.PY2:
+if PY2:
     identifier_match = re.compile(r'[^\d\W]\w*')
     expr_continuation = re.compile(r'[{([]|(\.[^\d\W]\w*)')
 else:

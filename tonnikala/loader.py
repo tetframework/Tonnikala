@@ -1,5 +1,4 @@
 import sys
-import six
 import codecs
 import os
 import errno
@@ -14,6 +13,8 @@ from .syntaxes.jinja2 import parse as parse_jinja2
 from .languages.python.generator import Generator as PythonGenerator
 from .languages.javascript.generator import Generator as JavascriptGenerator
 from .runtime import python, exceptions
+from .compat import reraise
+
 
 _make_traceback = None
 MIN_CHECK_INTERVAL = 0.25
@@ -88,7 +89,7 @@ def handle_exception(exc_info=None, source_hint=None, tb_override=_NO):
 
     traceback = _make_traceback((exc_type, exc_value, tb), source_hint)
     exc_type, exc_value, tb = traceback.standard_exc_info
-    six.reraise(exc_type, exc_value, tb)
+    reraise(exc_type, exc_value, tb)
 
 
 class Template(object):

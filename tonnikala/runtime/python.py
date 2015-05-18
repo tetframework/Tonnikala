@@ -4,7 +4,7 @@ NoneType = type(None)
 
 from collections import Mapping
 from ..helpers import escape as strescape
-from six import text_type, PY3
+from ..compat import text_type, PY3
 from collections import deque
 
 from markupsafe import escape

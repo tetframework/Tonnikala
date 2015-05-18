@@ -5,9 +5,6 @@ __docformat__ = "epytext"
 
 """XML parser"""
 
-import six
-from six.moves import html_entities
-from six import text_type
 from xml.dom.minidom    import Node
 from xml import sax
 
@@ -15,14 +12,12 @@ from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, \
     EscapedText, MutableAttribute, ContainerNode, Block, Extends, \
     Root, DynamicAttributes, Unless, Expression, Comment, Code
 
+from ..compat import text_type
 from ..expr               import handle_text_node  # TODO: move this elsewhere.
 from ..ir.generate        import BaseDOMIRGenerator
-from .docparser           import TonnikalaXMLParser, TonnikalaHTMLParser
 from ..runtime.exceptions import TemplateSyntaxError
 
-
-entitydefs = html_entities.entitydefs
-
+from .docparser           import TonnikalaXMLParser, TonnikalaHTMLParser
 
 class TonnikalaIRGenerator(BaseDOMIRGenerator):
     control_prefix = 'py:'

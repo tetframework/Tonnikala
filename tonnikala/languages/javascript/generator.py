@@ -10,7 +10,6 @@ from slimit.parser import Parser
 from slimit import ast
 from slimit.ast import *
 from collections import Iterable
-from six import string_types
 from slimit.scope import SymbolTable
 from slimit.parser import Parser
 from slimit.visitors.scopevisitor import (
@@ -20,7 +19,7 @@ from slimit.visitors.scopevisitor import (
     mangle_scope_tree,
     NameManglerVisitor,
     )
-
+from ...compat import string_types
 
 class FreeVariableAnalyzerVisitor(Visitor):
     """Mangles names.

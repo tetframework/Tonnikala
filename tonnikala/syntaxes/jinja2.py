@@ -5,8 +5,7 @@ __docformat__ = "epytext"
 
 """XML parser"""
 
-import six
-from six import text_type
+from ..compat import text_type
 
 from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, \
     EscapedText, MutableAttribute, ContainerNode, EscapedText, Root,   \

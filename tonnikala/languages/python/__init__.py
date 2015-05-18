@@ -4,6 +4,9 @@ from __future__ import (absolute_import, division, print_function,
 
 __docformat__ = "epytext"
 
+import six 
+import token
+
 from ...exceptions import ParseError
 from ...ir.nodes import InterpolatedExpression
 from tokenize import generate_tokens
@@ -19,7 +22,14 @@ import re
 class PythonExpression(InterpolatedExpression):
     pass
 
-identifier_match = re.compile(r'[a-zA-Z_][a-zA-Z_$0-9]*')
+
+if six.PY2:
+    identifier_match = re.compile(r'[^\d\W]\w*')
+    expr_continuation = re.compile(r'[{([]|(\.[^\d\W]\w*)')
+else:
+    identifier_match = re.compile(r'[^\d\W]\w*', re.UNICODE)
+    expr_continuation = re.compile(r'[([]|(\.[^\d\W]\w*)', re.UNICODE)
+
 
 class TokenReadLine(object):
     def __init__(self, string, pos):
@@ -28,32 +38,43 @@ class TokenReadLine(object):
         self.io = StringIO(string)
         self.io.seek(pos)
 
+    def readline(self):
+        for l in self.io:
+            self.last_line = l
+            yield l
+
+    def tell(self):
+        return self.io.tell()
+
     def get_readline(self):
-        return self.io.readline
+        return self.readline().__next__
 
-    def get_distance(self):
-        return self.io.tell() - self.pos
 
-def parse_expression(text, start_pos=0, position=(0, 0)):
-    nodes = []
+def gen_tokens(text, pos):
+    io = TokenReadLine(text, pos)
+    readline = io.get_readline()
+    tokens = generate_tokens(readline)
 
-    if text[start_pos + 1] != '{':
-        m = identifier_match.match(text, start_pos + 1)
-        identifier = m.group(0)
-        return PythonExpression('$' + identifier, identifier)
+    for type, content, start, end, line in tokens:
+        end_pos = io.tell() - len(io.last_line) + end[1]
+        yield type, content, end_pos
 
+
+braces = {
+    '(': ')',
+    '[': ']', 
+}
+
+
+def parse_brace_enclosed_expression(text, start_pos, position):
     braces = 0
     length = 2
     valid  = False
-    io = TokenReadLine(text, start_pos + 2)
-    readline = io.get_readline()
-    tokens = generate_tokens(readline)
-    binary = False
 
-    for type, content, start, end, line in tokens:
+    tokens = gen_tokens(text, start_pos + 2)
+    for type, content, end_pos in tokens:
         if content == '}':
             if braces <= 0:
-                length += io.get_distance() - len(line) + end[1]
                 valid = True
                 break
 
@@ -63,10 +84,57 @@ def parse_expression(text, start_pos=0, position=(0, 0)):
             braces += 1
 
     if not valid:
-        pos = start_pos + length
-        pos = len(text[:pos].rstrip())
+        pos = len(text[:end_pos].rstrip())
         s = text[pos:]
         raise TemplateSyntaxError("Unclosed braced Python expression", node=s)
 
-    return PythonExpression(text[start_pos:start_pos + length],
-                            text[start_pos + 2: start_pos + length - 1])
+    return PythonExpression(text[start_pos:end_pos],
+                            text[start_pos + 2: end_pos - 1])
+
+
+def parse_unenclosed_expression(text, start_pos, position):
+    m = identifier_match.match(text, start_pos + 1)
+    pos = m.end(0)
+    pars = []
+    while True:
+        m = expr_continuation.match(text, pos)
+        if not m:
+            break
+
+        # it was a dotted part; continue
+        if m.group(1):
+            pos = m.end(0)
+            continue
+
+        # a braced expression is started, consume it
+        for type, content, end_pos in gen_tokens(text, pos):
+            if content in braces:
+                pars.append(content)
+ 
+            elif content in braces.values():
+                last = pars.pop()
+                if braces[last] != content:
+                    raise TemplateSyntaxError(
+                        "Syntax error parsing interpolated expression",
+                        node=text[end_pos-1:])
+                    
+                if not pars:
+                    pos = end_pos
+                    break
+
+            elif token.ISEOF(type) or type == token.ERRORTOKEN:
+                raise TemplateSyntaxError(
+                    "Syntax error parsing interpolated expression",
+                    node=text[end_pos:])
+
+    expr = text[start_pos + 1:pos]
+    return PythonExpression('$' + expr, expr)
+
+
+def parse_expression(text, start_pos=0, position=(0, 0)):
+    nodes = []
+
+    if text[start_pos + 1] != '{':
+        return parse_unenclosed_expression(text, start_pos, position)
+
+    return parse_brace_enclosed_expression(text, start_pos, position)

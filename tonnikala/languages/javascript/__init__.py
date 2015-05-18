@@ -12,16 +12,57 @@ import re
 class JavascriptExpression(InterpolatedExpression):
     pass
 
-identifier_match = re.compile(r'[a-zA-Z_$][a-zA-Z_$0-9]*')
+
+identifier_match = re.compile(r'[^\d\W][\w$]*', re.UNICODE)
+expr_continuation = re.compile(r'[([]|(\.[^\d\W][\w$]*)', re.UNICODE)
+
+
+braces = {
+    '[': ']',
+    '(': ')'
+}
+
+
+def parse_unenclosed_expression(text, start_pos):
+    m = identifier_match.match(text, start_pos + 1)
+    pos = m.end(0)
+    pars = []
+    while True:
+        m = expr_continuation.match(text, pos)
+        if not m:
+            break
+
+        # it was a dotted part; continue
+        if m.group(1):
+            pos = m.end(0)
+            continue
+
+        lex = JsLexer()
+        # a braced expression is started, consume it
+        for type, content in lex.lex(text, pos):
+            pos += len(content)            
+            if content in braces:
+                pars.append(content)
+
+            elif content in braces.values():
+                last = pars.pop()
+                if braces[last] != content:
+                    raise TemplateSyntaxError(
+                        "Syntax error parsing interpolated expression",
+                        node=text[pos-1:])
+
+                if not pars:
+                    break
+
+    expr = text[start_pos + 1:pos]
+    return JavascriptExpression('$' + expr, expr)
+
 
 def parse_expression(text, start_pos=0):
-    lex = JsLexer()
-
     if text[start_pos + 1] != '{':
-        m = identifier_match.match(text, start_pos + 1)
-        identifier = m.group(0)
-        return JavascriptExpression('$' + identifier, identifier)
+        return parse_unenclosed_expression(text, start_pos)
 
+    lex = JsLexer()
     braces = 0
     length = 2
     valid  = False

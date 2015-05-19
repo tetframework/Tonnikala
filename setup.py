@@ -27,13 +27,17 @@ requires = """
     ply<3.6.0
 """.split()
 
+if sys.version_info < (2, 6) or (3, 0) <= sys.version_info < (3, 3):
+    raise Exception("Tonnikala requires Python 2.6+ or Python 3.3+")
+
+
 if sys.version_info < (2, 7):
     requires.append('ordereddict')
 
 
 setup(
     name='tonnikala',
-    version='0.20',
+    version='1.0.0b1',
     description='Python templating engine - the one ton solution',
     author='Antti Haapala',
     author_email='antti@haapala.name',

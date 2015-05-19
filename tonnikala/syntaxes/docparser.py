@@ -132,8 +132,15 @@ class TonnikalaXMLParser(sax.ContentHandler):
         pass
 
 
-attrfind = getattr(html_parser, 'attrfind_tolerant', html_parser.attrfind)
-tagfind = getattr(html_parser, 'tagfind_tolerant', html_parser.tagfind)
+if hasattr(html_parser, 'attrfind_tolerant'):
+    attrfind = html_parser.attrfind_tolerant
+else:
+    attrfind = html_parser.attrfind
+
+if hasattr(html_parser, 'tagfind_tolerant'):
+    tagfind = html_parser.tagfind_tolerant
+else:
+    tagfind = html_parser.tagfind
 
 
 # object to force a new-style class!

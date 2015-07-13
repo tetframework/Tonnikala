@@ -716,6 +716,9 @@ class JsRootNode(JsComplexNode):
 
         modules = ['tonnikala/runtime'] + list(generator.import_sources)
 
+        if extended:
+            modules.append(extended)
+
         # var_statement_vars = set(free_variables)|set(
 
         code = 'define(%s, function(__TK__) {\n' % json.dumps(modules)

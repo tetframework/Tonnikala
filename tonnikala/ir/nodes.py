@@ -65,7 +65,13 @@ class TranslatableText(Text):
 
 
 def escape_comment(text):
-    return text.replace('-->', '--&lt;')
+    if text.startswith('>'):
+        text = text.replace('>', '&gt', 1)
+
+    if text.endswith('-'):
+        text = text[:-1] + '&#45;'
+
+    return text.replace('--', '&#45;&#45;')
 
 
 class Comment(BaseNode):

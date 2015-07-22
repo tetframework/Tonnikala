@@ -220,7 +220,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         self.syntax_error('Unhandled node type %d' % node_t, node=dom_node)
 
     def is_attr_translatable(self, attr_name):
-        return attr_name in self.TRANSLATABLE_ATTRS
+        return bool(self.state.get('translatable')) and attr_name in self.TRANSLATABLE_ATTRS
 
 
 def parse(filename, string):

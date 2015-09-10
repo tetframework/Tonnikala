@@ -10,7 +10,7 @@ from xml import sax
 
 from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, \
     EscapedText, MutableAttribute, ContainerNode, Block, Extends, \
-    Root, DynamicAttributes, Unless, Expression, Comment, Code
+    Root, DynamicAttributes, Unless, Expression, Comment, Code, With
 
 from ..compat import text_type
 from ..expr               import handle_text_node  # TODO: move this elsewhere.
@@ -107,6 +107,8 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         make_control_node('for',     For,     'each')
         make_control_node('def',     Define,  'function')
         make_control_node('import',  Import,  'href', 'alias')
+        make_control_node('with',    With,    'vars')
+        make_control_node('vars',    With,    'names')
 
         # TODO: add all node types in order
         generate_element = not bool(ir_node_stack)
@@ -122,6 +124,8 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         make_control_node_of_attr(If, 'if')
         make_control_node_of_attr(For, 'for')
         make_control_node_of_attr(Define, 'def')
+        make_control_node_of_attr(With, 'with')
+        make_control_node_of_attr(With, 'vars')
 
         # TODO: add all control attrs in order
         if not ir_node_stack:

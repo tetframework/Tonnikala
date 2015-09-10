@@ -47,6 +47,7 @@ except:
     def create_argument_list(arguments):
         return [ arg(arg=id, annotation=None) for id in arguments ]
 
+
 def SimpleFunctionDef(name, arguments=()):
     arguments = create_argument_list(arguments)
     return FunctionDef(
@@ -97,7 +98,7 @@ def adjust_locations(ast_node, first_lineno, first_offset):
     _fix(ast_node)
 
 
-def get_expression_ast(expression, mode='eval', adjust=(0, 0)):
+def get_fragment_ast(expression, mode='eval', adjust=(0, 0)):
     if not isinstance(expression, string_types):
         return expression
 
@@ -268,7 +269,7 @@ class PyExpressionNode(PythonNode):
 
 
     def get_unescaped_expression(self):
-        return get_expression_ast(self.expr)
+        return get_fragment_ast(self.expr)
 
 
     def generate_ast(self, generator, parent):
@@ -281,7 +282,7 @@ class PyCodeNode(PythonNode):
         self.source = source
 
     def generate_ast(self, generator, parent):
-        return get_expression_ast(self.source, mode='exec')
+        return get_fragment_ast(self.source, mode='exec')
 
 
 def coalesce_strings(args):
@@ -320,7 +321,7 @@ class PyIfNode(PyComplexNode):
 
 
     def generate_ast(self, generator, parent):
-        test = get_expression_ast(self.expression)
+        test = get_fragment_ast(self.expression)
         boolean = static_expr_to_bool(test)
 
         if boolean == False:
@@ -338,7 +339,7 @@ class PyIfNode(PyComplexNode):
 
 
 def PyUnlessNode(self, expression):
-    expression = get_expression_ast(expression)
+    expression = get_fragment_ast(expression)
     expression = UnaryOp(op=Not(), operand=expression)
     return PyIfNode(expression)
 
@@ -422,7 +423,7 @@ class PyAttrsNode(PythonNode):
 
 
     def generate_ast(self, generator, parent):
-        expression = get_expression_ast(self.expression)
+        expression = get_fragment_ast(self.expression)
 
         output = SimpleCall(
             NameX('__TK__output_attrs'),
@@ -440,7 +441,7 @@ class PyForNode(PyComplexNode):
     def generate_contents(self, generator, parent):
         lineno, col = getattr(self.target_and_expression, 'position', (1, 0))
         
-        body = get_expression_ast(
+        body = get_fragment_ast(
             StringWithLocation('for %s: pass' % self.target_and_expression,
                 lineno, col - 4),
             'exec',
@@ -451,6 +452,7 @@ class PyForNode(PyComplexNode):
 
 
     def generate_ast(self, generator, parent):
+        # TODO: this could be needed to be reinstantiated
         # return self.generate_varscope(self.generate_contents())
         return self.generate_contents(generator, parent)
 
@@ -467,7 +469,7 @@ class PyDefineNode(PyComplexNode):
         self.funcspec = funcspec
 
     def generate_ast(self, generator, parent):
-        body = get_expression_ast(
+        body = get_fragment_ast(
             StringWithLocation('def %s: pass' % self.funcspec,
                 self.position[0], self.position[1] - 4),
             "exec"
@@ -509,14 +511,13 @@ class PyBlockNode(PyComplexNode):
         super(PyBlockNode, self).__init__()
         self.name = name
 
-
     def generate_ast(self, generator, parent):
         is_extended = isinstance(parent, PyExtendsNode)
 
         name = self.name
         blockfunc_name = '__TK__block__%s' % name
         position = getattr(name, 'position', (1, 0))
-        body = get_expression_ast(
+        body = get_fragment_ast(
             StringWithLocation(
                 'def %s():pass' % blockfunc_name,
                 position[0], position[1] - 4),
@@ -543,6 +544,17 @@ class PyBlockNode(PyComplexNode):
 
         else:
             return [ ]
+
+
+class PyWithNode(PyComplexNode):
+    def __init__(self, vars):
+        super(PyWithNode, self).__init__()
+        self.vars = vars
+
+    def generate_ast(self, generator, parent=None):
+        var_defs = get_fragment_ast(self.vars, 'exec')
+        body = var_defs + self.generate_child_ast(generator, self)
+        return self.generate_varscope(body)
 
 
 class PyExtendsNode(PyComplexNode):
@@ -806,6 +818,7 @@ class Generator(BaseGenerator):
     ExtendsNode     = PyExtendsNode
     BlockNode       = PyBlockNode
     CodeNode        = PyCodeNode
+    WithNode        = PyWithNode
 
     def __init__(self, ir_tree):
         super(Generator, self).__init__(ir_tree)

@@ -175,6 +175,13 @@ class TestHtmlTemplates(unittest.TestCase):
         fragment = '<html><div py:block="foo">a block</div></html>'
         self.are('<html><div>a block</div></html>', fragment)
 
+    def test_with(self):
+        fragment = '<html><py:with vars="a = 5; b = 6">${a * b}</py:with></html>'
+        self.are('<html>30</html>', fragment)
+
+        fragment = '<html><div py:with="a = 5; b = 6">${a * b}</div></html>'
+        self.are('<html><div>30</div></html>', fragment)
+
     def test_translation(self):
         fragment = '<html alt="foo"> abc </html>'
         self.are('<html alt="foo"> abc </html>', fragment, debug=False, translateable=True)

@@ -57,6 +57,7 @@ class BaseGenerator(object):
     ExtendsNode       = unimplemented
     BlockNode         = unimplemented
     TranslatableOutputNode = unimplemented
+    WithNode               = unimplemented
 
     def __init__(self, ir_tree):
         self.tree = ir_tree
@@ -108,6 +109,9 @@ class BaseGenerator(object):
 
         elif isinstance(ir_node, nodes.Code):
             new_node = self.CodeNode(ir_node.source)
+
+        elif isinstance(ir_node, nodes.With):
+            new_node = self.WithNode(ir_node.vars)
 
         else:
             raise ValueError("Unknown node type, %s" % (target), ir_node.__class__.__name__)

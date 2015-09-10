@@ -293,6 +293,16 @@ class Block(ContainerNode):
         return "%s, %s" % (repr(self.name), children)
 
 
+class With(ContainerNode):
+    def __init__(self, vars):
+        super(With, self).__init__()
+        self.vars = vars
+
+    def __str__(self):
+        children = str(self.children)
+        return "%s, %s" % (repr(self.vars), children)
+
+
 class Extends(ContainerNode):
     def __init__(self, href):
         super(Extends, self).__init__()

@@ -30,7 +30,7 @@ Examples
     <table>
         <tr py:for="row in table">
             <py:for each="key, value in row.items()"
-                ><td>${key}</td><td>${literal(value)}</td></py:for>
+                ><td>$key</td><td>$literal(value)</td></py:for>
         </tr>
     </table>
     """
@@ -84,6 +84,11 @@ Now, if ``digit == 'one'``, the output of this fragment would be
 .. code-block:: xml
 
     Your word one has the integer value 1.
+
+An interpolated expression is auto-escaped appropriately for its context. If you do
+not want to be the expression to be escaped you can bracket it with a function
+call to ``literal()``, or in ``markupsafe.Markup``. The ``literal`` is especially
+efficient as it is optimized away in the compile time whenever possible.
 
 
 Control tags/attributes
@@ -170,6 +175,8 @@ or
 
 results in the output
 
+.. code-block:: xml
+
     <span>5 * 6 = 30</span>
 
 
@@ -182,7 +189,7 @@ base.tk
 .. code-block:: xml
 
     <html>
-    <title><py:block name="title_block">I am ${title}</py:block></title>
+    <title><py:block name="title_block">I am $title</py:block></title>
     <py:def function="foo()">I can be overridden too!</py:def>
     <h1>${title_block()}</h1>
     ${foo()}
@@ -194,7 +201,7 @@ child.tk
 .. code-block:: xml
 
     <py:extends href="base.tk">
-    <py:block name="title_block">But I am ${title} instead</py:block>
+    <py:block name="title_block">But I am $title instead</py:block>
     <py:def function="foo()">I have overridden the function in parent template</py:def>
     </py:extends>
 

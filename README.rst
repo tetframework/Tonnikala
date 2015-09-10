@@ -15,8 +15,8 @@ footsteps of Chameleon and Kajiki in making the template to compile
 into Python bytecode directly. The syntax is very close to that of 
 Kajiki, but the internals are very different: Tonnikala writes code 
 as Abstract Syntax Trees and optimizes the resulting trees 
-extensively. In addition, there is an optional speed-up module 
-(currently Python 3 only), that provides a specialized class used 
+extensively. In addition, there is an optional speed-up module, 
+that provides a specialized class used 
 for output buffering.
 
 Examples
@@ -123,6 +123,8 @@ or
 
 results in the output
 
+.. code-block:: xml
+
     <span>the condition was true</span>
 
 if the ``condition`` was true
@@ -142,6 +144,8 @@ or
     <td py:for="i in range(5)">$i</td>
 
 results in the output
+
+.. code-block:: xml
 
     <td>0</td><td>1</td><td>2</td><td>3</td><td>4</td>
 

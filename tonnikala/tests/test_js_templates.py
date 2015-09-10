@@ -150,6 +150,10 @@ class TestJsTemplates(unittest.TestCase):
 
         self.are('<html><a>0</a><a>1</a><a>2</a></html>', fragment)
 
+    def test_with(self):
+        fragment = '<html><a js:with="a = 5; b = 6">${a * b}</a></html>'
+        self.are('<html><a>30</a></html>', fragment)
+
     def test_attribute_expressions(self):
         fragment = '<html a="$foo"></html>'
         self.are('<html></html>', fragment, foo=None)

@@ -20,6 +20,8 @@ from slimit.visitors.scopevisitor import (
     NameManglerVisitor,
     )
 from ...compat import string_types
+from ...runtime.debug import TemplateSyntaxError
+
 
 class FreeVariableAnalyzerVisitor(Visitor):
     """Mangles names.
@@ -155,7 +157,7 @@ def parse(expression, mode='eval'):
     raise TypeError("Only eval, exec modes allowed")
 
 
-def get_expression_ast(expression, mode='eval'):
+def get_fragment_ast(expression, mode='eval'):
     if not isinstance(expression, string_types):
         return expression
 
@@ -238,9 +240,8 @@ class JavascriptNode(LanguageNode):
     def generate_varscope(self, body):
         name = gen_name()
         rv = [
-            self.make_function(name, body,
-                arguments=['__TK__output', '__TK__escape']),
-            Expr(SimpleCall(NameX(name), [ NameX('__TK__output'), NameX('__TK__escape') ]))
+            self.make_function(name, body),
+            Expr(SimpleCall(NameX(name), []))
         ]
         return rv
 
@@ -303,7 +304,7 @@ class JsExpressionNode(JavascriptNode):
 
 
     def get_unescaped_expression(self):
-        return get_expression_ast(self.expr)
+        return get_fragment_ast(self.expr)
 
 
     def generate_ast(self, generator, parent):
@@ -316,7 +317,7 @@ class JsCodeNode(JavascriptNode):
         self.source = source
 
     def generate_ast(self, generator, parent):
-        return get_expression_ast(self.source, mode='exec')
+        return get_fragment_ast(self.source, mode='exec')
 
 
 def coalesce_strings(args):
@@ -355,7 +356,7 @@ class JsIfNode(JsComplexNode):
 
 
     def generate_ast(self, generator, parent):
-        test = get_expression_ast(self.expression)
+        test = get_fragment_ast(self.expression)
         boolean = static_expr_to_bool(test)
 
         if boolean == False:
@@ -372,7 +373,7 @@ class JsIfNode(JsComplexNode):
 
 
 def JsUnlessNode(self, expression):
-    expression = get_expression_ast(expression)
+    expression = get_fragment_ast(expression)
     expression = UnaryOp(op='!', value=expression)
     return JsIfNode(expression)
 
@@ -458,7 +459,7 @@ class JsAttrsNode(JavascriptNode):
 
 
     def generate_ast(self, generator, parent):
-        expression = get_expression_ast(self.expression)
+        expression = get_fragment_ast(self.expression)
 
         output = SimpleCall(
             NameX('__TK__output_attrs'),
@@ -476,7 +477,7 @@ class JsForNode(JsComplexNode):
 
 
     def generate_contents(self, generator, parent):
-        body = get_expression_ast(
+        body = get_fragment_ast(
             "__TK__foreach(%s, function (%s) { });" %
             (self.expression, self.vars),
             'exec'
@@ -489,7 +490,6 @@ class JsForNode(JsComplexNode):
 
 
     def generate_ast(self, generator, parent):
-        # return self.generate_varscope(self.generate_contents())
         return self.generate_contents(generator, parent)
 
 
@@ -502,7 +502,7 @@ class JsDefineNode(JsComplexNode):
         self.funcspec = funcspec
 
     def generate_ast(self, generator, parent):
-        body = get_expression_ast(
+        body = get_fragment_ast(
             "function %s{}" % self.funcspec,
             "exec"
         )
@@ -518,6 +518,21 @@ class JsDefineNode(JsComplexNode):
             return []
 
         return [ def_node ]
+
+
+class JsWithNode(JsComplexNode):
+    def __init__(self, vars):
+        super(JsWithNode, self).__init__()
+        self.vars = vars
+
+    def generate_ast(self, generator, parent):
+        var_defs = get_fragment_ast(self.vars, 'exec')
+        for i in var_defs:
+            if not isinstance(i, ast.ExprStatement):
+                raise TemplateSyntaxError("Only assignment statements allowed in With; not %s" % self.vars)
+
+        body = var_defs + self.generate_child_ast(generator, self)
+        return self.generate_varscope(body)
 
 
 class JsComplexExprNode(JsComplexNode):
@@ -546,7 +561,7 @@ class JsBlockNode(JsComplexNode):
     def generate_ast(self, generator, parent):
         is_extended = isinstance(parent, JsExtendsNode)
 
-        body = get_expression_ast(
+        body = get_fragment_ast(
             "function %s () {}" % self.name,
             "exec"
         )
@@ -795,6 +810,7 @@ class Generator(BaseGenerator):
     ExtendsNode     = JsExtendsNode
     BlockNode       = JsBlockNode
     CodeNode        = JsCodeNode
+    WithNode        = JsWithNode
 
     def __init__(self, ir_tree):
         super(Generator, self).__init__(ir_tree)

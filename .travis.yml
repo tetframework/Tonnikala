@@ -25,6 +25,4 @@ script:
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then nose2 -c unittest-python3.cfg; fi
 
 after_success:
-  - if [[ $TRAVIS_PYTHON_VERSION != 3* ]]; then coveralls --rcfile=coveragerc-python2; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then coveralls --rcfile=coveragerc-python3; fi
-
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then coveralls --rcfile=coveragerc-python3; fi

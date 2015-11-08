@@ -14,10 +14,15 @@ before_install:
 
 # command to install dependencies
 install:
-  - travis_retry pip install coverage 'nose2[coverage-plugin]' 
+  - travis_retry pip install coverage 'nose2[coverage-plugin]' coveralls
   - python setup.py develop
 
 # command to run tests
 script:
   - if [[ $TRAVIS_PYTHON_VERSION != 3* ]]; then nose2 -c unittest-python2.cfg; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then nose2 -c unittest-python3.cfg; fi
+
+after_success:
+  - if [[ $TRAVIS_PYTHON_VERSION != 3* ]]; then coveralls --rcfile=coveragerc-python2; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then coveralls --rcfile=coveragerc-python3; fi
+

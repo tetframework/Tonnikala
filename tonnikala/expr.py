@@ -6,25 +6,34 @@ __docformat__ = "epytext"
 """Tonnikala compiler. Produces source code from XML."""
 
 import re
-
 from tonnikala.ir.nodes import Text, DynamicText, TranslatableText
 from tonnikala.languages import javascript, python
-from tonnikala.exceptions import ParseError
 
-_dollar_strip_re = re.compile(r"\$([a-zA-Z_{])|(\$\$)", re.DOTALL)
+
+_dollar_strip_re = re.compile(r'\$[a-zA-Z_{$]')
+
 
 class HasExprException(Exception):
     pass
 
+
 def _strip_dollars_fast(text):
+    """
+    Replace `$$` with `$`. raise immediately
+    if `$` starting an interpolated expression is found.
+    @param text: the source text
+    @return: the text with dollars replaced, or raise
+        HasExprException if there are interpolated expressions
+    """
+
     def _sub(m):
-        if m.group(2) is not None:
+        if m.group(0) == '$$':
             return '$'
 
-        if m.group(1) is not None:
-            raise HasExprException()
+        raise HasExprException()
 
     return _dollar_strip_re.sub(_sub, text)
+
 
 _expr_find_code = re.compile(r"""
   ([^$]+)        # match any chars except \n or $ (group 1)
@@ -38,6 +47,7 @@ _strip_ws_re = re.compile(r"""
     (.*?)
     (\s*)$
 """, re.VERBOSE | re.DOTALL)
+
 
 def partition_translatable_text(text):
     m = _strip_ws_re.match(text)
@@ -71,7 +81,9 @@ def create_text_nodes(text, is_cdata=False, translatable=False):
 
     return node
 
-def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False, translatable=False, whole_translatable=False):
+
+def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False, translatable=False,
+                     whole_translatable=False):
     try:
         text = _strip_dollars_fast(text)
         return create_text_nodes(text, is_cdata=is_cdata, translatable=translatable)
@@ -88,10 +100,10 @@ def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False, 
         m = _expr_find_code.match(text, pos)
         pos = m.end()
 
-        if m.group(1) != None: # any
+        if m.group(1) != None:  # any
             stringrun.append(m.group(1))
 
-        elif m.group(2): # $$
+        elif m.group(2):  # $$
             stringrun.append('$')
 
         elif m.group(3):
@@ -103,7 +115,7 @@ def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False, 
             pos = m.start(3) + len(expr.string)
             nodes.append(expr)
 
-        elif m.group(4):
+        else:  # group 4, a sole $
             stringrun.append('$')
 
     if stringrun:

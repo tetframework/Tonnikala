@@ -5,14 +5,19 @@ python:
   - pypy
   - 3.3
   - 3.4
+  - 3.5
 
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install nodejs
+  - travis_retry sudo apt-get update
+  - travis_retry sudo apt-get install nodejs
   - ls /usr/bin/no*
 
 # command to install dependencies
-install: "python setup.py develop"
+install:
+	- travis-retry pip install coverage nose2 
+	- python setup.py develop
 
 # command to run tests
-script: "python setup.py test"
+script:
+	- if [[ $TRAVIS_PYTHON_VERSION != 3* ]]; then nose2 -c unittest-python2.cfg; fi
+	- if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then nose2 -c unittest-python3.cfg; fi

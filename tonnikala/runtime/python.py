@@ -3,14 +3,11 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 NoneType = type(None)
 
 from collections import Mapping
-from ..helpers import escape as strescape
 from ..compat import text_type, PY3
-from collections import deque
-
 from markupsafe import escape
 
 
-class _TK_buffer(object):
+class _TK_python_buffer_impl(object):
     def __init__(self):
         self._buffer = buffer = []
         e = buffer.extend
@@ -18,17 +15,17 @@ class _TK_buffer(object):
 
         def do_output(*objs):
             for obj in objs:
-                if obj.__class__ is _TK_buffer:
+                if obj.__class__ is self.__class__:
                     e(obj._buffer)
                 else:
                     a(text_type(obj))
 
         self.output = do_output
+
         def output_boolean_attr(name, value):
             t = type(value)
             if t in (bool, NoneType):
-                if bool(value):
-                    do_output(' ' + name + '="' + name + '"')
+                value and do_output(' ' + name + '="' + name + '"')
 
                 # skip on false, None
                 return
@@ -39,36 +36,35 @@ class _TK_buffer(object):
 
         self.output_boolean_attr = output_boolean_attr
 
-
     def __call__(self, *a):
         self.output(*a)
-
 
     def __html__(self):
         return self
 
-
     def join(self):
         return ''.join(self._buffer)
 
-
-    if PY3:
+    if PY3:  # pragma: no cover
         __str__ = join
 
-    else:
+    else:  # pragma: no cover
         __unicode__ = join
+
         def __str__(self):
             return self.join().encode('UTF-8')
 
-Buffer = _TK_buffer
 
-try:
+Buffer = _TK_python_buffer_impl
+
+try:  # pragma: no cover
     from ._buffer import Buffer as _Buffer, _set_escape_method
+
     _set_escape_method(escape)
     Buffer = _Buffer
     del _Buffer
     del _set_escape_method
-except ImportError as e:
+except ImportError as e:  # pragma: no cover
     pass
 
 
@@ -83,23 +79,9 @@ def output_attrs(values):
 
     rv = Buffer()
     for k, v in values:
-        if v in (True, False, None):
-            if v:
-                v = k
-            else:
-                continue
-
-        rv(' ')
-        rv(k)
-        rv('="')
-        rv(escape(v))
-        rv('"')
+        rv.output_boolean_attr(k, v)
 
     return rv
-
-
-def import_defs(href):
-    return {}
 
 
 def bind(context, block=False):
@@ -130,17 +112,17 @@ def bind(context, block=False):
 
 class ImportedTemplate(object):
     def __init__(self, name):
-        self.__name = name
+        self._name = name
 
-    def __repr__(self):
-        return "<ImportedTemplate '%r'>" % self.name
+    def __repr__(self):  # pragma: no cover
+        return "<ImportedTemplate '%r'>" % self._name
 
 
 class TonnikalaRuntime(object):
-    bind         = staticmethod(bind)
-    Buffer       = staticmethod(Buffer)
+    bind = staticmethod(bind)
+    Buffer = staticmethod(Buffer)
     output_attrs = staticmethod(output_attrs)
-    escape       = staticmethod(escape)
+    escape = staticmethod(escape)
 
     def __init__(self):
         self.loader = None

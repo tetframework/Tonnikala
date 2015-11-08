@@ -62,6 +62,9 @@ setup(
     include_package_data=True,
     packages=find_packages(),
     test_suite = "tonnikala.tests.test_all",
-    tests_require=[],
+    tests_require=[
+        'coverage',
+        'nose2'
+    ],
     **extra_kw
 )

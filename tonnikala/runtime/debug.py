@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-    jinja2.debug
-    ~~~~~~~~~~~~
+    tonnikala.runtime.debug
+    ~~~~~~~~~~~~~~~~~~~~~~~
 
-    Implements the debug interface for Jinja.  This module does some pretty
+    Implements the debug interface for Tonnikala. This module does some pretty
     ugly stuff with the Python traceback system in order to achieve tracebacks
     with correct line numbers, locals and contents.
 
+    Based on Jinja2 module `jinja2.debug`,
     :copyright: (c) 2010 by the Jinja Team.
     :license: BSD, see LICENSE for more details.
 """
@@ -23,14 +24,14 @@ try:
     from __pypy__ import tproxy
 except ImportError:
     tproxy = None
-
+''
 
 # how does the raise helper look like?
 try:
     exec("raise TypeError, 'foo'")
-except SyntaxError:
+except SyntaxError:  # pragma: python3
     raise_helper = '__tonnikala_exception__[1].__traceback__ = None; raise __tonnikala_exception__[1]'
-except TypeError:
+except TypeError:  # pragma: python2
     raise_helper = 'raise __tonnikala_exception__[0], __tonnikala_exception__[1]'
 
 
@@ -254,19 +255,19 @@ def fake_exc_info(exc_info, filename, lineno):
             else:
                 location = 'def "%s"' % function
 
-        if not PY2:
+        if not PY2:  # pragma: python3
             code = CodeType(0, code.co_kwonlyargcount, code.co_nlocals, code.co_stacksize,
                             code.co_flags, code.co_code, code.co_consts,
                             code.co_names, code.co_varnames, filename,
                             location, code.co_firstlineno,
                             code.co_lnotab, (), ())
-        else:
+        else:  # pragma: python2
             code = CodeType(0, code.co_nlocals, code.co_stacksize,
                             code.co_flags, code.co_code, code.co_consts,
                             code.co_names, code.co_varnames, filename,
                             location, code.co_firstlineno,
                             code.co_lnotab, (), ())
-        
+
     except Exception as e:
         pass
 
@@ -293,12 +294,12 @@ def _init_ugly_crap():
     # figure out size of _Py_ssize_t
 
     _Py_ssize_t = ctypes.c_int
-    if PY2:
-        if hasattr(ctypes.pythonapi, 'Py_InitModule4_64'):
+    if PY2:  # pragma: python2
+        if hasattr(ctypes.pythonapi, 'Py_InitModule4_64'):  # pragma: no cover
             _Py_ssize_t = ctypes.c_int64
-        else:
+        else:  # pragma: no cover
             _Py_ssize_t = ctypes.c_int
-    elif ctypes.sizeof(ctypes.c_void_p) == 8:
+    elif ctypes.sizeof(ctypes.c_void_p) == 8:  # pragma: no cover
         _Py_ssize_t = ctypes.c_int64
 
     # regular python
@@ -310,15 +311,15 @@ def _init_ugly_crap():
     ]
 
     # python with trace
-    if hasattr(sys, 'getobjects'):
+    if hasattr(sys, 'getobjects'):  # pragma: no cover
         class _PyObject(ctypes.Structure):
             pass
-        _PyObject._fields_ = [
-            ('_ob_next', ctypes.POINTER(_PyObject)),
-            ('_ob_prev', ctypes.POINTER(_PyObject)),
-            ('ob_refcnt', _Py_ssize_t),
-            ('ob_type', ctypes.POINTER(_PyObject))
-        ]
+    _PyObject._fields_ = [
+        ('_ob_next', ctypes.POINTER(_PyObject)),
+        ('_ob_prev', ctypes.POINTER(_PyObject)),
+        ('ob_refcnt', _Py_ssize_t),
+        ('ob_type', ctypes.POINTER(_PyObject))
+    ]
 
     class _Traceback(_PyObject):
         pass
@@ -332,7 +333,7 @@ def _init_ugly_crap():
     def tb_set_next(tb, next):
         """Set the tb_next attribute of a traceback object."""
         if not (isinstance(tb, TracebackType) and
-                (next is None or isinstance(next, TracebackType))):
+                    (next is None or isinstance(next, TracebackType))):
             raise TypeError('tb_set_next arguments must be traceback objects')
         obj = _Traceback.from_address(id(tb))
         if tb.tb_next is not None:
@@ -351,7 +352,7 @@ def _init_ugly_crap():
 # try to get a tb_set_next implementation if we don't have transparent
 # proxies.
 tb_set_next = None
-if tproxy is None:
+if tproxy is None:  # pragma: no cover
     try:
         tb_set_next = _init_ugly_crap()
     except:

@@ -2,29 +2,19 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-__docformat__ = "epytext"
-
-import token
-
-from ...exceptions import ParseError
-from ...ir.nodes import InterpolatedExpression
-from tokenize import generate_tokens
-from ...runtime.debug import TemplateSyntaxError
-from ...compat import PY2, next_method
-
-
-try:
-    from StringIO import StringIO
-except:
-    from io import StringIO
-
 import re
+import token
+from tokenize import generate_tokens, TokenError
+from ...ir.nodes import InterpolatedExpression
+from ...runtime.debug import TemplateSyntaxError
+from ...compat import PY2, next_method, StringIO
+
 
 class PythonExpression(InterpolatedExpression):
     pass
 
 
-if PY2:
+if PY2:  # pragma: no cover
     identifier_match = re.compile(r'[^\d\W]\w*')
     expr_continuation = re.compile(r'[{([]|(\.[^\d\W]\w*)')
 else:
@@ -38,6 +28,7 @@ class TokenReadLine(object):
         self.pos = pos
         self.io = StringIO(string)
         self.io.seek(pos)
+        self.last_line = ''
 
     def readline(self):
         for l in self.io:
@@ -52,37 +43,51 @@ class TokenReadLine(object):
 
 
 def gen_tokens(text, pos):
+    """
+    Generate position-adjusted python tokens from the given source text
+
+    :param text: the source code
+    :param pos: the adjusted position
+    :return: a generator yielding the tokens
+    """
     io = TokenReadLine(text, pos)
     readline = io.get_readline()
     tokens = generate_tokens(readline)
 
-    for type, content, start, end, line in tokens:
-        end_pos = io.tell() - len(io.last_line) + end[1]
-        yield type, content, end_pos
+    try:
+        for t_type, content, start, end, line in tokens:
+            end_pos = io.tell() - len(io.last_line) + end[1]
+            yield t_type, content, end_pos
+
+    # tokenize will *throw* an exception at the end instead
+    # of returning an error token under certain circumstances
+    except TokenError as e:
+        pos = len(text[:end_pos].rstrip())
+        s = text[pos:]
+        raise TemplateSyntaxError(e.args[0], node=s)
 
 
 braces = {
     '(': ')',
-    '[': ']', 
+    '[': ']',
 }
 
 
 def parse_brace_enclosed_expression(text, start_pos, position):
-    braces = 0
-    length = 2
-    valid  = False
+    n_braces = 0
+    valid = False
 
     tokens = gen_tokens(text, start_pos + 2)
-    for type, content, end_pos in tokens:
+    for t_type, content, end_pos in tokens:
         if content == '}':
-            if braces <= 0:
+            if n_braces <= 0:
                 valid = True
                 break
 
-            braces -= 1
+            n_braces -= 1
 
         elif content == '{':
-            braces += 1
+            n_braces += 1
 
     if not valid:
         pos = len(text[:end_pos].rstrip())
@@ -108,22 +113,22 @@ def parse_unenclosed_expression(text, start_pos, position):
             continue
 
         # a braced expression is started, consume it
-        for type, content, end_pos in gen_tokens(text, pos):
+        for t_type, content, end_pos in gen_tokens(text, pos):
             if content in braces:
                 pars.append(content)
- 
+
             elif content in braces.values():
                 last = pars.pop()
                 if braces[last] != content:
                     raise TemplateSyntaxError(
                         "Syntax error parsing interpolated expression",
-                        node=text[end_pos-1:])
-                    
+                        node=text[end_pos - 1:])
+
                 if not pars:
                     pos = end_pos
                     break
 
-            elif token.ISEOF(type) or type == token.ERRORTOKEN:
+            elif token.ISEOF(t_type) or t_type == token.ERRORTOKEN:
                 raise TemplateSyntaxError(
                     "Syntax error parsing interpolated expression",
                     node=text[end_pos:])
@@ -133,8 +138,6 @@ def parse_unenclosed_expression(text, start_pos, position):
 
 
 def parse_expression(text, start_pos=0, position=(0, 0)):
-    nodes = []
-
     if text[start_pos + 1] != '{':
         return parse_unenclosed_expression(text, start_pos, position)
 

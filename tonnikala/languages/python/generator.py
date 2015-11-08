@@ -4,27 +4,21 @@
 # unicode_literals, bc some of the arguments need to be str on
 # both python2 and 3
 from __future__ import absolute_import, division, print_function
-
 import ast
 from ast import *
 from collections import Iterable
-import warnings
-
-from ...compat import string_types
-
+from ...compat import string_types, PY2
 from ...runtime.debug import TemplateSyntaxError
 from ...helpers import StringWithLocation
 from ..base import LanguageNode, ComplexNode, BaseGenerator
 from .astalyzer import FreeVarFinder
 
-
-HAS_ASSERT = False
-try:
+try:  # pragma: no cover
     import sysconfig
-    HAS_ASSERT = bool(sysconfig.get_config_var('Py_DEBUG'))
-except:
-    pass
 
+    HAS_ASSERT = bool(sysconfig.get_config_var('Py_DEBUG'))
+except:  # pragma: no cover
+    HAS_ASSERT = False
 
 name_counter = 0
 ALWAYS_BUILTINS = '''
@@ -38,14 +32,13 @@ def SimpleCall(func, args=None):
     return Call(func=func, args=args or [], keywords=[], starargs=None, kwargs=None)
 
 
-try:
-    unicode
+if PY2:  # pragma: python2
     def create_argument_list(arguments):
-        return [ Name(id=id, ctx=Param()) for id in arguments ]
+        return [Name(id=id, ctx=Param()) for id in arguments]
 
-except:
+else:  # pragma: python 3
     def create_argument_list(arguments):
-        return [ arg(arg=id, annotation=None) for id in arguments ]
+        return [arg(arg=id, annotation=None) for id in arguments]
 
 
 def SimpleFunctionDef(name, arguments=()):
@@ -78,10 +71,11 @@ def adjust_locations(ast_node, first_lineno, first_offset):
     """
 
     line_delta = first_lineno - 1
+
     def _fix(node):
         if 'lineno' in node._attributes:
             lineno = node.lineno
-            col    = node.col_offset
+            col = node.col_offset
 
             # adjust the offset on the first line
             if lineno == 1:
@@ -117,7 +111,7 @@ def get_fragment_ast(expression, mode='eval', adjust=(0, 0)):
 
     if t:
         raise t
-    
+
     adjust_locations(tree, position[0], position[1])
     return tree.body
 
@@ -149,11 +143,11 @@ class PythonNode(LanguageNode):
     is_top_level = False
 
     def generate_output_ast(self, code, generator, parent, escape=False,
-             position=None):
+                            position=None):
         func = Name(id='__TK__output', ctx=Load())
 
         if not isinstance(code, list):
-            code = [ code ]
+            code = [code]
 
         rv = []
         for i in code:
@@ -166,12 +160,11 @@ class PythonNode(LanguageNode):
 
         return rv
 
-
     def make_buffer_frame(self, body):
         new_body = []
         new_body.append(Assign(
             targets=[
-                 NameX('__TK__output', store=True),
+                NameX('__TK__output', store=True),
             ],
             value=SimpleCall(
                 NameX('__TK__mkbuffer')
@@ -182,11 +175,10 @@ class PythonNode(LanguageNode):
         new_body.append(Return(value=NameX('__TK__output')))
         return new_body
 
-
     def make_function(self, name, body, add_buffer=False, arguments=()):
         # ensure that the function name is an str
         func = SimpleFunctionDef(str(name), arguments=arguments)
-        new_body = func.body = [ ]
+        new_body = func.body = []
 
         if add_buffer:
             new_body.extend(self.make_buffer_frame(body))
@@ -199,14 +191,13 @@ class PythonNode(LanguageNode):
 
         return func
 
-
     def generate_varscope(self, body):
         name = gen_name('variable_scope')
         rv = [
             self.make_function(name, body,
-                arguments=['__TK__output', '__TK__escape']),
-            Expr(SimpleCall(NameX(name), 
-                 [ NameX('__TK__output'), NameX('__TK__escape') ]))
+                               arguments=['__TK__output', '__TK__escape']),
+            Expr(SimpleCall(NameX(name),
+                            [NameX('__TK__output'), NameX('__TK__escape')]))
         ]
         return rv
 
@@ -216,14 +207,11 @@ class PyOutputNode(PythonNode):
         super(PyOutputNode, self).__init__()
         self.text = text
 
-
     def get_expressions(self):
-        return [ self.get_expression() ]
-
+        return [self.get_expression()]
 
     def get_expression(self):
         return Str(s=(self.text))
-
 
     def generate_ast(self, generator, parent):
         return self.generate_output_ast(self.get_expression(), generator, parent)
@@ -234,10 +222,8 @@ class PyTranslatableOutputNode(PyOutputNode):
         super(PyTranslatableOutputNode, self).__init__(text)
         self.needs_escape = needs_escape
 
-
     def get_expressions(self):
-        return [ self.get_expression() ]
-
+        return [self.get_expression()]
 
     def get_expression(self):
         name = 'gettext'
@@ -256,21 +242,17 @@ class PyExpressionNode(PythonNode):
         super(PyExpressionNode, self).__init__()
         self.expr = expression
 
-
     def get_expressions(self):
-        return [ self.get_expression() ]
-
+        return [self.get_expression()]
 
     def get_expression(self):
         return SimpleCall(
             NameX('__TK__escape'),
-            [ self.get_unescaped_expression() ]
+            [self.get_unescaped_expression()]
         )
-
 
     def get_unescaped_expression(self):
         return get_fragment_ast(self.expr)
-
 
     def generate_ast(self, generator, parent):
         return self.generate_output_ast(self.get_expression(), generator, parent)
@@ -319,7 +301,6 @@ class PyIfNode(PyComplexNode):
         super(PyIfNode, self).__init__()
         self.expression = expression
 
-
     def generate_ast(self, generator, parent):
         test = get_fragment_ast(self.expression)
         boolean = static_expr_to_bool(test)
@@ -331,11 +312,11 @@ class PyIfNode(PyComplexNode):
             return self.generate_child_ast(generator, parent)
 
         node = If(
-           test=test,
-           body=self.generate_child_ast(generator, self),
-           orelse=[]
+            test=test,
+            body=self.generate_child_ast(generator, self),
+            orelse=[]
         )
-        return [ node ]
+        return [node]
 
 
 def PyUnlessNode(self, expression):
@@ -352,31 +333,30 @@ class PyImportNode(PythonNode):
 
     def generate_ast(self, generator, parent):
         node = Assign(
-            targets = [NameX(str(self.alias), store=True)],
-            value =
-                SimpleCall(
-                    func=
-                        Attribute(value=NameX('__TK__runtime', store=False),
-                                  attr='import_defs', ctx=Load()),
-                    args=[
-                        NameX('__TK__original_context'),
-                        Str(s=self.href)
-                    ]
-                )
+            targets=[NameX(str(self.alias), store=True)],
+            value=
+            SimpleCall(
+                func=
+                Attribute(value=NameX('__TK__runtime', store=False),
+                          attr='import_defs', ctx=Load()),
+                args=[
+                    NameX('__TK__original_context'),
+                    Str(s=self.href)
+                ]
+            )
         )
 
         if parent.is_top_level:
             generator.add_top_level_import(str(self.alias), node)
             return []
 
-        return [ node ]
+        return [node]
 
 
 class PyAttributeNode(PyComplexNode):
     def __init__(self, name, value):
         super(PyAttributeNode, self).__init__()
         self.name = name
-
 
     def get_expressions(self):
         rv = []
@@ -385,33 +365,31 @@ class PyAttributeNode(PyComplexNode):
 
         return rv
 
-
     def generate_ast(self, generator, parent):
         if len(self.children) == 1 and \
-                isinstance(self.children[0], PyExpressionNode):
-
+            isinstance(self.children[0], PyExpressionNode):
             # special case, the attribute contains a single
             # expression, these are handled by
             # __TK__output.output_boolean_attr,
             # given the name, and unescaped expression!
-            return [ Expr(SimpleCall(
+            return [Expr(SimpleCall(
                 func=Attribute(
                     value=NameX('__TK__output'),
                     attr='output_boolean_attr',
                     ctx=Load()
                 ),
                 args=[
-                     Str(s=self.name),
-                     self.children[0].get_unescaped_expression()
+                    Str(s=self.name),
+                    self.children[0].get_unescaped_expression()
                 ]
-            )) ]
+            ))]
 
         # otherwise just return the output for the attribute code
         # like before
         return self.generate_output_ast(
-            [ Str(s=' %s="' % self.name) ] +
+            [Str(s=' %s="' % self.name)] +
             self.get_expressions() +
-            [ Str(s='"') ],
+            [Str(s='"')],
             generator, parent
         )
 
@@ -420,7 +398,6 @@ class PyAttrsNode(PythonNode):
     def __init__(self, expression):
         super(PyAttrsNode, self).__init__()
         self.expression = expression
-
 
     def generate_ast(self, generator, parent):
         expression = get_fragment_ast(self.expression)
@@ -440,16 +417,15 @@ class PyForNode(PyComplexNode):
 
     def generate_contents(self, generator, parent):
         lineno, col = getattr(self.target_and_expression, 'position', (1, 0))
-        
+
         body = get_fragment_ast(
             StringWithLocation('for %s: pass' % self.target_and_expression,
-                lineno, col - 4),
+                               lineno, col - 4),
             'exec',
         )
-        for_node      = body[0]
+        for_node = body[0]
         for_node.body = self.generate_child_ast(generator, self)
-        return [ for_node ]
-
+        return [for_node]
 
     def generate_ast(self, generator, parent):
         # TODO: this could be needed to be reinstantiated
@@ -471,7 +447,7 @@ class PyDefineNode(PyComplexNode):
     def generate_ast(self, generator, parent):
         body = get_fragment_ast(
             StringWithLocation('def %s: pass' % self.funcspec,
-                self.position[0], self.position[1] - 4),
+                               self.position[0], self.position[1] - 4),
             "exec"
         )
         def_node = body[0]
@@ -485,7 +461,7 @@ class PyDefineNode(PyComplexNode):
             generator.add_top_def(def_node.name, def_node)
             return []
 
-        return [ def_node ]
+        return [def_node]
 
 
 class PyComplexExprNode(PyComplexNode):
@@ -499,7 +475,6 @@ class PyComplexExprNode(PyComplexNode):
                 rv.extend(i.get_expressions())
 
         return rv
-
 
     def generate_ast(self, generator, parent=None):
         return self.generate_output_ast(self.get_expressions(),
@@ -528,22 +503,22 @@ class PyBlockNode(PyComplexNode):
             self.generate_child_ast(generator, self)
         )
 
-        if not isinstance(name, str):
-            name = name.encode('UTF-8') # python 2
+        if not isinstance(name, str):  # pragma: python2
+            name = name.encode('UTF-8')
 
         generator.add_block(str(name), def_node, blockfunc_name)
 
         if not is_extended:
             # call the block in place
             return self.generate_output_ast(
-                [ SimpleCall(NameX(str(self.name)), []) ],
+                [SimpleCall(NameX(str(self.name)), [])],
                 self,
                 parent,
                 position=position
             )
 
         else:
-            return [ ]
+            return []
 
 
 class PyWithNode(PyComplexNode):
@@ -687,7 +662,6 @@ class PyRootNode(PyComplexNode):
     def __init__(self):
         super(PyRootNode, self).__init__()
 
-
     is_top_level = True
 
     def generate_ast(self, generator, parent=None):
@@ -701,7 +675,7 @@ class PyRootNode(PyComplexNode):
             main_func = self.make_function('__main__', main_body, add_buffer=True)
             generator.add_bind_decorator(main_func)
 
-            toplevel_funcs = [ main_func ] + toplevel_funcs
+            toplevel_funcs = [main_func] + toplevel_funcs
 
         # analyze the set of free variables
         free_variables = set()
@@ -718,7 +692,7 @@ class PyRootNode(PyComplexNode):
         # discard the names of toplevel funcs from free variables
         free_variables.difference_update(generator.top_level_names)
 
-        code  = '__TK__mkbuffer = __TK__runtime.Buffer\n'
+        code = '__TK__mkbuffer = __TK__runtime.Buffer\n'
         code += '__TK__escape = __TK__escape_g = __TK__runtime.escape\n'
         code += '__TK__output_attrs = __TK__runtime.output_attrs\n'
 
@@ -734,7 +708,7 @@ class PyRootNode(PyComplexNode):
             # an extended template does not have a __main__ (it is inherited)
             code += '    __TK__parent_template.binder_func(__TK__context)\n'
 
-        for i in [ 'egettext' ]:
+        for i in ['egettext']:
             if i in free_variables:
                 free_variables.add('gettext')
                 free_variables.discard(i)
@@ -802,36 +776,36 @@ class LocationMapper(object):
 
 
 class Generator(BaseGenerator):
-    OutputNode             = PyOutputNode
+    OutputNode = PyOutputNode
     TranslatableOutputNode = PyTranslatableOutputNode
 
-    IfNode          = PyIfNode
-    ForNode         = PyForNode
-    DefineNode      = PyDefineNode
+    IfNode = PyIfNode
+    ForNode = PyForNode
+    DefineNode = PyDefineNode
     ComplexExprNode = PyComplexExprNode
-    ExpressionNode  = PyExpressionNode
-    ImportNode      = PyImportNode
-    RootNode        = PyRootNode
-    AttributeNode   = PyAttributeNode
-    AttrsNode       = PyAttrsNode
-    UnlessNode      = PyUnlessNode
-    ExtendsNode     = PyExtendsNode
-    BlockNode       = PyBlockNode
-    CodeNode        = PyCodeNode
-    WithNode        = PyWithNode
+    ExpressionNode = PyExpressionNode
+    ImportNode = PyImportNode
+    RootNode = PyRootNode
+    AttributeNode = PyAttributeNode
+    AttrsNode = PyAttrsNode
+    UnlessNode = PyUnlessNode
+    ExtendsNode = PyExtendsNode
+    BlockNode = PyBlockNode
+    CodeNode = PyCodeNode
+    WithNode = PyWithNode
 
     def __init__(self, ir_tree):
         super(Generator, self).__init__(ir_tree)
-        self.blocks          = []
-        self.top_defs        = []
+        self.blocks = []
+        self.top_defs = []
         self.top_level_names = set()
-        self.extended_href   = None
-        self.imports         = []
-        self.lnotab          = None
+        self.extended_href = None
+        self.imports = []
+        self.lnotab = None
 
     def add_bind_decorator(self, func, block=True):
         binder_call = NameX('__TK__bind' + ('block' if block else ''))
-        decors = [ binder_call ]
+        decors = [binder_call]
         func.decorator_list = decors
 
     def add_block(self, name, blockfunc, blockfunc_name):

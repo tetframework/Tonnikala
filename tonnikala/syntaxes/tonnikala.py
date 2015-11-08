@@ -5,19 +5,15 @@ __docformat__ = "epytext"
 
 """XML parser"""
 
-from xml.dom.minidom    import Node
+from xml.dom.minidom import Node
 from xml import sax
-
 from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, \
     EscapedText, MutableAttribute, ContainerNode, Block, Extends, \
     Root, DynamicAttributes, Unless, Expression, Comment, Code, With
+from ..expr import handle_text_node  # TODO: move this elsewhere.
+from ..ir.generate import BaseDOMIRGenerator
+from .docparser import TonnikalaXMLParser, TonnikalaHTMLParser
 
-from ..compat import text_type
-from ..expr               import handle_text_node  # TODO: move this elsewhere.
-from ..ir.generate        import BaseDOMIRGenerator
-from ..runtime.exceptions import TemplateSyntaxError
-
-from .docparser           import TonnikalaXMLParser, TonnikalaHTMLParser
 
 class TonnikalaIRGenerator(BaseDOMIRGenerator):
     control_prefix = 'py:'
@@ -50,7 +46,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             (k, handle_text_node(v, translatable=self.is_attr_translatable(k)))
             for (k, v)
             in dom_node.attributes.items()
-        ]
+            ]
 
         self.generate_attributes(ir_node, attrs=attrs, dynamic_attrs=attrs_node)
 
@@ -74,7 +70,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
                 lineno = getattr(node, 'position', (0, 0))[0]
             else:
                 lineno = 0
-     
+
         BaseDOMIRGenerator.syntax_error(
             self,
             message=message,
@@ -92,6 +88,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         name = dom_node.tagName
 
         ir_node_stack = []
+
         def make_control_node(node_name, irtype, *attrs):
             if not self.is_control_name(name, node_name):
                 return
@@ -102,13 +99,13 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             ir_node_stack.append(irnode)
 
         make_control_node('extends', Extends, 'href')
-        make_control_node('block',   Block,   'name')
-        make_control_node('if',      If,      'test')
-        make_control_node('for',     For,     'each')
-        make_control_node('def',     Define,  'function')
-        make_control_node('import',  Import,  'href', 'alias')
-        make_control_node('with',    With,    'vars')
-        make_control_node('vars',    With,    'names')
+        make_control_node('block', Block, 'name')
+        make_control_node('if', If, 'test')
+        make_control_node('for', For, 'each')
+        make_control_node('def', Define, 'function')
+        make_control_node('import', Import, 'href', 'alias')
+        make_control_node('with', With, 'vars')
+        make_control_node('vars', With, 'names')
 
         # TODO: add all node types in order
         generate_element = not bool(ir_node_stack)
@@ -135,7 +132,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         bottom = ir_node_stack[-1]
 
         # link children
-        while ir_node_stack:
+        while True:
             current = ir_node_stack.pop()
 
             if not ir_node_stack:
@@ -144,7 +141,6 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             ir_node_stack[-1].add_child(current)
 
         return generate_element, top, bottom
-
 
     def generate_element_node(self, dom_node):
         generate_element, topmost, bottom = self.create_control_nodes(dom_node)
@@ -159,7 +155,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         overridden_children = None
         content = self.grab_and_remove_control_attr(dom_node, 'content')
         if content:
-            overridden_children = [ Expression(content) ]
+            overridden_children = [Expression(content)]
 
         if self.is_control_name(dom_node.tagName, 'replace'):
             replace = self.grab_mandatory_attribute(dom_node, 'value')
@@ -193,7 +189,6 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
                 self.add_children(self.child_iter(dom_node), bottom)
 
         return topmost
-
 
     def generate_ir_node(self, dom_node):
         node_t = dom_node.nodeType
@@ -230,7 +225,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
 def parse(filename, string):
     parser = TonnikalaHTMLParser(filename, string)
     parsed = parser.parse()
-    generator = TonnikalaIRGenerator(document=parsed, translatable=True, 
+    generator = TonnikalaIRGenerator(document=parsed, translatable=True,
                                      filename=filename, source=string)
     tree = generator.generate_tree()
     tree = generator.flatten_element_nodes(tree)
@@ -241,7 +236,7 @@ def parse(filename, string):
 def parse_js(filename, string):
     parser = TonnikalaHTMLParser(filename, string)
     parsed = parser.parse()
-    generator = TonnikalaIRGenerator(document=parsed, translatable=False, 
+    generator = TonnikalaIRGenerator(document=parsed, translatable=False,
                                      control_prefix='js', filename=filename,
                                      source=string)
     tree = generator.generate_tree()

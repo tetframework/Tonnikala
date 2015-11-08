@@ -1,0 +1,12 @@
+[run]
+branch  = True
+include = tonnikala/*
+omit    = tonnikala/tests/*
+          tonnikala/runtime/debug.py
+source  = python
+
+[report]
+exclude_lines =
+        pragma: no cover
+        pragma: python3
+

@@ -5,3 +5,7 @@ venv*
 *.so
 build
 tonnikala/tests/js/tmp
+.coverage
+htmlcov
+nose2-junit.xml
+coverage.xml

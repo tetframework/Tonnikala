@@ -1,9 +1,10 @@
 import sys
 
-if sys.version_info < (3,):
-    PY2 = True
-    PY3 = False
+PY2 = sys.version_info < (3,)
+PY3 = not PY2
 
+
+if PY2:  # pragma: python2
     text_type = unicode
     string_types = basestring
     unichr = unichr
@@ -21,10 +22,7 @@ def reraise(tp, value, tb=None):
     from htmlentitydefs import entitydefs as html_entity_defs
     import HTMLParser as html_parser
 
-else:
-    PY3 = True
-    PY2 = False
-
+else:  # pragma: python3
     text_type = str
     string_types = (str,)
     unichr = chr
@@ -32,7 +30,7 @@ else:
     def next_method(obj):
         return obj.__next__
 
-    def reraise(tp, value, tb=None):
+    def reraise(tp, value, tb=None):  # pragma: no cover
         if value is None:
             value = tp()
         if value.__traceback__ is not tb:
@@ -42,3 +40,8 @@ else:
     from io import StringIO, BytesIO
     from html.entities import entitydefs as html_entity_defs
     from html import parser as html_parser
+
+try:  # pragma: no cover
+    from collections import OrderedDict
+except ImportError:  #  pragma: no cover
+    from ordereddict import OrderedDict

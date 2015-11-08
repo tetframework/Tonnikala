@@ -9,7 +9,6 @@ from .languages import javascript
 from .syntaxes.tonnikala import parse as parse_tonnikala, \
                                 parse_js as parse_js_tonnikala
 from .syntaxes.chameleon import parse as parse_chameleon
-from .syntaxes.jinja2 import parse as parse_jinja2
 from .languages.python.generator import Generator as PythonGenerator
 from .languages.javascript.generator import Generator as JavascriptGenerator
 from .runtime import python, exceptions
@@ -20,9 +19,9 @@ _make_traceback = None
 MIN_CHECK_INTERVAL = 0.25
 
 
-try:
+try:  # pragma: python3
     import builtins as __builtin__
-except ImportError:
+except ImportError:  # pragma: python2
     import __builtin__
 
 
@@ -73,7 +72,7 @@ def handle_exception(exc_info=None, source_hint=None, tb_override=_NO):
     """
 
     global _make_traceback
-    if exc_info is None:
+    if exc_info is None:  # pragma: no cover
         exc_info = sys.exc_info()
 
     # the debugging module is imported when it's used for the first time.
@@ -82,9 +81,9 @@ def handle_exception(exc_info=None, source_hint=None, tb_override=_NO):
     # all of that.
     if _make_traceback is None:
         from .runtime.debug import make_traceback as _make_traceback
-    
+
     exc_type, exc_value, tb = exc_info
-    if tb_override is not _NO:
+    if tb_override is not _NO:  # pragma: no cover
         tb = tb_override
 
     traceback = _make_traceback((exc_type, exc_value, tb), source_hint)
@@ -109,9 +108,11 @@ class Template(object):
         except Exception as e:
             exc_info = sys.exc_info()
 
-        self.handle_exception(exc_info)
-        del exc_info
-        
+        try:
+            self.handle_exception(exc_info)
+        finally:
+            del exc_info
+
     def render(self, context, funcname='__main__'):
         return self.render_to_buffer(context, funcname).join()
 
@@ -120,7 +121,6 @@ parsers = {
     'tonnikala':    parse_tonnikala,
     'js_tonnikala': parse_js_tonnikala,
     'chameleon':    parse_chameleon,
-    'jinja2':       parse_jinja2
 }
 
 
@@ -139,7 +139,7 @@ def _new_globals(runtime):
         '__TK__mkbuffer': runtime.Buffer,
         '__TK__escape': runtime.escape,
         '__TK__output_attrs': runtime.output_attrs,
-        'literal':     lambda x: x
+        'literal': helpers.literal
     }
 
 
@@ -169,7 +169,7 @@ class Loader(object):
                 e.filename = filename
 
             exc_info = sys.exc_info()
-        
+
         if exc_info:
             self.handle_exception(exc_info, string, tb_override=None)
 

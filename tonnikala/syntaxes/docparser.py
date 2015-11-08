@@ -9,7 +9,7 @@ import sys
 from xml import sax
 from xml.dom import minidom as dom
 
-from ..compat import (html_entity_defs, html_parser, 
+from ..compat import (html_entity_defs, html_parser,
                       text_type, unichr, BytesIO, StringIO)
 from ..helpers import StringWithLocation
 from ..runtime.exceptions import TemplateSyntaxError
@@ -132,12 +132,12 @@ class TonnikalaXMLParser(sax.ContentHandler):
         pass
 
 
-if hasattr(html_parser, 'attrfind_tolerant'):
+if hasattr(html_parser, 'attrfind_tolerant'):  # pragma: no cover
     attrfind = html_parser.attrfind_tolerant
 else:
     attrfind = html_parser.attrfind
 
-if hasattr(html_parser, 'tagfind_tolerant'):
+if hasattr(html_parser, 'tagfind_tolerant'):  # pragma: no cover
     tagfind = html_parser.tagfind_tolerant
 else:
     tagfind = html_parser.tagfind
@@ -146,7 +146,7 @@ else:
 # object to force a new-style class!
 class TonnikalaHTMLParser(html_parser.HTMLParser, object):
     void_elements = set([
-        'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 
+        'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
         'keygen', 'link', 'meta', 'param', 'source', 'track', 'wbr'
     ])
 

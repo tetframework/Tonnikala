@@ -8,56 +8,35 @@ class LanguageNode(object):
         self.indent_level = None
         self.children = []
 
-    def set_indent_level(self, indent_level):
-        self.indent_level = indent_level
-
-    def get_indent(self):
-        return ' ' * 4 * self.indent_level
-
-    def add_child(self, node):
-        if not isinstance(self, ComplexNode):
-            raise NotImplementedError("Cannot add children to a node of type %s" % self.__class__.__name__)
-
-        self.children.append(node)
-
-    def generate_indented_code(self, code):
-        return self.get_indent() + code + '\n'
-
-    def gen_name(self):
-        global name_counter
-        name_counter += 1
-        return "__tk_%d__" % name_counter
+    def add_child(self, node):  # pragma: no cover
+        raise NotImplementedError("Cannot add children to a node of type %s" % self.__class__.__name__)
 
 
 class ComplexNode(LanguageNode):
-    def indented_children(self, generator, increment=1):
-        child_indent = self.indent_level + increment
-        for i in self.children:
-            i.set_indent_level(child_indent)
-            for j in i.generate(generator):
-                yield j
+    def add_child(self, node):
+        self.children.append(node)
 
 
-def unimplemented(self, *a, **kw):
+def unimplemented(self, *a, **kw):  # pragma: no cover
     raise NotImplementedError("Error: unimplemented")
 
 
 class BaseGenerator(object):
-    OutputNode        = unimplemented
-    IfNode            = unimplemented
-    ForNode           = unimplemented
-    DefineNode        = unimplemented
-    ComplexExprNode   = unimplemented
-    ExpressionNode    = unimplemented
-    ImportNode        = unimplemented
-    Node              = unimplemented
-    UnlessNode        = unimplemented
-    MutableAttribute  = unimplemented
+    OutputNode = unimplemented
+    IfNode = unimplemented
+    ForNode = unimplemented
+    DefineNode = unimplemented
+    ComplexExprNode = unimplemented
+    ExpressionNode = unimplemented
+    ImportNode = unimplemented
+    Node = unimplemented
+    UnlessNode = unimplemented
+    MutableAttribute = unimplemented
     DynamicAttributes = unimplemented
-    ExtendsNode       = unimplemented
-    BlockNode         = unimplemented
+    ExtendsNode = unimplemented
+    BlockNode = unimplemented
     TranslatableOutputNode = unimplemented
-    WithNode               = unimplemented
+    WithNode = unimplemented
 
     def __init__(self, ir_tree):
         self.tree = ir_tree
@@ -67,11 +46,11 @@ class BaseGenerator(object):
             self.add_child(i, target)
 
     def add_child(self, ir_node, target):
-        if   isinstance(ir_node, nodes.TranslatableText):
+        if isinstance(ir_node, nodes.TranslatableText):
             new_node = self.TranslatableOutputNode(
                 ir_node.text, needs_escape=ir_node.needs_escape)
 
-        elif   isinstance(ir_node, nodes.Text):
+        elif isinstance(ir_node, nodes.Text):
             new_node = self.OutputNode(ir_node.escaped())
 
         elif isinstance(ir_node, nodes.If):
@@ -113,7 +92,7 @@ class BaseGenerator(object):
         elif isinstance(ir_node, nodes.With):
             new_node = self.WithNode(ir_node.vars)
 
-        else:
+        else:  # pragma: no cover
             raise ValueError("Unknown node type, %s" % (target), ir_node.__class__.__name__)
 
         target.add_child(new_node)
@@ -121,16 +100,7 @@ class BaseGenerator(object):
         if isinstance(ir_node, nodes.ContainerNode):
             self.add_children(ir_node, new_node)
 
-    def generate(self):
-        root = self.tree
-        self.root_node = self.RootNode()
-        self.add_children(self.tree.root, self.root_node)
-        x = list(self.root_node.generate())
-        return ''.join(self.root_node.generate())
-
     def generate_ast(self):
-        root = self.tree
         self.root_node = self.RootNode()
         self.add_children(self.tree.root, self.root_node)
         return self.root_node.generate_ast(self)
-

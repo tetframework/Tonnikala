@@ -51,6 +51,15 @@ class TestJsTemplates(unittest.TestCase):
 
         self.assertEqual(render(template, **args).strip(), result.strip())
 
+    def assert_compile_throws(self, exception_class, template):
+        try:
+            compile_js_template(template, 'scratch.js')
+        except exception_class:
+            return
+
+        raise AssertionError('Compiling template {} did not throw a {}'
+                             .format(template, exception_class.__name__))
+
     def test_simple(self):
         self.are('<html></html>', '<html></html>')
         self.are('<html attr="&amp;&lt;&#34;">&amp;&lt;&#34;</html>',

@@ -5,10 +5,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 __docformat__ = "epytext"
 
-from xml.dom.minidom    import Node
-from .nodes import (Element, Text, If, For, Define, Import, EscapedText,
-                    MutableAttribute, ContainerNode, EscapedText, Root, 
-                    DynamicAttributes, Unless, Expression, Comment, IRTree)
+from .nodes import (Element, Text,
+                    MutableAttribute, ContainerNode, EscapedText, Root,
+                    DynamicAttributes, Unless, Comment, IRTree)
 
 from ..runtime.exceptions import TemplateSyntaxError
 
@@ -35,19 +34,6 @@ html5_cdata_elements = frozenset('''
     script
     style
 '''.split())
-
-
-try:
-    # noinspection PyUnresolvedReferences,PyStatementEffect
-    unicode
-
-    def u(s):
-        # noinspection PyUnresolvedReferences
-        return unicode(s)
-
-except NameError:
-    def u(s):
-        return s
 
 
 class all_set(object):
@@ -139,6 +125,7 @@ class Validator(object):
         raise TemplateSyntaxError(message=message, source=source,
                                   filename=filename, lineno=lineno)
 
+
 class BaseDOMIRGenerator(BaseIRGenerator):
     def __init__(self, document=None, mode='html5', *a, **kw):
         super(BaseDOMIRGenerator, self).__init__(*a, **kw)
@@ -156,7 +143,7 @@ class BaseDOMIRGenerator(BaseIRGenerator):
             self.empty_tag_closing_string = '/>'
             self.cdata_elements = set()
 
-        else:
+        else:  # pragma: no cover
             raise ValueError("Unknown render mode '%s'" % mode)
 
     def child_iter(self, node):
@@ -172,7 +159,7 @@ class BaseDOMIRGenerator(BaseIRGenerator):
         for name, value in attrs:
             ir_node.set_attribute(name, value)
 
-    def generate_ir_node(self, dom_node):
+    def generate_ir_node(self, dom_node):  # pragma: no cover
         raise NotImplementedError('abstract method not implemented')
 
     def add_children(self, children, ir_node):

@@ -3,17 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import re
 
 from tonnikala.helpers import escape
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
-
-try:
-    # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
-    unicode
-
-except NameError:
-    unicode = str
+from ..compat import OrderedDict, text_type
 
 
 class BaseNode(object):
@@ -34,7 +24,7 @@ class Text(BaseNode):
         self.text = text
         self.is_cdata = is_cdata
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return self.text
 
     def escaped(self):
@@ -50,7 +40,7 @@ class TranslatableText(Text):
     def __init__(self, text, is_cdata=False):
         super(TranslatableText, self).__init__(text, is_cdata=is_cdata)
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return '_t(%s)' % self.text
 
     @property
@@ -81,7 +71,7 @@ class Comment(BaseNode):
     def escaped(self):
         return escape_comment(self.text)
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return self.text
 
 
@@ -89,7 +79,7 @@ class EscapedText(Text):
     def __init__(self, string):
         super(EscapedText, self).__init__(string)
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return self.text
 
     def escaped(self):
@@ -102,7 +92,7 @@ class Expression(BaseNode):
     def __init__(self, expression):
         self.expression = expression
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return self.expression
 
 
@@ -112,7 +102,7 @@ class Code(BaseNode):
     def __init__(self, source):
         self.source = source
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return self.source
 
 
@@ -139,7 +129,7 @@ class ContainerNode(BaseNode):
     def __repr__(self):
         return self.__class__.__name__ + '(%s)' % str(self)
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return str(self.children)
 
     def validate(self, validator):
@@ -160,7 +150,7 @@ class MutableAttribute(ContainerNode):
         self.value = value
         self.children.append(value)
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return str({ self.name: self.value })
 
 
@@ -169,7 +159,7 @@ class DynamicAttributes(BaseNode):
         super(DynamicAttributes, self).__init__()
         self.expression = expression
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return str(self.expression)
 
 
@@ -178,7 +168,7 @@ class DynamicText(ContainerNode):
         super(DynamicText, self).__init__()
         pass
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return str(self.children)
 
 
@@ -191,7 +181,7 @@ class Element(ContainerNode):
         self.mutable_attributes  = OrderedDict()
         self.dynamic_attrs       = None
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         attrs = str(self.attributes)
         children = str(self.children)
 
@@ -235,7 +225,7 @@ class For(ContainerNode):
 
         super(For, self).validate(validator)
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         children = str(self.children)
         return ', '.join([("(%s in %s)" % tuple(self.parts)), children])
 
@@ -246,8 +236,8 @@ class Define(ContainerNode):
 
         self.funcspec = funcspec
 
-    def __str__(self):
-        return ', '.join([self.funcspec, unicode(self.children)])
+    def __str__(self):  # pragma: no cover
+        return ', '.join([self.funcspec, text_type(self.children)])
 
 
 class Import(BaseNode):
@@ -257,7 +247,7 @@ class Import(BaseNode):
         self.href = href
         self.alias = alias
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return ', '.join([self.href, self.alias])
 
 
@@ -267,7 +257,7 @@ class If(ContainerNode):
 
         self.expression = expression
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         children = str(self.children)
         return ', '.join([("(%s)" % self.expression), children])
 
@@ -278,7 +268,7 @@ class Unless(ContainerNode):
 
         self.expression = expression
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         children = str(self.children)
         return ', '.join([("(%s)" % self.expression), children])
 
@@ -288,7 +278,7 @@ class Block(ContainerNode):
         super(Block, self).__init__()
         self.name = name
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         children = str(self.children)
         return "%s, %s" % (repr(self.name), children)
 
@@ -298,7 +288,7 @@ class With(ContainerNode):
         super(With, self).__init__()
         self.vars = vars
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         children = str(self.children)
         return "%s, %s" % (repr(self.vars), children)
 
@@ -309,7 +299,7 @@ class Extends(ContainerNode):
 
         self.href = href
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         children = str(self.children)
         return ', '.join([("(%s)" % self.expression), children])
 
@@ -356,7 +346,7 @@ class IRTree(object):
     def get_root(self):
         return self.root
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return repr(self)
 
     def __repr__(self):

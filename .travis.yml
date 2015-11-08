@@ -14,7 +14,7 @@ before_install:
 
 # command to install dependencies
 install:
-  - travis-retry pip install coverage nose2 
+  - travis_retry pip install coverage nose2 
   - python setup.py develop
 
 # command to run tests

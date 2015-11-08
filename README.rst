@@ -6,10 +6,10 @@ Tonnikala
    :target: https://gitter.im/ztane/Tonnikala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 .. image:: https://next.travis-ci.org/tetframework/Tonnikala.svg?branch=master
-    :target: https://next.travis-ci.org/tetframework/Tonnikala
+   :target: https://next.travis-ci.org/tetframework/Tonnikala
 
- .. image:: https://coveralls.io/repos/ztane/Tonnikala/badge.svg?branch=master&service=github
-    :target: https://coveralls.io/github/ztane/Tonnikala?branch=master 
+.. image:: https://coveralls.io/repos/ztane/Tonnikala/badge.svg?branch=master&service=github
+   :target: https://coveralls.io/github/ztane/Tonnikala?branch=master 
 
 
 Tonnikala is the latest reincarnation among the Python templating 

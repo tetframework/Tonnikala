@@ -9,12 +9,12 @@ python:
 
 before_install:
   - travis_retry sudo apt-get update
-  - travis_retry sudo apt-get install nodejs
+  - travis_retry sudo apt-get install 'nodejs[coverage-plugin]'
   - ls /usr/bin/no*
 
 # command to install dependencies
 install:
-  - travis_retry pip install coverage nose2 
+  - travis_retry pip install coverage 'nose2[coverage-plugin]' 
   - python setup.py develop
 
 # command to run tests

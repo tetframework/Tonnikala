@@ -7,10 +7,12 @@ python:
   - 3.4
   - 3.5
 
-before_install:
-  - travis_retry sudo apt-get update
-  - travis_retry sudo apt-get install nodejs
-  - ls /usr/bin/no*
+sudo: false
+
+addons:
+  apt:
+    packages:
+    - nodejs
 
 # command to install dependencies
 install:

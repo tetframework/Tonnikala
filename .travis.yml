@@ -16,7 +16,8 @@ addons:
 
 # command to install dependencies
 install:
-  - travis_retry pip install coverage 'nose2[coverage-plugin]' coveralls
+  - travis_retry pip install coverage coveralls
+  - travis_retry pip install 'https://github.com/nose-devs/nose2/archive/master.zip' 'nose2[coverage-plugin]'
   - python setup.py develop
 
 # command to run tests

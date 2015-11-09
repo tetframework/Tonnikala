@@ -19,7 +19,7 @@ install:
   - travis_retry pip install coverage coveralls
   - mkdir eggs && wget https://github.com/nose-devs/nose2/archive/master.zip -O eggs/nose-0.5.1.zip
   - pip install --upgrade pip
-  - pip install -i eggs 'nose2[coverage-plugin]' --extra-index-url https://pypi.python.org/simple
+  - pip install -f file://$(pwd)/eggs 'nose2[coverage-plugin]' --extra-index-url https://pypi.python.org/simple
   - python setup.py develop
 
 # command to run tests

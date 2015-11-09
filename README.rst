@@ -137,7 +137,11 @@ results in the output
     <span>the condition was true</span>
 
 if the ``condition`` was true
-	
+
+``py:unless``
++++++++++++++
+
+``py:unless="expression"`` is an alternative way to type ``py:if="not expression"``.
 
 ``py:for``
 ++++++++++
@@ -158,6 +162,102 @@ results in the output
 
     <td>0</td><td>1</td><td>2</td><td>3</td><td>4</td>
 
+``py:strip``
++++++++++++ 
+
+Strips the *tag* if the expression is true; keeping the contents. Keeps the tag if the expression evaluates to false.
+
+.. code-block:: xml
+
+    <div py:strip="True">content</div>
+
+results in rendered output
+
+.. code-block:: xml
+
+    content
+
+``py:strip=""`` is equivalen to ``py:strip="True"``.
+
+Warning: ``py:strip`` will evaluate the expression twice: once for the opening and once for the closing tag.
+
+``py:def``
+++++++++++
+
+Declares a callable function with optional arguments. The function, when called, will return the rendered contents
+of the ``py:def`` tag.
+
+For example a function without argments (you can omit the empty parentheses ``()``):
+
+.. code-block:: xml
+
+    <!-- define a function -->
+    <py:def function="copyright">(C) 2015 Tonnikala contributors</py:def>
+
+    <!-- call the function -->
+    $copyright()
+
+With arguments:
+
+.. code-block:: xml
+
+    <button 
+         py:def="button(caption, type='submit' cls='btn-default', id=None)"
+         class="btn $btn_cls"
+         type="$type"
+         id="$id">$caption</button>
+
+    $button('Cancel', id='cancel')
+    $button('OK', cls='btn-primary', id='ok')
+    $button('Reset', type='reset')
+
+Will render to
+
+    <button class="btn btn-default" type="submit" id="cancel">Cancel</button>
+    <button class="btn btn-primary" type="submit" id="ok">OK</button>
+    <button class="btn btn-default" type="reset">Reset</button>
+
+The functions created by ``py:def`` form closures - that is they remember
+the variable values from the context where they were created.
+
+.. code-block:: xml
+
+    <li py:def="li_element(content)">$content</li>
+
+    <ul py:def="make_list(elements, format_item=li_element)">
+        <py:for each="item in elements">$format_item(item)</py:for>
+    </ul>
+
+    <py:def function="make_color_list(elements, color='#ccc')">
+        <li py:def="colorized_li_element(content)" style="color: $color">$content</li>
+        $make_list(elements, format_item=colorized_li_element)
+    </py:def>
+
+    $make_list(plain)
+    $make_color_list(good, color="#0F0")
+    $make_color_list(bad, color="#F00")
+
+might render to
+
+.. code-block:: xml
+
+    <ul>
+        <li>Plain item 0</li>
+        <li>Plain item 1</li>
+        <li>Plain item 2</li>
+    </ul>
+    <ul>
+        <li style="color: #0F0">Good item 0</li>
+        <li style="color: #0F0">Good item 1</li>
+        <li style="color: #0F0">Good item 2</li>
+        <li style="color: #0F0">Good item 3</li>
+    </ul>
+    <ul>
+        <li style="color: #F00">Bad item 0</li>
+        <li style="color: #F00">Bad item 1</li>
+        <li style="color: #F00">Bad item 2</li>
+    </ul>
+    
 
 ``py:with``
 +++++++++++ 

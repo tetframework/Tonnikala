@@ -213,6 +213,8 @@ With arguments:
 
 Will render to
 
+.. code-block:: xml
+
     <button class="btn btn-default" type="submit" id="cancel">Cancel</button>
     <button class="btn btn-primary" type="submit" id="ok">OK</button>
     <button class="btn btn-default" type="reset">Reset</button>

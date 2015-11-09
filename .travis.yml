@@ -16,7 +16,7 @@ addons:
 
 # command to install dependencies
 install:
-  - travis_retry pip install pytest pytest-cov
+  - travis_retry pip install --upgrade pytest pytest-cov
   - python setup.py develop
 
 # command to run tests

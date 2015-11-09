@@ -21,7 +21,7 @@ install:
 
 # command to run tests
 script:
-  - if [[ $TRAVIS_PYTHON_VERSION != 3* ]]; then py.test --cov-config=unittest-python3.cfg; fi
+  - if [[ $TRAVIS_PYTHON_VERSION != 3* ]]; then py.test --cov-config=coveragerc-python2; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then py.test; fi
 
 after_success:

@@ -16,16 +16,13 @@ addons:
 
 # command to install dependencies
 install:
-  - travis_retry pip install --upgrade pip
-  - travis_retry pip install coverage coveralls six cov-core
-  - mkdir eggs && wget https://github.com/nose-devs/nose2/archive/master.zip -O eggs/nose-0.5.0.post1.zip
-  - pip install eggs/nose-0.5.0.post1.zip
+  - travis_retry pip install pytest pytest-cov
   - python setup.py develop
 
 # command to run tests
 script:
-  - if [[ $TRAVIS_PYTHON_VERSION != 3* ]]; then nose2 -c unittest-python2.cfg; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then nose2 -c unittest-python3.cfg; fi
+  - if [[ $TRAVIS_PYTHON_VERSION != 3* ]]; then py.test --cov-config=unittest-python3.cfg; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then py.test; fi
 
 after_success:
   - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then coveralls --rcfile=coveragerc-python3; fi

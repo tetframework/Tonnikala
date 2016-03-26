@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import absolute_import, division, print_function, \
+    unicode_literals
 
 """Generates IR nodes from DOM tree"""
-
-__docformat__ = "epytext"
 
 from .nodes import (Element, Text,
                     MutableAttribute, ContainerNode, EscapedText, Root,
@@ -29,7 +28,6 @@ html5_empty_tags = frozenset('''
     source
 '''.split())
 
-
 html5_cdata_elements = frozenset('''
     script
     style
@@ -46,7 +44,7 @@ class BaseIRGenerator(object):
         super(BaseIRGenerator, self).__init__(*a, **kw)
         self.filename = filename
         self.source = source
-        self.states = [ {} ]
+        self.states = [{}]
         self.tree = IRTree()
 
     def syntax_error(self, message, lineno=None):
@@ -133,7 +131,7 @@ class BaseDOMIRGenerator(BaseIRGenerator):
         self.mode = mode
         self.is_cdata = False
 
-        if mode in [ 'html', 'html5', 'xhtml' ]:
+        if mode in ['html', 'html5', 'xhtml']:
             self.empty_elements = html5_empty_tags
             self.cdata_elements = html5_cdata_elements
             self.empty_tag_closing_string = ' />'
@@ -221,14 +219,15 @@ class BaseDOMIRGenerator(BaseIRGenerator):
                 # if no children, then 1 guard is enough
                 if not i.children:
                     if i.name in self.empty_elements:
-                        start_tag_nodes.append(EscapedText(self.empty_tag_closing_string))
+                        start_tag_nodes.append(
+                            EscapedText(self.empty_tag_closing_string))
 
                     else:
                         start_tag_nodes.append(EscapedText('></%s>' % i.name))
 
                 else:
                     start_tag_nodes.append(EscapedText('>'))
-                    end_tag_nodes = [ EscapedText('</%s>' % i.name) ]
+                    end_tag_nodes = [EscapedText('</%s>' % i.name)]
 
                 child_nodes = []
                 for j in i.children:
@@ -241,12 +240,12 @@ class BaseDOMIRGenerator(BaseIRGenerator):
                 if guard is not None:
                     start_tag = Unless(guard)
                     start_tag.children = start_tag_nodes
-                    start_tag_nodes = [ start_tag ]
+                    start_tag_nodes = [start_tag]
 
                     if end_tag_nodes:
                         end_tag = Unless(guard)
                         end_tag.children = end_tag_nodes
-                        end_tag_nodes = [ end_tag ]
+                        end_tag_nodes = [end_tag]
 
                 new_children.extend(start_tag_nodes)
                 new_children.extend(child_nodes)

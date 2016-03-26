@@ -1,9 +1,9 @@
 def escape(string):
-    return string.replace('&', '&amp;')  \
-                 .replace('<', '&lt;')   \
-                 .replace('>', '&gt;')   \
-                 .replace('"', '&#34;') \
-                 .replace("'", '&#39;')
+    return (string.replace('&', '&amp;')
+            .replace('<', '&lt;')
+            .replace('>', '&gt;')
+            .replace('"', '&#34;')
+            .replace("'", '&#39;'))
 
 
 def internalcode(f):
@@ -43,15 +43,14 @@ def calculate_position(source, offset, start=None):
 
     fragment = source[:offset]
     lines = fragment.count('\n')
-    coloffset = offset - fragment.rfind('\n') if lines else offset
+    column_offset = offset - fragment.rfind('\n') if lines else offset
 
     if lines:
-        pos = start[0] + lines, coloffset
+        pos = start[0] + lines, column_offset
     else:
-        pos = start[0], start[1] + coloffset
-    
+        pos = start[0], start[1] + column_offset
+
     return pos
 
+
 internal_code = set()
-
-

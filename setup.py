@@ -27,17 +27,13 @@ requires = """
     ply<3.6.0
 """.split()
 
-if sys.version_info < (2, 6) or (3, 0) <= sys.version_info < (3, 3):
-    raise Exception("Tonnikala requires Python 2.6+ or Python 3.3+")
-
-
-if sys.version_info < (2, 7):
-    requires.append('ordereddict')
+if sys.version_info < (2, 7) or (3, 0) <= sys.version_info < (3, 3):
+    raise Exception("Tonnikala requires Python 2.7 or Python 3.3+")
 
 
 setup(
     name='tonnikala',
-    version='1.0.0b1',
+    version='1.0.0b2',
     description='Python templating engine - the one ton solution',
     author='Antti Haapala',
     author_email='antti@haapala.name',
@@ -47,7 +43,6 @@ setup(
         "Framework :: Pyramid",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",

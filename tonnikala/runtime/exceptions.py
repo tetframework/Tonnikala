@@ -1,10 +1,11 @@
 class TemplateError(Exception):
     pass
 
+
 class TemplateSyntaxError(TemplateError):
     """Raised to tell the user that there is a problem with the template."""
 
-    def __init__(self, message, lineno=None, name=None, 
+    def __init__(self, message, lineno=None, name=None,
                  source=None, filename=None, node=None):
         TemplateError.__init__(self, message)
         self.message = message
@@ -44,4 +45,3 @@ class TemplateSyntaxError(TemplateError):
                 lines.append('    ' + line.strip())
 
         return u'\n'.join(lines)
-

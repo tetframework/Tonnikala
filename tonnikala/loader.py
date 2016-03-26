@@ -1,23 +1,20 @@
-import sys
-import codecs
-import os
 import errno
+import sys
 import time
 
-from . import expr
-from .languages import javascript
-from .syntaxes.tonnikala import parse as parse_tonnikala, \
-                                parse_js as parse_js_tonnikala
-from .syntaxes.chameleon import parse as parse_chameleon
-from .languages.python.generator import Generator as PythonGenerator
-from .languages.javascript.generator import Generator as JavascriptGenerator
-from .runtime import python, exceptions
-from .compat import reraise
+import codecs
+import os
 
+from .compat import reraise
+from .languages.javascript.generator import Generator as JavascriptGenerator
+from .languages.python.generator import Generator as PythonGenerator
+from .runtime import python, exceptions
+from .syntaxes.chameleon import parse as parse_chameleon
+from .syntaxes.tonnikala import parse as parse_tonnikala, \
+    parse_js as parse_js_tonnikala
 
 _make_traceback = None
 MIN_CHECK_INTERVAL = 0.25
-
 
 try:  # pragma: python3
     import builtins as __builtin__
@@ -32,11 +29,12 @@ class Helpers():
 escape = python.escape
 
 helpers = Helpers()
-helpers.literal  = lambda x: x
-helpers.gettext  = lambda x: x
+helpers.literal = lambda x: x
+helpers.gettext = lambda x: x
 helpers.egettext = lambda x: escape(x)
 
-def get_builtins_with_chain(chain=[ helpers ]):
+
+def get_builtins_with_chain(chain=[helpers]):
     builtins = {}
     for i in [__builtin__] + list(reversed(chain)):
         for j in dir(i):
@@ -47,6 +45,8 @@ def get_builtins_with_chain(chain=[ helpers ]):
 
 
 _builtins = None
+
+
 def get_builtins():
     global _builtins
     if _builtins is None:
@@ -65,6 +65,7 @@ def make_template_context(context):
 
 
 _NO = object()
+
 
 def handle_exception(exc_info=None, source_hint=None, tb_override=_NO):
     """Exception handling helper.  This is used internally to either raise
@@ -135,11 +136,11 @@ class TemplateInfo(object):
 
 def _new_globals(runtime):
     return {
-        '__TK__runtime': runtime,
-        '__TK__mkbuffer': runtime.Buffer,
-        '__TK__escape': runtime.escape,
+        '__TK__runtime':      runtime,
+        '__TK__mkbuffer':     runtime.Buffer,
+        '__TK__escape':       runtime.escape,
         '__TK__output_attrs': runtime.output_attrs,
-        'literal': helpers.literal
+        'literal':            helpers.literal
     }
 
 
@@ -155,7 +156,7 @@ class Loader(object):
         parser_func = parsers.get(self.syntax)
         if not parser_func:
             raise ValueError("Invalid parser syntax %s: valid syntaxes: %r"
-                % sorted(parsers.keys()))
+                             % sorted(parsers.keys()))
 
         try:
             tree = parser_func(filename, string)
@@ -252,12 +253,12 @@ class FileLoader(Loader):
             raise OSError(errno.ENOENT, "File not found: %s" % name)
 
         with codecs.open(path, 'r', encoding='UTF-8') as f:
-           contents = f.read()
-           mtime = os.fstat(f.fileno()).st_mtime
+            contents = f.read()
+            mtime = os.fstat(f.fileno()).st_mtime
 
         template = self.load_string(contents, filename=path)
         template.mtime = mtime
-        template.path  = path
+        template.path = path
 
         self.cache[name] = template
         return template
@@ -273,7 +274,7 @@ class JSLoader(object):
         parser_func = parsers.get(self.syntax)
         if not parser_func:
             raise ValueError("Invalid parser syntax %s: valid syntaxes: %r"
-                % sorted(parsers.keys()))
+                             % sorted(parsers.keys()))
 
         tree = parser_func(filename, string)
         code = JavascriptGenerator(tree).generate_ast()

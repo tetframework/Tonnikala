@@ -1,39 +1,34 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-__docformat__ = "epytext"
+from __future__ import absolute_import, division, print_function, \
+    unicode_literals
 
 """XML parser"""
 
-from ..compat import text_type
-
-from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, EscapedText, MutableAttribute, ContainerNode, EscapedText, Root, DynamicAttributes, Unless, Expression, Comment
+from tonnikala.ir.nodes import Element, If, For, EscapedText, Expression
 from xml.dom.minidom import Node
 
-from tonnikala.expr     import handle_text_node # TODO: move this elsewhere.
+from tonnikala.expr import handle_text_node  # TODO: move this elsewhere.
 from tonnikala.ir.generate import BaseDOMIRGenerator
 from tonnikala.syntaxes.docparser import \
-    TonnikalaXMLParser, TonnikalaHTMLParser
+    TonnikalaHTMLParser
 
 
+# noinspection PyMethodMayBeStatic
 class ChameleonIRGenerator(BaseDOMIRGenerator):
     def __init__(self, *a, **kw):
         super(ChameleonIRGenerator, self).__init__(*a, **kw)
 
-
     def get_guard_expression(self, dom_node):
         return self.grab_and_remove_control_attr(dom_node, 'omit-tag')
 
-
     def generate_attributes_for_node(self, dom_node, ir_node):
         attrs_node = self.grab_and_remove_control_attr(dom_node, 'attrs')
-        attrs = [ (k, handle_text_node(v)) for (k, v) in dom_node.attributes.items() ]
+        attrs = [(k, handle_text_node(v)) for (k, v) in
+                 dom_node.attributes.items()]
         self.generate_attributes(ir_node, attrs=attrs, dynamic_attrs=attrs_node)
-
 
     def is_control_name(self, name, to_match):
         return 'tal:' + to_match == name
-
 
     def grab_and_remove_control_attr(self, dom_node, name):
         name = 'tal:' + name
@@ -44,14 +39,14 @@ class ChameleonIRGenerator(BaseDOMIRGenerator):
 
         return None
 
-
     def create_control_nodes(self, dom_node):
         name = dom_node.tagName
 
         ir_node_stack = []
 
         # if self.is_control_name(name, 'import'):
-        #    ir_node_stack.append(Import(dom_node.getAttribute('href'), dom_node.getAttribute('alias')))
+        #    ir_node_stack.append(Import(dom_node.getAttribute('href'),
+        # dom_node.getAttribute('alias')))
 
         # TODO: add all node types in order
         generate_element = not bool(ir_node_stack)
@@ -81,23 +76,20 @@ class ChameleonIRGenerator(BaseDOMIRGenerator):
 
         return generate_element, top, bottom
 
-
     def generate_element_node(self, dom_node):
         generate_element, topmost, bottom = self.create_control_nodes(dom_node)
 
         guard_expression = self.get_guard_expression(dom_node)
 
-
         # on py:strip="" the expression is to be set to "1"
         if guard_expression is not None and not guard_expression.strip():
             guard_expression = '1'
-
 
         # facility to replace children for content control attr
         overridden_children = None
         content = self.grab_and_remove_control_attr(dom_node, 'content')
         if content:
-            overridden_children = [ Expression(content) ]
+            overridden_children = [Expression(content)]
 
         if self.is_control_name(dom_node.tagName, 'replace'):
             replace = dom_node.getAttribute('value')
@@ -114,7 +106,8 @@ class ChameleonIRGenerator(BaseDOMIRGenerator):
             generate_element = False
 
         if generate_element:
-            el_ir_node = Element(dom_node.tagName, guard_expression=guard_expression)
+            el_ir_node = Element(dom_node.tagName,
+                                 guard_expression=guard_expression)
             self.generate_attributes_for_node(dom_node, el_ir_node)
 
         if not topmost:
@@ -134,7 +127,6 @@ class ChameleonIRGenerator(BaseDOMIRGenerator):
 
         return topmost
 
-
     def generate_ir_node(self, dom_node):
         node_t = dom_node.nodeType
 
@@ -142,7 +134,8 @@ class ChameleonIRGenerator(BaseDOMIRGenerator):
             return self.generate_element_node(dom_node)
 
         if node_t == Node.TEXT_NODE:
-            ir_node = handle_text_node(dom_node.nodeValue, is_cdata=self.is_cdata)
+            ir_node = handle_text_node(dom_node.nodeValue,
+                                       is_cdata=self.is_cdata)
             return ir_node
 
         if node_t == Node.COMMENT_NODE:

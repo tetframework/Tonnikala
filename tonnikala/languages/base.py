@@ -9,7 +9,9 @@ class LanguageNode(object):
         self.children = []
 
     def add_child(self, node):  # pragma: no cover
-        raise NotImplementedError("Cannot add children to a node of type %s" % self.__class__.__name__)
+        raise NotImplementedError(
+            "Cannot add children to a node of type %s" %
+            self.__class__.__name__)
 
 
 class ComplexNode(LanguageNode):
@@ -22,6 +24,8 @@ def unimplemented(self, *a, **kw):  # pragma: no cover
 
 
 class BaseGenerator(object):
+    root_node = None
+
     OutputNode = unimplemented
     IfNode = unimplemented
     ForNode = unimplemented
@@ -37,6 +41,9 @@ class BaseGenerator(object):
     BlockNode = unimplemented
     TranslatableOutputNode = unimplemented
     WithNode = unimplemented
+    AttrsNode = unimplemented
+    CodeNode = unimplemented
+    RootNode = unimplemented
 
     def __init__(self, ir_tree):
         self.tree = ir_tree
@@ -93,7 +100,8 @@ class BaseGenerator(object):
             new_node = self.WithNode(ir_node.vars)
 
         else:  # pragma: no cover
-            raise ValueError("Unknown node type, %s" % (target), ir_node.__class__.__name__)
+            raise ValueError("Unknown node type, %s" % (target),
+                             ir_node.__class__.__name__)
 
         target.add_child(new_node)
 

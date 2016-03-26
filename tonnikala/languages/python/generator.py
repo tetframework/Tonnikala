@@ -4,20 +4,24 @@
 # unicode_literals, bc some of the arguments need to be str on
 # both python2 and 3
 from __future__ import absolute_import, division, print_function
+
 import ast
 from ast import *
+
 from collections import Iterable
-from ...compat import string_types, PY2
-from ...runtime.debug import TemplateSyntaxError
-from ...helpers import StringWithLocation
-from ..base import LanguageNode, ComplexNode, BaseGenerator
+
 from .astalyzer import FreeVarFinder
+from ..base import LanguageNode, ComplexNode, BaseGenerator
+from ...compat import string_types, PY2
+from ...helpers import StringWithLocation
+from ...runtime.debug import TemplateSyntaxError
 
 try:  # pragma: no cover
     import sysconfig
 
     HAS_ASSERT = bool(sysconfig.get_config_var('Py_DEBUG'))
-except:  # pragma: no cover
+    del sysconfig
+except ImportError:  # pragma: no cover
     HAS_ASSERT = False
 
 name_counter = 0
@@ -28,8 +32,9 @@ ALWAYS_BUILTINS = '''
 '''.split()
 
 
-def SimpleCall(func, args=None):
-    return Call(func=func, args=args or [], keywords=[], starargs=None, kwargs=None)
+def simple_call(func, args=None):
+    return Call(func=func, args=args or [], keywords=[], starargs=None,
+                kwargs=None)
 
 
 if PY2:  # pragma: python2
@@ -41,7 +46,7 @@ else:  # pragma: python 3
         return [arg(arg=id, annotation=None) for id in arguments]
 
 
-def SimpleFunctionDef(name, arguments=()):
+def simple_function_def(name, arguments=()):
     arguments = create_argument_list(arguments)
     return FunctionDef(
         name=name,
@@ -154,7 +159,7 @@ class PythonNode(LanguageNode):
             if position is not None:
                 i.lineno, i.col_offset = position
 
-            e = Expr(SimpleCall(func, [i]))
+            e = Expr(simple_call(func, [i]))
             e.output_args = [i]
             rv.append(e)
 
@@ -166,7 +171,7 @@ class PythonNode(LanguageNode):
             targets=[
                 NameX('__TK__output', store=True),
             ],
-            value=SimpleCall(
+            value=simple_call(
                 NameX('__TK__mkbuffer')
             )
         ))
@@ -177,7 +182,7 @@ class PythonNode(LanguageNode):
 
     def make_function(self, name, body, add_buffer=False, arguments=()):
         # ensure that the function name is an str
-        func = SimpleFunctionDef(str(name), arguments=arguments)
+        func = simple_function_def(str(name), arguments=arguments)
         new_body = func.body = []
 
         if add_buffer:
@@ -196,8 +201,8 @@ class PythonNode(LanguageNode):
         rv = [
             self.make_function(name, body,
                                arguments=['__TK__output', '__TK__escape']),
-            Expr(SimpleCall(NameX(name),
-                            [NameX('__TK__output'), NameX('__TK__escape')]))
+            Expr(simple_call(NameX(name),
+                             [NameX('__TK__output'), NameX('__TK__escape')]))
         ]
         return rv
 
@@ -211,10 +216,11 @@ class PyOutputNode(PythonNode):
         return [self.get_expression()]
 
     def get_expression(self):
-        return Str(s=(self.text))
+        return Str(s=self.text)
 
     def generate_ast(self, generator, parent):
-        return self.generate_output_ast(self.get_expression(), generator, parent)
+        return self.generate_output_ast(self.get_expression(), generator,
+                                        parent)
 
 
 class PyTranslatableOutputNode(PyOutputNode):
@@ -230,7 +236,7 @@ class PyTranslatableOutputNode(PyOutputNode):
         if self.needs_escape:
             name = 'egettext'
 
-        expr = SimpleCall(
+        expr = simple_call(
             NameX(name),
             [Str(s=self.text)],
         )
@@ -246,7 +252,7 @@ class PyExpressionNode(PythonNode):
         return [self.get_expression()]
 
     def get_expression(self):
-        return SimpleCall(
+        return simple_call(
             NameX('__TK__escape'),
             [self.get_unescaped_expression()]
         )
@@ -255,7 +261,8 @@ class PyExpressionNode(PythonNode):
         return get_fragment_ast(self.expr)
 
     def generate_ast(self, generator, parent):
-        return self.generate_output_ast(self.get_expression(), generator, parent)
+        return self.generate_output_ast(self.get_expression(), generator,
+                                        parent)
 
 
 class PyCodeNode(PythonNode):
@@ -335,7 +342,7 @@ class PyImportNode(PythonNode):
         node = Assign(
             targets=[NameX(str(self.alias), store=True)],
             value=
-            SimpleCall(
+            simple_call(
                 func=
                 Attribute(value=NameX('__TK__runtime', store=False),
                           attr='import_defs', ctx=Load()),
@@ -367,12 +374,12 @@ class PyAttributeNode(PyComplexNode):
 
     def generate_ast(self, generator, parent):
         if len(self.children) == 1 and \
-            isinstance(self.children[0], PyExpressionNode):
+                isinstance(self.children[0], PyExpressionNode):
             # special case, the attribute contains a single
             # expression, these are handled by
             # __TK__output.output_boolean_attr,
             # given the name, and unescaped expression!
-            return [Expr(SimpleCall(
+            return [Expr(simple_call(
                 func=Attribute(
                     value=NameX('__TK__output'),
                     attr='output_boolean_attr',
@@ -402,7 +409,7 @@ class PyAttrsNode(PythonNode):
     def generate_ast(self, generator, parent):
         expression = get_fragment_ast(self.expression)
 
-        output = SimpleCall(
+        output = simple_call(
             NameX('__TK__output_attrs'),
             args=[expression]
         )
@@ -511,7 +518,7 @@ class PyBlockNode(PyComplexNode):
         if not is_extended:
             # call the block in place
             return self.generate_output_ast(
-                [SimpleCall(NameX(str(self.name)), [])],
+                [simple_call(NameX(str(self.name)), [])],
                 self,
                 parent,
                 position=position
@@ -672,7 +679,8 @@ class PyRootNode(PyComplexNode):
         toplevel_funcs = generator.blocks + generator.top_defs
         # do not generate __main__ for extended templates
         if not extended:
-            main_func = self.make_function('__main__', main_body, add_buffer=True)
+            main_func = self.make_function('__main__', main_body,
+                                           add_buffer=True)
             generator.add_bind_decorator(main_func)
 
             toplevel_funcs = [main_func] + toplevel_funcs
@@ -697,12 +705,14 @@ class PyRootNode(PyComplexNode):
         code += '__TK__output_attrs = __TK__runtime.output_attrs\n'
 
         if extended:
-            code += '__TK__parent_template = __TK__runtime.load(%r)\n' % extended
+            code += '__TK__parent_template = __TK__runtime.load(%r)\n' % \
+                    extended
 
         code += 'def __TK__binder(__TK__context):\n'
         code += '    __TK__original_context = __TK__context.copy()\n'
         code += '    __TK__bind = __TK__runtime.bind(__TK__context)\n'
-        code += '    __TK__bindblock = __TK__runtime.bind(__TK__context, block=True)\n'
+        code += '    __TK__bindblock = __TK__runtime.bind(__TK__context, ' \
+                'block=True)\n'
 
         if extended:
             # an extended template does not have a __main__ (it is inherited)
@@ -748,6 +758,7 @@ class PyRootNode(PyComplexNode):
         return tree
 
 
+# noinspection PyProtectedMember
 class LocationMapper(object):
     def __init__(self):
         self.lineno_map = {1: 1}
@@ -830,7 +841,7 @@ class Generator(BaseGenerator):
 
     def generate_ast(self):
         tree = super(Generator, self).generate_ast()
-        lmapper = LocationMapper()
-        lmapper.map_linenos(tree)
-        self.lnotab = lmapper.lineno_map
+        loc_mapper = LocationMapper()
+        loc_mapper.map_linenos(tree)
+        self.lnotab = loc_mapper.lineno_map
         return tree

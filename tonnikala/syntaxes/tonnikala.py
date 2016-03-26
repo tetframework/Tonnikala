@@ -1,28 +1,22 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-__docformat__ = "epytext"
+from __future__ import absolute_import, division, print_function, \
+    unicode_literals
 
 """XML parser"""
 
 from xml.dom.minidom import Node
-from xml import sax
-from tonnikala.ir.nodes import Element, Text, If, For, Define, Import, \
-    EscapedText, MutableAttribute, ContainerNode, Block, Extends, \
-    Root, DynamicAttributes, Unless, Expression, Comment, Code, With
+from tonnikala.ir.nodes import Element, If, For, Define, Import, \
+    EscapedText, Block, Extends, \
+    Expression, Code, With
 from ..expr import handle_text_node  # TODO: move this elsewhere.
 from ..ir.generate import BaseDOMIRGenerator
-from .docparser import TonnikalaXMLParser, TonnikalaHTMLParser
+from .docparser import TonnikalaHTMLParser
 
 
 class TonnikalaIRGenerator(BaseDOMIRGenerator):
     control_prefix = 'py:'
 
-    TRANSLATABLE_ATTRS = set([
-        'title',
-        'alt',
-        'placeholder',
-    ])
+    TRANSLATABLE_ATTRS = {'title', 'alt', 'placeholder'}
 
     def __init__(self, translatable=True, *a, **kw):
         if 'control_prefix' in kw:
@@ -170,7 +164,8 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             generate_element = False
 
         if generate_element:
-            el_ir_node = Element(dom_node.tagName, guard_expression=guard_expression)
+            el_ir_node = Element(dom_node.tagName,
+                                 guard_expression=guard_expression)
             self.generate_attributes_for_node(dom_node, el_ir_node)
 
         if not topmost:
@@ -219,7 +214,8 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         self.syntax_error('Unhandled node type %d' % node_t, node=dom_node)
 
     def is_attr_translatable(self, attr_name):
-        return bool(self.state.get('translatable')) and attr_name in self.TRANSLATABLE_ATTRS
+        return bool(self.state.get(
+            'translatable')) and attr_name in self.TRANSLATABLE_ATTRS
 
 
 def parse(filename, string):

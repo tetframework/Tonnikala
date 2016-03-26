@@ -1,11 +1,16 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import absolute_import, division, print_function, \
+    unicode_literals
+
 import unittest
-import os.path
+
 import codecs
+import os.path
+from collections import OrderedDict
+
+from tonnikala.compat import text_type
+from tonnikala.loader import FileLoader
 from tonnikala.runtime import python
 from tonnikala.runtime.exceptions import TemplateSyntaxError
-from ..compat import text_type, OrderedDict
-from tonnikala.loader import Loader, FileLoader
 
 
 def render(template, debug=False, **args):
@@ -36,7 +41,8 @@ class TestHtmlTemplates(unittest.TestCase):
 
         self.assertEqual(render(template, **args), result)
 
-    def assert_loader_throws(self, exception_class, template, debug=False, **args):
+    def assert_loader_throws(self, exception_class, template, debug=False,
+                             **args):
         try:
             FileLoader(debug=debug).load_string(template)
         except exception_class:
@@ -45,7 +51,8 @@ class TestHtmlTemplates(unittest.TestCase):
         raise AssertionError('loading the template {} did not throw a {}'
                              .format(template, exception_class.__name__))
 
-    def assert_render_throws(self, exception_class, template, debug=False, **args):
+    def assert_render_throws(self, exception_class, template, debug=False,
+                             **args):
         try:
             render(template, **args)
         except exception_class:
@@ -77,7 +84,8 @@ class TestHtmlTemplates(unittest.TestCase):
         fragment = '<html><div id="a" py:if="flag">was true</div></html>'
         self.are('<html><div id="a">was true</div></html>', fragment, flag=True)
         self.are('<html></html>', fragment, flag=False)
-        self.are('<html><div id="a">was true</div></html>', fragment, flag=dict(something=1))
+        self.are('<html><div id="a">was true</div></html>', fragment,
+                 flag=dict(something=1))
         self.are('<html></html>', fragment, flag={})
         self.are('<html></html>', fragment, flag=None)
 
@@ -128,14 +136,16 @@ class TestHtmlTemplates(unittest.TestCase):
         self.are('<html>&lt;</html>', fragment, values=['<'])
 
         fragment = '<html><div py:for="i in values">${i}</div></html>'
-        self.are('<html><div>0</div><div>1</div></html>', fragment, values=range(2))
+        self.are('<html><div>0</div><div>1</div></html>', fragment,
+                 values=range(2))
 
     def test_def(self):
         fragment = '<html><py:def function="foo(bar)">bar: ${bar}</py:def>' \
                    '-${foo("baz")}-</html>'
 
         self.are('<html>-bar: baz-</html>', fragment)
-        self.assert_loader_throws(TemplateSyntaxError, '<html><py:def bar="foobar"></py:def></html>')
+        self.assert_loader_throws(TemplateSyntaxError,
+                                  '<html><py:def bar="foobar"></py:def></html>')
 
     def test_empty_def(self):
         fragment = '<html><py:def function="foo"></py:def>${foo()}</html>'
@@ -166,8 +176,12 @@ class TestHtmlTemplates(unittest.TestCase):
                  foo=lambda x=iter([False, True]): next(x))
 
     def test_comments(self):
-        fragment = '<html><!-- some comment here, passed verbatim <html></html> --></html>'
-        self.are('<html><!-- some comment here, passed verbatim <html></html> --></html>', fragment)
+        fragment = '<html><!-- some comment here, passed verbatim ' \
+                   '<html></html> --></html>'
+        self.are(
+            '<html><!-- some comment here, passed verbatim <html></html> '
+            '--></html>',
+            fragment)
 
     def test_comments_stripped(self):
         fragment = '<html><!--! some comment here, stripped --></html>'
@@ -188,11 +202,13 @@ class TestHtmlTemplates(unittest.TestCase):
 
     def test_empty_tags(self):
         fragment = '<html><script/><script></script><br/><br></html>'
-        self.are('<html><script></script><script></script><br /><br /></html>', fragment)
+        self.are('<html><script></script><script></script><br /><br /></html>',
+                 fragment)
 
     def test_closures(self):
         fragment = '<html><a py:def="embed(func)">${func()}</a>' \
-                   '<py:for each="i in range(3)"><py:def function="callable()">${i}</py:def>' \
+                   '<py:for each="i in range(3)"><py:def function="callable(' \
+                   ')">${i}</py:def>' \
                    '${embed(callable)}</py:for></html>'
 
         self.are('<html><a>0</a><a>1</a><a>2</a></html>', fragment)
@@ -201,13 +217,18 @@ class TestHtmlTemplates(unittest.TestCase):
         self.assert_render_throws(ZeroDivisionError, '<html>${1 / 0}</html>')
 
     def test_literal(self):
-        self.are('<html><br/></html>', '<html>$literal(val)</html>', val='<br/>')
+        self.are('<html><br/></html>', '<html>$literal(val)</html>',
+                 val='<br/>')
 
     def test_literal_only_1_argument(self):
-        self.assert_render_throws(TypeError, '<html>$literal(val, val)</html>', val='<br/>')
+        self.assert_render_throws(TypeError, '<html>$literal(val, val)</html>',
+                                  val='<br/>')
 
-    def test_invalid_expression_raises_template_syntax_error_and_multiline(self):
-        self.assert_loader_throws(TemplateSyntaxError, '<html><py:for each="i in i i\n"></py:for></html>')
+    def test_invalid_expression_raises_template_syntax_error_and_multiline(
+            self):
+        self.assert_loader_throws(TemplateSyntaxError,
+                                  '<html><py:for each="i in i '
+                                  'i\n"></py:for></html>')
 
     def test_attribute_expressions(self):
         fragment = '<html a="$foo"></html>'
@@ -247,7 +268,8 @@ class TestHtmlTemplates(unittest.TestCase):
         self.are('<html><div>a block</div></html>', fragment)
 
     def test_with(self):
-        fragment = '<html><py:with vars="a = 5; b = 6">${a * b}</py:with></html>'
+        fragment = '<html><py:with vars="a = 5; b = 6">${a * ' \
+                   'b}</py:with></html>'
         self.are('<html>30</html>', fragment)
 
         fragment = '<html><div py:with="a = 5; b = 6">${a * b}</div></html>'
@@ -259,26 +281,31 @@ class TestHtmlTemplates(unittest.TestCase):
 
     def test_translation(self):
         fragment = '<html alt="foo"> abc </html>'
-        self.are('<html alt="foo"> abc </html>', fragment, debug=False, translateable=True)
+        self.are('<html alt="foo"> abc </html>', fragment, debug=False,
+                 translateable=True)
 
         def gettext(x):
-            return '<"%s&>' % x
+            return '<"%s&>' % x.upper()
 
-        self.are('<html alt="&lt;&#34;foo&amp;&gt;"> &lt;&#34;abc&amp;&gt; </html>',
-                 fragment, debug=False, translateable=True, gettext=gettext)
+        self.are(
+            '<html alt="&lt;&#34;FOO&amp;&gt;"> &lt;&#34;ABC&amp;&gt; </html>',
+            fragment, debug=False, translateable=True, gettext=gettext)
 
         def gettext(x):
             return '<%s' % x
 
-        self.are('<html>&lt;&gt;</html>', '<html>&gt;</html>', debug=False, translateable=True, gettext=gettext)
+        self.are('<html>&lt;&gt;</html>', '<html>&gt;</html>', debug=False,
+                 translateable=True, gettext=gettext)
 
     def test_attrs(self):
         fragment = '<html><div py:attrs="foo"></div></html>'
         attrs = OrderedDict([('foo', 'bar'), ('baz', 42)])
-        self.are('<html><div foo="bar" baz="42"></div></html>', fragment, debug=False, foo=attrs)
+        self.are('<html><div foo="bar" baz="42"></div></html>', fragment,
+                 debug=False, foo=attrs)
 
         attrs = [('foo', 'bar'), ('baz', 42)]
-        self.are('<html><div foo="bar" baz="42"></div></html>', fragment, debug=False, foo=attrs)
+        self.are('<html><div foo="bar" baz="42"></div></html>', fragment,
+                 debug=False, foo=attrs)
 
         attrs = None
         self.are('<html><div></div></html>', fragment, debug=False, foo=attrs)
@@ -287,9 +314,11 @@ class TestHtmlTemplates(unittest.TestCase):
         self.are('<html></html>', '<html></HTML>', debug=False)
 
     def test_void_elements(self):
-        self.are('<html><img title="foo" /></html>', '<html><img title="foo"></html>', debug=False)
+        self.are('<html><img title="foo" /></html>',
+                 '<html><img title="foo"></html>', debug=False)
 
-    def assert_file_rendering_equals(self, input_file, output_file, debug=False, **context):
+    def assert_file_rendering_equals(self, input_file, output_file, debug=False,
+                                     **context):
         loader = get_loader(debug=debug)
         template = loader.load(input_file)
         output = template.render(context)
@@ -300,11 +329,14 @@ class TestHtmlTemplates(unittest.TestCase):
         self.assert_file_rendering_equals('simple.tk', 'simple.tk', foo='bar')
 
     def test_extension(self):
-        self.assert_file_rendering_equals('base.tk', 'base.tk', title='the base')
-        self.assert_file_rendering_equals('child.tk', 'child.tk', title='the child')
+        self.assert_file_rendering_equals('base.tk', 'base.tk',
+                                          title='the base')
+        self.assert_file_rendering_equals('child.tk', 'child.tk',
+                                          title='the child')
 
     def test_import(self):
-        self.assert_file_rendering_equals('importing.tk', 'importing.tk', foo='bar')
+        self.assert_file_rendering_equals('importing.tk', 'importing.tk',
+                                          foo='bar')
 
     def test_python_processing_instruction(self):
         result = []
@@ -321,11 +353,11 @@ class TestHtmlTemplates(unittest.TestCase):
         self.assertEqual(['baz'], result)
 
 
-if python.Buffer != python._TK_python_buffer_impl:
+if python.Buffer != python._TKPythonBufferImpl:
     class TestHtmlTemplatesWithoutSpeedups(TestHtmlTemplates):
         def setUp(self):
             self.saved_buffer_cls = python.Buffer
-            python.Buffer = python._TK_python_buffer_impl
+            python.Buffer = python._TKPythonBufferImpl
             python.TonnikalaRuntime.Buffer = staticmethod(python.Buffer)
 
         def tearDown(self):

@@ -58,12 +58,12 @@ class FreeVariableAnalyzerVisitor(Visitor):
             self.free_variables.add(name)
 
 
-HAS_ASSERT = False
 try:
     import sysconfig
     HAS_ASSERT = bool(sysconfig.get_config_var('Py_DEBUG'))
-except:
-    pass
+    del sysconfig
+except ImportError:
+    HAS_ASSERT = False
 
 name_counter = 0
 ALWAYS_BUILTINS = '''

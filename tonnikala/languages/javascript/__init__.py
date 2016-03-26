@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import absolute_import, division, print_function, \
+    unicode_literals
 
-__docformat__ = "epytext"
+import re
 
 from tonnikala.exceptions import ParseError
 from tonnikala.ir.nodes import InterpolatedExpression
-
 from tonnikala.languages.javascript.jslex import JsLexer
-import re
+from tonnikala.runtime.exceptions import TemplateSyntaxError
+
 
 class JavascriptExpression(InterpolatedExpression):
     pass
@@ -15,7 +16,6 @@ class JavascriptExpression(InterpolatedExpression):
 
 identifier_match = re.compile(r'[^\d\W][\w$]*', re.UNICODE)
 expr_continuation = re.compile(r'[([]|(\.[^\d\W][\w$]*)', re.UNICODE)
-
 
 braces = {
     '[': ']',
@@ -40,7 +40,7 @@ def parse_unenclosed_expression(text, start_pos):
         lex = JsLexer()
         # a braced expression is started, consume it
         for type, content in lex.lex(text, pos):
-            pos += len(content)            
+            pos += len(content)
             if content in braces:
                 pars.append(content)
 
@@ -49,7 +49,7 @@ def parse_unenclosed_expression(text, start_pos):
                 if braces[last] != content:
                     raise TemplateSyntaxError(
                         "Syntax error parsing interpolated expression",
-                        node=text[pos-1:])
+                        node=text[pos - 1:])
 
                 if not pars:
                     break
@@ -65,7 +65,7 @@ def parse_expression(text, start_pos=0):
     lex = JsLexer()
     braces = 0
     length = 2
-    valid  = False
+    valid = False
     tokens = lex.lex(text, start_pos + 2)
     for type, content in tokens:
         if content == '}':
@@ -82,7 +82,8 @@ def parse_expression(text, start_pos=0):
         length += len(content)
 
     if not valid:
-        raise ParseError("Unclosed braced Javascript expression", charpos=length)
+        raise ParseError("Unclosed braced Javascript expression",
+                         charpos=length)
 
     return JavascriptExpression(text[start_pos:start_pos + length],
                                 text[start_pos + 2: start_pos + length - 1])

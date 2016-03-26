@@ -13,11 +13,12 @@
 """
 import sys
 import traceback
-from types import TracebackType, CodeType
-from .exceptions import TemplateSyntaxError
-from ..helpers import internal_code
-from ..compat import reraise, PY2
 
+from types import TracebackType, CodeType
+
+from .exceptions import TemplateSyntaxError
+from ..compat import reraise, PY2
+from ..helpers import internal_code
 
 # on pypy we can take advantage of transparent proxies
 try:
@@ -30,9 +31,11 @@ except ImportError:
 try:
     exec("raise TypeError, 'foo'")
 except SyntaxError:  # pragma: python3
-    raise_helper = '__tonnikala_exception__[1].__traceback__ = None; raise __tonnikala_exception__[1]'
+    raise_helper = '__tonnikala_exception__[1].__traceback__ = None; raise ' \
+                   '__tonnikala_exception__[1]'
 except TypeError:  # pragma: python2
-    raise_helper = 'raise __tonnikala_exception__[0], __tonnikala_exception__[1]'
+    raise_helper = 'raise __tonnikala_exception__[0], ' \
+                   '__tonnikala_exception__[1]'
 
 
 class TracebackFrameProxy(object):
@@ -69,6 +72,7 @@ def make_frame_proxy(frame):
     proxy = TracebackFrameProxy(frame)
     if tproxy is None:
         return proxy
+
     def operation_handler(operation, *args, **kwargs):
         if operation in ('__getattribute__', '__getattr__'):
             return getattr(proxy, args[0])
@@ -76,6 +80,7 @@ def make_frame_proxy(frame):
             proxy.__setattr__(*args, **kwargs)
         else:
             return getattr(proxy, operation)(*args, **kwargs)
+
     return tproxy(TracebackType, operation_handler)
 
 
@@ -222,14 +227,14 @@ def fake_exc_info(exc_info, filename, lineno):
 
     # assemble fake globals we need
     globals = {
-        '__name__':             filename,
-        '__file__':             filename,
-        '__tonnikala_exception__':  exc_info[:2],
+        '__name__':                        filename,
+        '__file__':                        filename,
+        '__tonnikala_exception__': exc_info[:2],
 
         # we don't want to keep the reference to the template around
         # to not cause circular dependencies, but we mark it as Tonnikala
         # frame for the ProcessedTraceback
-        '__TK_template_info__':   None
+        '__TK_template_info__':            None
     }
 
     # and fake the exception
@@ -256,7 +261,8 @@ def fake_exc_info(exc_info, filename, lineno):
                 location = 'def "%s"' % function
 
         if not PY2:  # pragma: python3
-            code = CodeType(0, code.co_kwonlyargcount, code.co_nlocals, code.co_stacksize,
+            code = CodeType(0, code.co_kwonlyargcount, code.co_nlocals,
+                            code.co_stacksize,
                             code.co_flags, code.co_code, code.co_consts,
                             code.co_names, code.co_varnames, filename,
                             location, code.co_firstlineno,
@@ -305,6 +311,7 @@ def _init_ugly_crap():
     # regular python
     class _PyObject(ctypes.Structure):
         pass
+
     _PyObject._fields_ = [
         ('ob_refcnt', _Py_ssize_t),
         ('ob_type', ctypes.POINTER(_PyObject))
@@ -323,6 +330,7 @@ def _init_ugly_crap():
 
     class _Traceback(_PyObject):
         pass
+
     _Traceback._fields_ = [
         ('tb_next', ctypes.POINTER(_Traceback)),
         ('tb_frame', ctypes.POINTER(_PyObject)),

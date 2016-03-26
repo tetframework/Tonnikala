@@ -1,13 +1,15 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import absolute_import, division, print_function, \
+    unicode_literals
+
+from collections import Mapping
+from markupsafe import escape
+
+from ..compat import text_type, PY3
 
 NoneType = type(None)
 
-from collections import Mapping
-from ..compat import text_type, PY3
-from markupsafe import escape
 
-
-class _TK_python_buffer_impl(object):
+class _TKPythonBufferImpl(object):
     def __init__(self):
         self._buffer = buffer = []
         e = buffer.extend
@@ -55,17 +57,15 @@ class _TK_python_buffer_impl(object):
             return self.join().encode('UTF-8')
 
 
-Buffer = _TK_python_buffer_impl
-
 try:  # pragma: no cover
-    from ._buffer import Buffer as _Buffer, _set_escape_method
+    from ._buffer import Buffer, _set_escape_method
 
     _set_escape_method(escape)
-    Buffer = _Buffer
-    del _Buffer
-    del _set_escape_method
 except ImportError as e:  # pragma: no cover
-    pass
+    Buffer = _TKPythonBufferImpl
+    _set_escape_method = None
+
+del _set_escape_method
 
 
 def output_attrs(values):

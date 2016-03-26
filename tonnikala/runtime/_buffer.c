@@ -262,13 +262,17 @@ static PyMethodDef Buffer_methods[] = {
         "Returns self unmodified" },
     { "join", Buffer_join, METH_NOARGS,
         "Returns the contents of the buffer as a string" },
-    { "output_boolean_attr", (PyCFunction)Buffer_output_boolean_attr, METH_VARARGS,
+    { "output_boolean_attr",
+        (PyCFunction)Buffer_output_boolean_attr,
+        METH_VARARGS,
         "Outputs a bool	ean or string attribute" },
     {NULL}  /* Sentinel */
 };
 
 static PyMethodDef Buffer_module_methods[] = {
-    {"_set_escape_method", (PyCFunction)_set_escape_method, METH_VARARGS|METH_KEYWORDS,
+    {"_set_escape_method",
+     (PyCFunction)_set_escape_method,
+     METH_VARARGS | METH_KEYWORDS,
      "Sets the escape method used by buffer to escape strings"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
@@ -315,7 +319,8 @@ static PyTypeObject buffer_BufferType = {
     Buffer_new,                /* tp_new */
 };
 
-#define BUFFER_DOC "Accelerated Buffer type for speeding up output ops on Tonnikala templates"
+#define BUFFER_DOC "Accelerated Buffer type for speeding up" \
+                   "output ops on Tonnikala templates"
 
 #if IS_PY3
 static PyModuleDef buffermodule = {

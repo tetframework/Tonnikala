@@ -1,7 +1,9 @@
 // FIXME: !!! hacked "AMD support" bound to fail !!!
 function requirejs(name) {
     var m;
-    global.define = function (_, f) { m = f(); };
+    global.define = function (_, f) {
+        m = f();
+    };
     require(name);
     delete global.define;
     return m;
@@ -39,6 +41,12 @@ b.attr('yehees', true);
 b('>')
 assertStringEqual(String(b), 'asdffoo&amp; is as dangerous as &lt; or so<div baz="bar &#39; &#34; &amp; &lt; &gt;" yehees="yehees">');
 
-var o = {toString: function () { return 'kukkuu! ALASTON & & &'; }, html: function () { return this; }};
+var o = {
+    toString: function () {
+        return 'kukkuu! ALASTON & & &';
+    }, html: function () {
+        return this;
+    }
+};
 b.escape(o);
 assertStringEqual(String(b), 'asdffoo&amp; is as dangerous as &lt; or so<div baz="bar &#39; &#34; &amp; &lt; &gt;" yehees="yehees">kukkuu! ALASTON & & &');

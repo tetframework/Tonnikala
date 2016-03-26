@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import absolute_import, division, print_function, \
+    unicode_literals
 
-__docformat__ = "epytext"
 
 """XML parser"""
 
@@ -13,7 +13,6 @@ from ..compat import (html_entity_defs, html_parser,
                       text_type, unichr, BytesIO, StringIO)
 from ..helpers import StringWithLocation
 from ..runtime.exceptions import TemplateSyntaxError
-
 
 impl = dom.getDOMImplementation(' ')
 
@@ -98,16 +97,16 @@ class TonnikalaXMLParser(sax.ContentHandler):
 
         return self.characters(text_type(content))
 
-    def startElementNS(self, name, qname, attrs): # pragma no cover
+    def startElementNS(self, name, qname, attrs):  # pragma no cover
         raise NotImplementedError('startElementNS')
 
-    def endElementNS(self, name, qname):# pragma no cover
+    def endElementNS(self, name, qname):  # pragma no cover
         raise NotImplementedError('startElementNS')
 
-    def startPrefixMapping(self, prefix, uri):# pragma no cover
+    def startPrefixMapping(self, prefix, uri):  # pragma no cover
         raise NotImplementedError('startPrefixMapping')
 
-    def endPrefixMapping(self, prefix):# pragma no cover
+    def endPrefixMapping(self, prefix):  # pragma no cover
         raise NotImplementedError('endPrefixMapping')
 
     # LexicalHandler implementation
@@ -145,10 +144,9 @@ else:
 
 # object to force a new-style class!
 class TonnikalaHTMLParser(html_parser.HTMLParser, object):
-    void_elements = set([
-        'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
-        'keygen', 'link', 'meta', 'param', 'source', 'track', 'wbr'
-    ])
+    void_elements = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+                     'keygen', 'link', 'meta', 'param', 'source', 'track',
+                     'wbr'}
 
     def __init__(self, filename, source):
         super(TonnikalaHTMLParser, self).__init__(**html_parser_extra_kw)

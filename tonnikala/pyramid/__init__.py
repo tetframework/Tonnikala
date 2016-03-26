@@ -1,25 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''This module allows the tonnikala templating language --
+"""
+This module allows the tonnikala templating language --
 http://pypi.python.org/pypi/tonnikala/
 
 -- to be used in the Pyramid web framework --
 http://docs.pylonshq.com/
-'''
+"""
 
 from __future__ import (absolute_import, division, print_function,
-    unicode_literals)
+                        unicode_literals)
 
 import os
-import re
-from zope.interface import implementer, Interface
-from pyramid.resource import abspath_from_resource_spec
 import pkg_resources
-import tonnikala
-import tonnikala.loader
 from pyramid.compat import is_nonstr_iter
 from pyramid.settings import asbool, aslist
+
+import tonnikala.loader
+
 
 class PyramidTonnikalaLoader(tonnikala.loader.FileLoader):
     def __init__(self):
@@ -122,7 +121,8 @@ def add_tonnikala_extensions(config, *extensions):
         if not extension.startswith('.'):
             extension = '.' + extension
 
-        config.add_renderer(extension, config.registry.tonnikala_renderer_factory)
+        config.add_renderer(extension,
+                            config.registry.tonnikala_renderer_factory)
 
 
 def add_tonnikala_search_paths(config, *paths):
@@ -132,7 +132,8 @@ def add_tonnikala_search_paths(config, *paths):
             base_dir = module_name
             module_name = None
 
-        config.registry.tonnikala_renderer_factory.add_search_path(module_name, base_dir)
+        config.registry.tonnikala_renderer_factory.add_search_path(module_name,
+                                                                   base_dir)
 
 
 def set_tonnikala_reload(config, flag):
@@ -151,7 +152,8 @@ def includeme(config):
     config.registry.tonnikala_renderer_factory = TonnikalaRendererFactory()
 
     config.add_directive('add_tonnikala_extensions', add_tonnikala_extensions)
-    config.add_directive('add_tonnikala_search_paths', add_tonnikala_search_paths)
+    config.add_directive('add_tonnikala_search_paths',
+                         add_tonnikala_search_paths)
     config.add_directive('set_tonnikala_reload', set_tonnikala_reload)
 
     settings = config.registry.settings
@@ -169,7 +171,6 @@ def includeme(config):
             paths = aslist(paths, flatten=True)
 
         config.add_tonnikala_search_paths(*paths)
-
 
     tk_reload = settings.get('tonnikala.reload')
     if tk_reload is None:

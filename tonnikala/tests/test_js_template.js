@@ -1,7 +1,9 @@
 // FIXME: !!! hacked "AMD support" bound to fail !!!
 function requirejs(name) {
     var m;
-    global.define = function (_, f) { m = f(); };
+    global.define = function (_, f) {
+        m = f();
+    };
     require(name);
     delete global.define;
     return m;

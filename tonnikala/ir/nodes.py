@@ -3,8 +3,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import re
 
 from tonnikala.helpers import escape
-from ..compat import OrderedDict, text_type
-
+from ..compat import text_type
+from collections import OrderedDict
 
 class BaseNode(object):
     position = (None, None)

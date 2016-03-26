@@ -24,7 +24,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         'placeholder',
     ])
 
-    def __init__(self, translatable=True, *a, **kw):
+    def __init__(self, translatable=False, *a, **kw):
         if 'control_prefix' in kw:
             self.control_prefix = kw.pop('control_prefix') + ':'
 
@@ -225,7 +225,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
 def parse(filename, string):
     parser = TonnikalaHTMLParser(filename, string)
     parsed = parser.parse()
-    generator = TonnikalaIRGenerator(document=parsed, translatable=True,
+    generator = TonnikalaIRGenerator(document=parsed, translatable=False,
                                      filename=filename, source=string)
     tree = generator.generate_tree()
     tree = generator.flatten_element_nodes(tree)

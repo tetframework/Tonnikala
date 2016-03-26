@@ -145,7 +145,10 @@ class ChameleonIRGenerator(BaseDOMIRGenerator):
         raise ValueError("Unhandled node type %d" % node_t)
 
 
-def parse(filename, string):
+def parse(filename, string, translatable=False):
+    if translatable:
+        raise ValueError("L10n not implemented for Chameleon templates")
+
     parser = TonnikalaHTMLParser(filename, string)
     parsed = parser.parse()
     generator = ChameleonIRGenerator(parsed)

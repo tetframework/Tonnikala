@@ -13,8 +13,8 @@ from tonnikala.runtime import python
 from tonnikala.runtime.exceptions import TemplateSyntaxError
 
 
-def render(template, debug=False, **args):
-    compiled = FileLoader(debug=debug).load_string(template)
+def render(template, debug=False, translatable=False, **args):
+    compiled = FileLoader(debug=debug, translatable=translatable).load_string(template)
     return text_type(compiled.render(args))
 
 
@@ -282,20 +282,20 @@ class TestHtmlTemplates(unittest.TestCase):
     def test_translation(self):
         fragment = '<html alt="foo"> abc </html>'
         self.are('<html alt="foo"> abc </html>', fragment, debug=False,
-                 translateable=True)
+                 translatable=True)
 
         def gettext(x):
             return '<"%s&>' % x.upper()
 
         self.are(
             '<html alt="&lt;&#34;FOO&amp;&gt;"> &lt;&#34;ABC&amp;&gt; </html>',
-            fragment, debug=False, translateable=True, gettext=gettext)
+            fragment, debug=False, translatable=True, gettext=gettext)
 
         def gettext(x):
             return '<%s' % x
 
         self.are('<html>&lt;&gt;</html>', '<html>&gt;</html>', debug=False,
-                 translateable=True, gettext=gettext)
+                 translatable=True, gettext=gettext)
 
     def test_attrs(self):
         fragment = '<html><div py:attrs="foo"></div></html>'
@@ -351,6 +351,18 @@ class TestHtmlTemplates(unittest.TestCase):
             foo=bar
         )
         self.assertEqual(['baz'], result)
+
+    def test_500_coalesced_args(self):
+        """
+        Python only allows 255 arguments to a function. Since outputs
+        are coalesced to a single function call if possible, we test the
+        scenario that there are more than 255 arguments to output in
+        a single statement:
+        """
+
+        source = '<html>' + '$a!' * 500 + '</html>'
+        target = '<html>' + '?!' * 500 + '</html>'
+        self.are(target, source, a='?')
 
 
 if python.Buffer != python._TKPythonBufferImpl:

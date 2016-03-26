@@ -167,7 +167,7 @@ class JsLexer(Lexer):
                             \]
                         )
                         # Following characters are same, except for excluding
-                        a star
+                        # a star
                         (   [^\\/[]             # anything but \ / or [
                         |   \\.                 # or an escape sequence
                         |   \[                  # or a class, which has

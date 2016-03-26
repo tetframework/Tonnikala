@@ -218,10 +218,10 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             'translatable')) and attr_name in self.TRANSLATABLE_ATTRS
 
 
-def parse(filename, string):
+def parse(filename, string, translatable=False):
     parser = TonnikalaHTMLParser(filename, string)
     parsed = parser.parse()
-    generator = TonnikalaIRGenerator(document=parsed, translatable=False,
+    generator = TonnikalaIRGenerator(document=parsed, translatable=translatable,
                                      filename=filename, source=string)
     tree = generator.generate_tree()
     tree = generator.flatten_element_nodes(tree)
@@ -229,10 +229,10 @@ def parse(filename, string):
     return tree
 
 
-def parse_js(filename, string):
+def parse_js(filename, string, translatable=False):
     parser = TonnikalaHTMLParser(filename, string)
     parsed = parser.parse()
-    generator = TonnikalaIRGenerator(document=parsed, translatable=False,
+    generator = TonnikalaIRGenerator(document=parsed, translatable=translatable,
                                      control_prefix='js', filename=filename,
                                      source=string)
     tree = generator.generate_tree()

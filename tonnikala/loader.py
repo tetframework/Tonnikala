@@ -108,6 +108,7 @@ class Template(object):
             return context[funcname]()
         except Exception as e:
             exc_info = sys.exc_info()
+            raise
 
         try:
             self.handle_exception(exc_info)
@@ -148,9 +149,10 @@ class Loader(object):
     handle_exception = staticmethod(handle_exception)
     runtime = python.TonnikalaRuntime
 
-    def __init__(self, debug=False, syntax='tonnikala'):
+    def __init__(self, debug=False, syntax='tonnikala', translatable=False):
         self.debug = debug
         self.syntax = syntax
+        self.translatable = translatable
 
     def load_string(self, string, filename="<string>"):
         parser_func = parsers.get(self.syntax)
@@ -159,7 +161,7 @@ class Loader(object):
                              % sorted(parsers.keys()))
 
         try:
-            tree = parser_func(filename, string)
+            tree = parser_func(filename, string, translatable=self.translatable)
             gen = PythonGenerator(tree)
             code = gen.generate_ast()
             exc_info = None
@@ -199,8 +201,8 @@ class Loader(object):
 
 
 class FileLoader(Loader):
-    def __init__(self, paths=[], debug=False, syntax='tonnikala'):
-        super(FileLoader, self).__init__(debug=debug, syntax=syntax)
+    def __init__(self, paths=[], debug=False, syntax='tonnikala', *args, **kwargs):
+        super(FileLoader, self).__init__(*args, debug=debug, syntax=syntax, **kwargs)
 
         self.cache = {}
         self.paths = list(paths)

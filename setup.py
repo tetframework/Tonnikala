@@ -37,7 +37,7 @@ setup(
     description='Python templating engine - the one ton solution',
     author='Antti Haapala',
     author_email='antti@haapala.name',
-    url='https://github.com/ztane/Tonnikala',
+    url='https://github.com/tetframework/Tonnikala',
     classifiers=[
         "Development Status :: 4 - Beta",
         "Framework :: Pyramid",
@@ -47,6 +47,7 @@ setup(
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Text Processing :: Markup",
         "Topic :: Text Processing :: Markup :: HTML"

@@ -19,7 +19,7 @@ function getStack() {
 }
 
 global.define = function(requires, func) {
-    var actuals = requires.map(function(e) { return require('./' + e); });
+    var actuals = requires.map(function(e) { return require(e); });
     rv = func.apply(null, actuals);
     var caller = getCallingModule();
     var module = require.cache[caller.getFileName()];
@@ -31,11 +31,11 @@ if (process.argv.length != 4) {
     process.exit(2);
 }
 
-tonnikala_runtime = require('./tonnikala/runtime');
+tonnikala_runtime = require('tonnikala/runtime');
 tonnikala_runtime.window = global;
 
 template = process.argv[2];
 context = JSON.parse(process.argv[3]);
 
-rv = require('./' + template);
+rv = require(template);
 console.log(rv(context).render());

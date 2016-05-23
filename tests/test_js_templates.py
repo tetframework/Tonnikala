@@ -4,13 +4,14 @@ from __future__ import absolute_import, division, print_function, \
 import json
 import subprocess
 import unittest
+import pkg_resources
 from distutils.spawn import find_executable
 
 import os.path
 import os.path
 
 from tonnikala.loader import JSLoader
-from ..compat import text_type
+from tonnikala.compat import text_type
 
 js_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'js')
 output_dir = os.path.join(js_dir, 'tmp')
@@ -20,8 +21,14 @@ node_exe = find_executable('nodejs') or find_executable('node')
 
 
 def compile_js_template(contents, target_filename):
-    if not os.path.isdir(output_dir):
-        os.makedirs(output_dir)
+    tonnikala_module_dir = os.path.join(output_dir, 'tonnikala')
+    if not os.path.isdir(tonnikala_module_dir):
+        os.makedirs(tonnikala_module_dir)
+
+    # ensure that the runtime is properly in path.
+    runtime_code = pkg_resources.resource_string('tonnikala.runtime', 'javascript.js')
+    with open(os.path.join(tonnikala_module_dir, 'runtime.js'), 'wb') as f:
+        f.write(runtime_code)
 
     compiled_js = JSLoader().load_string(contents)
     with open(os.path.join(output_dir, target_filename), 'w') as f:

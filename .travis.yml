@@ -1,4 +1,4 @@
-language: python
+language: python 
 python:
   - 2.7
   - pypy
@@ -15,7 +15,7 @@ addons:
 
 # command to install dependencies
 install:
-  - travis_retry pip install --upgrade pytest pytest-cov
+  - travis_retry pip install --upgrade pytest pytest-cov coveralls
   - python setup.py develop
 
 # command to run tests
@@ -24,4 +24,13 @@ script:
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then py.test; fi
 
 after_success:
-  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then coveralls --rcfile=coveragerc-python3; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then; echo "sending coveralls"; coveralls --rcfile=coveragerc-python3; fi
+
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net#tonnikala"
+    on_success: change
+    on_failure: change
+    use_notice: true
+    skip_join: true

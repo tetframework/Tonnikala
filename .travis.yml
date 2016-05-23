@@ -55,7 +55,7 @@ deploy:
   distributions: sdist
   skip_cleanup: true
   on:
-    branch: production
+    branch: release
     python: 3.5
 
 after_deploy:

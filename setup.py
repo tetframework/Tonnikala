@@ -33,7 +33,7 @@ if sys.version_info < (2, 7) or (3, 0) <= sys.version_info < (3, 3):
 
 setup(
     name='tonnikala',
-    version='1.0.0b3.dev1',
+    version='1.0.0b2',
     description='Python templating engine - the one ton solution',
     author='Antti Haapala',
     author_email='antti@haapala.name',

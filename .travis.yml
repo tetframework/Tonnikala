@@ -1,35 +1,51 @@
-language: python 
+language: python
+
 python:
-  - 2.7
-  - pypy
-  - 3.3
-  - 3.4
-  - 3.5
+- 2.7
+- pypy
+- 3.3
+- 3.4
+- 3.5
 
 sudo: false
+
+services:
+  - docker
 
 addons:
   apt:
     packages:
     - nodejs
 
-# command to install dependencies
 install:
-  - travis_retry pip install --upgrade pytest pytest-cov coveralls
-  - python setup.py develop
+- travis_retry pip install --upgrade pytest pytest-cov coveralls
+- python setup.py develop
 
-# command to run tests
 script:
-  - if [[ $TRAVIS_PYTHON_VERSION != 3* ]]; then py.test --cov-config=coveragerc-python2; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then py.test; fi
+- |
+  if [[ $TRAVIS_PYTHON_VERSION != 3* ]]
+  then 
+      py.test --cov-config=coveragerc-python2
+  fi
+- |
+  if [[ $TRAVIS_PYTHON_VERSION == 3* ]]
+  then 
+     py.test
+  fi
+- |
+  if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]
+  then
+     DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
+     docker run --rm -v `pwd`:/io $DOCKER_IMAGE /io/travis/build-wheels.sh
+  fi
 
 after_success:
-  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then echo "sending coveralls"; coveralls --rcfile=coveragerc-python3; fi
+- if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then echo "sending coveralls"; coveralls --rcfile=coveragerc-python3; fi
 
 notifications:
   irc:
     channels:
-      - "chat.freenode.net#tonnikala"
+    - chat.freenode.net#tonnikala
     on_success: always
     on_failure: always
     use_notice: true

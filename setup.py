@@ -59,8 +59,8 @@ setup(
     packages=find_packages(exclude=['tests']),
     test_suite='tests.test_all',
     tests_require=[
-        'coverage',
-        'nose2'
+        'pytest',
+        'pytest-cov'
     ],
     **extra_kw
 )

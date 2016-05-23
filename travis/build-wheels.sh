@@ -5,7 +5,7 @@ set -e -x
 yum install -y atlas-devel
 
 # Compile wheels
-for PYBIN in /opt/python/*/bin; do
+for PYBIN in /opt/python/*27*/bin/ /opt/python/*3[3456789]*/bin/; do
     ${PYBIN}/pip install -r /io/dev-requirements.txt
     ${PYBIN}/pip wheel /io/ -w wheelhouse/
 done

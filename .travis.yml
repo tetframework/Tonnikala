@@ -30,7 +30,7 @@ notifications:
   irc:
     channels:
       - "chat.freenode.net#tonnikala"
-    on_success: change
-    on_failure: change
+    on_success: always
+    on_failure: always
     use_notice: true
     skip_join: true

@@ -163,7 +163,7 @@ results in the output
     <td>0</td><td>1</td><td>2</td><td>3</td><td>4</td>
 
 ``py:strip``
-+++++++++++ 
+++++++++++++
 
 Strips the *tag* if the expression is true; keeping the contents. Keeps the tag if the expression evaluates to false.
 

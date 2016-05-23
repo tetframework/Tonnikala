@@ -130,8 +130,11 @@ def do_setup(with_c_extension):
         url='https://github.com/tetframework/Tonnikala',
         classifiers=[
             'Development Status :: 4 - Beta',
+            'Environment :: Web Environment',
             'Framework :: Pyramid',
+            'Intended Audience :: Developers',
             'License :: OSI Approved :: Apache Software License',
+            'Operating System :: OS Independent',
             'Programming Language :: Python',
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3.3',
@@ -139,7 +142,8 @@ def do_setup(with_c_extension):
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: Implementation :: CPython',
-            'Topic :: Text Processing :: Markup',
+            'Programming Language :: Python :: Implementation :: PyPy',
+            'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
             'Topic :: Text Processing :: Markup :: HTML'
         ],
         scripts=['bin/tonnikala-compile-jstemplate'],

@@ -1,5 +1,5 @@
 include tonnikala/runtime/javascript.js
-include tonnikala/tests/js/runner.js
-recursive-include tonnikala/tests/files *.tk
+include tests/js/runner.js
+recursive-include tests/files *.tk
 include LICENSE.txt
 include coveragerc-python*

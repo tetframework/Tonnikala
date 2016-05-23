@@ -56,8 +56,8 @@ setup(
     install_requires=requires,
     setup_requires=[],
     include_package_data=True,
-    packages=find_packages(),
-    test_suite = 'tests.test_all',
+    packages=find_packages(exclude=['tests']),
+    test_suite='tests.test_all',
     tests_require=[
         'coverage',
         'nose2'

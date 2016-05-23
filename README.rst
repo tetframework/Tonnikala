@@ -2,8 +2,8 @@ Tonnikala
 =========
 
 .. image:: https://badges.gitter.im/Join%20Chat.svg
-   :alt: Join the chat at https://gitter.im/ztane/Tonnikala
-   :target: https://gitter.im/ztane/Tonnikala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+   :alt: Join the chat at https://gitter.im/tetframework/Tonnikala
+   :target: https://gitter.im/tetframework/Tonnikala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 .. image:: https://next.travis-ci.org/tetframework/Tonnikala.svg?branch=master
    :target: https://next.travis-ci.org/tetframework/Tonnikala

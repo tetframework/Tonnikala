@@ -16,7 +16,7 @@ for whl in wheelhouse/*.whl; do
 done
 
 # Install packages and test
-for PYBIN in /opt/python/*/bin/; do
+for PYBIN in /opt/python/*27*/bin/ /opt/python/*3[3456789]*/bin/; do
     ${PYBIN}/pip install tonnikala --no-index -f /io/wheelhouse
     (cd $HOME; ${PYBIN}/nosetests tonnikala)
 done

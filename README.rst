@@ -8,8 +8,7 @@ Tonnikala
 .. image:: https://next.travis-ci.org/tetframework/Tonnikala.svg?branch=master
    :target: https://next.travis-ci.org/tetframework/Tonnikala
 
-.. image:: https://coveralls.io/repos/tetframework/Tonnikala/badge.svg?branch=master&service=github
-   :target: https://coveralls.io/github/tetframework/Tonnikala?branch=master 
+.. image:: https://coveralls.io/repos/github/tetframework/Tonnikala/badge.svg?branch=master :target: https://coveralls.io/github/tetframework/Tonnikala?branch=master 
 
 
 Tonnikala is the latest reincarnation among the Python templating 

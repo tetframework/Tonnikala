@@ -1,4 +1,4 @@
-py.test
+pytest
 coverage
 markupsafe>=0.18
 slimit>=0.8.1

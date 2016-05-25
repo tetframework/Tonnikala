@@ -13,10 +13,9 @@ Tonnikala
 
 
 Tonnikala is the latest reincarnation among the Python templating 
-languages that feed on Kid-inspired XML syntax. It rejects the Kid 
-and Genshi notions of tagstreams and trees, and follows in 
-footsteps of Chameleon and Kajiki in making the template to compile 
-into Python bytecode directly. The syntax is very close to that of 
+languages that feed on Kid-inspired XML syntax. It doesn't use the tagstreams and trees
+of Genshi or Kid, but follows in footsteps of Chameleon and Kajiki in making the 
+template to compile into Python bytecode directly. The syntax is very close to that of 
 Kajiki, but the internals are very different: Tonnikala writes code 
 as Abstract Syntax Trees and optimizes the resulting trees 
 extensively. In addition, there is an optional speed-up module, 
@@ -57,7 +56,7 @@ by a ``{``, an alphabetic character or ``_`` is considered an interpolated expre
 If the interpolated expression starts with ``${``, the expression continues until the matching ``}`` token.
 Otherwise the interpolation consists of an identifier, followed by any number of attribute accesses,
 indexing brackets ``[...]``, and method call operators ``(...)``, without any 
-intervening whitespace (except within the bracketS). The expression
+intervening whitespace (except within the brackets). The expression
 parsing stops whenever the next token cannot match this rule anymore. 
 
 While the form
@@ -363,10 +362,10 @@ You can specify a block, or no-argument def to render explicitly:
 Pyramid integration
 -------------------
 
-Include `'tonnikala.pyramid'` into your config to enable Tonnikala. When included, tonnikala adds the following configuration directives:
+Include `'tonnikala.pyramid'` into your config to enable Tonnikala. When included, Tonnikala adds the following configuration directives:
 
 ``add_tonnikala_extensions(*extensions)``
-    Registers tonnikala renderer for these template extensions. By default Tonnikala is not registered as a renderer for any extension.
+    Registers Tonnikala renderer for these template extensions. By default Tonnikala is not registered as a renderer for any extension.
     For example: ``config.add_tonnikala_extensions('.html', '.tk')`` would enable Tonnikala renderer for templates with either of these extensions.
 
 ``add_tonnikala_search_paths(*paths)``
@@ -381,7 +380,7 @@ Include `'tonnikala.pyramid'` into your config to enable Tonnikala. When include
     If ``True``, makes Tonnikala skip some optimizations that make debugging harder.
 
 These 3 can also be controlled by ``tonnikala.extensions``, ``tonnikala.search_paths`` and ``tonnikala.reload`` respectively in the deployment settings (the ``.ini`` files). 
-If ``tonnikala.reload`` is not set, Tonnikala shall follow the ``pyramid.reload_templatea`` setting.
+If ``tonnikala.reload`` is not set, Tonnikala shall follow the ``pyramid.reload_templates`` setting.
 
 Status
 ======

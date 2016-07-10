@@ -106,9 +106,9 @@ class Template(object):
             context = make_template_context(context)
             self.bind(context)
             return context[funcname]()
+
         except Exception as e:
             exc_info = sys.exc_info()
-            raise
 
         try:
             self.handle_exception(exc_info)

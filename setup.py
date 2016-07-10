@@ -159,6 +159,10 @@ def do_setup(with_c_extension):
         cmdclass=cmdclass,
         distclass=Distribution,
         ext_modules=ext_modules,
+        entry_points = """
+        [babel.extractors]
+        tonnikala = tonnikala.i18n:extract_tonnikala
+        """,
     )
 
 try:

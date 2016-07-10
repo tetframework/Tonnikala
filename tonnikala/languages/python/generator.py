@@ -593,12 +593,11 @@ def coalesce_outputs(tree):
                 for i in node.body:
                     if hasattr(i, 'output_args') and should_coalesce(i):
                         if output_node:
-                            output_node.value.args.extend(i.output_args)
-
-                            # maximum number of arguments to a Python function: 255
-                            if len(output_node.value.args) > 250:
+                            if len(output_node.value.args) + len(i.output_args) > 250:
                                 coalesce_strs()
-                                output_node = None
+                                output_node = i
+                            else:
+                                output_node.value.args.extend(i.output_args)
 
                             continue
 

@@ -68,7 +68,6 @@ def extract_tonnikala(fileobj, keywords, comment_tags, options):
              tuples
     :rtype: ``iterator``
     """
-
     extractor = TonnikalaExtractor()
     for msg in extractor(filename=None, fileobj=fileobj, options=Options()):
         msgid = msg.msgid,
@@ -79,7 +78,7 @@ def extract_tonnikala(fileobj, keywords, comment_tags, options):
             prefix = 'n'
 
         if msg.msgctxt:
-            msgid = (msg.context,) + msgid
+            msgid = (msg.msgctxt,) + msgid
             prefix += 'p'
 
         yield (msg.location[1], prefix + 'gettext', msgid, msg.comment)

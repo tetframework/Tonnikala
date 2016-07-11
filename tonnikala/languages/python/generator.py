@@ -598,8 +598,7 @@ def coalesce_outputs(tree):
                                 output_node = i
                             else:
                                 output_node.value.args.extend(i.output_args)
-
-                            continue
+                                continue
 
                         output_node = i
 

@@ -19,7 +19,8 @@ MIN_CHECK_INTERVAL = 0.25
 try:  # pragma: python3
     import builtins as __builtin__
 except ImportError:  # pragma: python2
-    import __builtin__
+    # noinspection PyUnresolvedReferences,PyCompatibility
+    exec('import __builtin__')
 
 
 class Helpers():

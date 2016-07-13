@@ -113,7 +113,7 @@ features = dict(speedups=speedups)
 install_requires = [
     'markupsafe>=0.18',
     'slimit>=0.8.1',
-    'ply<3.6.0'
+    'ply<3.6.0',
 ]
 
 

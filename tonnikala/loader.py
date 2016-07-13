@@ -19,7 +19,8 @@ MIN_CHECK_INTERVAL = 0.25
 try:  # pragma: python3
     import builtins as __builtin__
 except ImportError:  # pragma: python2
-    import __builtin__
+    # noinspection PyUnresolvedReferences,PyCompatibility
+    exec('import __builtin__')
 
 
 class Helpers():
@@ -106,9 +107,9 @@ class Template(object):
             context = make_template_context(context)
             self.bind(context)
             return context[funcname]()
+
         except Exception as e:
             exc_info = sys.exc_info()
-            raise
 
         try:
             self.handle_exception(exc_info)

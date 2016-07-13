@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
+
+
+import collections
+
 import re
 
 from tonnikala.helpers import escape
 from ..compat import text_type
 from collections import OrderedDict
+
 
 class BaseNode(object):
     position = (None, None)
@@ -14,6 +19,9 @@ class BaseNode(object):
 
     def validate(self, validator):
         pass
+
+    def get_children(self):
+        return []
 
 
 class Text(BaseNode):
@@ -151,7 +159,10 @@ class MutableAttribute(ContainerNode):
         self.children.append(value)
 
     def __str__(self):  # pragma: no cover
-        return str({ self.name: self.value })
+        return str({self.name: self.value})
+
+    def get_children(self):
+        return self.children
 
 
 class DynamicAttributes(BaseNode):
@@ -161,6 +172,9 @@ class DynamicAttributes(BaseNode):
 
     def __str__(self):  # pragma: no cover
         return str(self.expression)
+
+    def get_children(self):
+        return [self.expression]
 
 
 class DynamicText(ContainerNode):
@@ -351,3 +365,12 @@ class IRTree(object):
 
     def __repr__(self):
         return 'IRTree(%r)' % self.root
+
+    def __iter__(self):
+        stack = collections.deque()
+        stack.append(self.root)
+        while stack:
+            item = stack.popleft()
+            if hasattr(item, 'children'):
+                stack.extendleft(item.children or [])
+            yield item

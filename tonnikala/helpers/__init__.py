@@ -1,3 +1,6 @@
+from tonnikala.compat import text_type
+
+
 def escape(string):
     return (string.replace('&', '&amp;')
             .replace('<', '&lt;')
@@ -12,13 +15,7 @@ def internalcode(f):
     return f
 
 
-try:
-    unicode
-except:
-    unicode = str
-
-
-class StringWithLocation(unicode):
+class StringWithLocation(text_type):
     def __new__(cls, value, lineno, offset):
         val = unicode.__new__(cls, value)
         val.position = lineno, offset

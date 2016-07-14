@@ -338,6 +338,19 @@ class TestHtmlTemplates(unittest.TestCase):
         self.assert_file_rendering_equals('importing.tk', 'importing.tk',
                                           foo='bar')
 
+    def test_invalid_control_attribute(self):
+        self.assert_loader_throws(
+            TemplateSyntaxError,
+            '<html py:notcorrect="foo"></html>')
+
+        self.assert_loader_throws(
+            TemplateSyntaxError,
+            '<html py:notcorrect></html>')
+
+        self.assert_loader_throws(
+            TemplateSyntaxError,
+            '<html><py:notcorrect></py:notcorrect></html>')
+
     def test_python_processing_instruction(self):
         result = []
 
@@ -364,6 +377,8 @@ class TestHtmlTemplates(unittest.TestCase):
         target = '<html>' + '?!' * 500 + '</html>'
         self.are(target, source, a='?')
 
+    def test_xmlnspy_removed(self):
+        self.are('<html></html>', '<html xmlns:py="foo"></html>')
 
 if python.Buffer != python._TKPythonBufferImpl:
     class TestHtmlTemplatesWithoutSpeedups(TestHtmlTemplates):

@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function, \
     unicode_literals
 
+
 """XML parser"""
 
 from xml.dom.minidom import Node
@@ -16,11 +17,13 @@ from .docparser import TonnikalaHTMLParser
 class TonnikalaIRGenerator(BaseDOMIRGenerator):
     control_prefix = 'py:'
 
-    TRANSLATABLE_ATTRS = {'title', 'alt', 'placeholder'}
+    TRANSLATABLE_ATTRS = {'title', 'alt', 'placeholder', 'value', 'caption'}
 
     def __init__(self, translatable=False, *a, **kw):
         if 'control_prefix' in kw:
             self.control_prefix = kw.pop('control_prefix') + ':'
+
+        self.xmlns = 'xmlns:' + self.control_prefix.replace(':', '')
 
         super(TonnikalaIRGenerator, self).__init__(*a, **kw)
         self.state['translatable'] = translatable
@@ -36,17 +39,32 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
 
     def generate_attributes_for_node(self, dom_node, ir_node):
         attrs_node = self.grab_and_remove_control_attr(dom_node, 'attrs')
+        if dom_node.hasAttribute(self.xmlns):
+            dom_node.removeAttribute(self.xmlns)
+
+        # if there are control nodes present at this stage, complain aloud
+        for k, v in dom_node.attributes.items():
+             if k.startswith(self.control_prefix):
+                 self.syntax_error("Unknown control attribute {}".format(k),
+                     node=v)
+
         attrs = [
             (k, handle_text_node(v, translatable=self.is_attr_translatable(k)))
             for (k, v)
             in dom_node.attributes.items()
-            ]
+        ]
 
         self.generate_attributes(ir_node, attrs=attrs, dynamic_attrs=attrs_node)
 
+    def control_name(self, name):
+        if name.startswith(self.control_prefix):
+            return name.replace(self.control_prefix, '', 1)
+
+        return None
+
     # noinspection PyMethodMayBeStatic
     def is_control_name(self, name, to_match):
-        return self.control_prefix + to_match == name
+        return self.control_name(name) == to_match
 
     # noinspection PyMethodMayBeStatic
     def grab_and_remove_control_attr(self, dom_node, name):
@@ -73,8 +91,8 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
     def grab_mandatory_attribute(self, dom_node, name):
         if not dom_node.hasAttribute(name):
             self.syntax_error(
-                message="<%s> does not have the required attribute '%s'"
-                        % (dom_node.name, name),
+                message="<{}> does not have the required attribute '{}'"
+                        .format(dom_node.name, name),
                 node=dom_node)
         return dom_node.getAttribute(name)
 
@@ -182,6 +200,11 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
                 bottom.children = overridden_children
             else:
                 self.add_children(self.child_iter(dom_node), bottom)
+
+        # raise syntax error for unknown control node names
+        if generate_element and self.control_name(dom_node.tagName):
+            self.syntax_error('Unknown control element <{}>'
+                              .format(dom_node.tagName), node=dom_node)
 
         return topmost
 

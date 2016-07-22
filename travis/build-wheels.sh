@@ -23,12 +23,12 @@ done
 cd $HOME
 mkdir -p tester
 cd tester
-cp -a /io/coverage* /io/tests /io/setup.cfg .
+cp -a /io/coverage* /io/tests .
 find -name \*.pyc -delete
 
 # Install packages and test
 for PYBIN in $PYTHONS
 do
     ${PYBIN}/pip install tonnikala --no-index -f /io/wheelhouse
-    (cd $HOME/tester; ${PYBIN}/py.test)
+    (cd $HOME/tester; ${PYBIN}/py.test -rsx --tb=short)
 done

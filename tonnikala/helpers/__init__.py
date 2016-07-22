@@ -17,7 +17,7 @@ def internalcode(f):
 
 class StringWithLocation(text_type):
     def __new__(cls, value, lineno, offset):
-        val = unicode.__new__(cls, value)
+        val = text_type.__new__(cls, value)
         val.position = lineno, offset
         return val
 
@@ -25,7 +25,7 @@ class StringWithLocation(text_type):
         return self.__getitem__(slice(start, end))
 
     def __getitem__(self, i):
-        s = unicode(self)
+        s = text_type(self)
         if isinstance(i, slice):
             start = i.indices(len(self))[0]
             position = calculate_position(s, start, self.position)

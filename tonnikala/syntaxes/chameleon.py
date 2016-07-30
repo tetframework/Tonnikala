@@ -135,7 +135,7 @@ class ChameleonIRGenerator(BaseDOMIRGenerator):
 
         if node_t == Node.TEXT_NODE:
             ir_node = handle_text_node(dom_node.nodeValue,
-                                       is_cdata=self.is_cdata)
+                                       is_cdata=self.state['is_cdata'])
             return ir_node
 
         if node_t == Node.COMMENT_NODE:

@@ -18,6 +18,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
     control_prefix = 'py:'
 
     TRANSLATABLE_ATTRS = {'title', 'alt', 'placeholder', 'value', 'caption'}
+    UNTRANSLATABLE_ELEMENTS = {'style', 'script'}
 
     def __init__(self, translatable=False, *a, **kw):
         if 'control_prefix' in kw:
@@ -32,7 +33,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         return bool(self.state.get('translatable'))
 
     def set_translatable(self, is_translatable):
-        self.push_state()['translatable'] = is_translatable
+        self.state['translatable'] = is_translatable
 
     def get_guard_expression(self, dom_node):
         return self.grab_and_remove_control_attr(dom_node, 'strip')
@@ -75,6 +76,13 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             return value
 
         return None
+
+    def enter_node(self, ir_node):
+        if isinstance(ir_node, Element):
+            if ir_node.name in self.UNTRANSLATABLE_ELEMENTS:
+                self.state['translatable'] = False
+
+        super(TonnikalaIRGenerator, self).enter_node(ir_node)
 
     def syntax_error(self, message, node=None, lineno=None):
         if lineno is None:
@@ -217,7 +225,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
         if node_t == Node.TEXT_NODE:
             ir_node = handle_text_node(
                 dom_node.nodeValue,
-                is_cdata=self.is_cdata,
+                is_cdata=self.state['is_cdata'],
                 translatable=self.is_translatable()
             )
             return ir_node

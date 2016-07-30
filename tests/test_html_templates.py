@@ -297,6 +297,18 @@ class TestHtmlTemplates(unittest.TestCase):
         self.are('<html>&lt;&gt;</html>', '<html>&gt;</html>', debug=False,
                  translatable=True, gettext=gettext)
 
+
+    def test_cdata_elements_not_translated(self):
+        fragment = '<html>a<script>a</script>a<style>a</style>a</html>'
+        # fragment = '<html><script>a</script><style>a</style>a</html>'
+
+        def gettext(s):
+            return 'b'
+
+        return self.are('<html>b<script>a</script>b<style>a</style>b</html>',
+                        fragment, debug=False, translatable=True,
+                        gettext=gettext)
+
     def test_attrs(self):
         fragment = '<html><div py:attrs="foo"></div></html>'
         attrs = OrderedDict([('foo', 'bar'), ('baz', 42)])

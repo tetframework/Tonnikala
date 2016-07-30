@@ -129,7 +129,6 @@ class BaseDOMIRGenerator(BaseIRGenerator):
         super(BaseDOMIRGenerator, self).__init__(*a, **kw)
         self.dom_document = document
         self.mode = mode
-        self.is_cdata = False
 
         if mode in ['html', 'html5', 'xhtml']:
             self.empty_elements = html5_empty_tags
@@ -160,19 +159,29 @@ class BaseDOMIRGenerator(BaseIRGenerator):
     def generate_ir_node(self, dom_node):  # pragma: no cover
         raise NotImplementedError('abstract method not implemented')
 
-    def add_children(self, children, ir_node):
-        is_cdata_save = self.is_cdata
-        if isinstance(ir_node, Element) \
-                and ir_node.name in self.cdata_elements:
+    def enter_node(self, ir_node):
+        """
+        Enter the given element; keeps track of `cdata`;
+        subclasses may extend by overriding
+        """
+        this_is_cdata = (isinstance(ir_node, Element)
+                         and ir_node.name in self.cdata_elements)
+        self.state['is_cdata'] = bool(self.state.get('is_cdata')) or this_is_cdata
 
-            self.is_cdata = True
+    def exit_node(self, ir_node):
+        pass
+
+    def add_children(self, children, ir_node):
+        self.push_state()
+        self.enter_node(ir_node)
 
         for dom_node in children:
             node = self.generate_ir_node(dom_node)
             if node:
                 ir_node.add_child(node)
 
-        self.is_cdata = is_cdata_save
+        self.exit_node(ir_node)
+        self.pop_state()
 
     def render_constant_attributes(self, element):
         cattr = element.get_constant_attributes()

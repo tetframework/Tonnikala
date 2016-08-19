@@ -106,6 +106,9 @@ class TonnikalaRendererFactory(object):
         self.debug = False
         self.loader = PyramidTonnikalaLoader()
 
+    def set_l10n(self, flag):
+        self.loader.translatable = flag
+
     def set_reload(self, flag):
         self.loader.set_reload(flag)
 
@@ -139,10 +142,19 @@ def add_tonnikala_search_paths(config, *paths):
 def set_tonnikala_reload(config, flag):
     """
     Sets the reload flag for tonnikala template renderer.
-    If True, the templates are reload if changed
+    If True, the templates are reloaded if changed
     """
 
     config.registry.tonnikala_renderer_factory.set_reload(flag)
+
+
+def set_tonnikala_l10n(config, flag):
+    """
+    Set the l10n/translation enabled flag for tonnikala template renderer.
+    If True, the templates are translated using the gettext facility
+    """
+
+    config.registry.tonnikala_renderer_factory.set_l10n(flag)
 
 
 def includeme(config):
@@ -155,6 +167,7 @@ def includeme(config):
     config.add_directive('add_tonnikala_search_paths',
                          add_tonnikala_search_paths)
     config.add_directive('set_tonnikala_reload', set_tonnikala_reload)
+    config.add_directive('set_tonnikala_l10n', set_tonnikala_l10n)
 
     settings = config.registry.settings
 
@@ -177,3 +190,6 @@ def includeme(config):
         tk_reload = settings.get('pyramid.reload_templates')
 
     config.set_tonnikala_reload(asbool(tk_reload))
+
+    l10n = asbool(settings.get('tonnikala.l10n'))
+    config.set_tonnikala_l10n(l10n)

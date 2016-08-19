@@ -4,4 +4,4 @@ from __future__ import absolute_import, division, print_function, \
 
 from .loader import FileLoader, Loader, Template
 
-__version__ = '1.0.0b2'
+__version__ = '1.0.0b4'

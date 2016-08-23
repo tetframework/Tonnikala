@@ -718,10 +718,7 @@ class PyRootNode(PyComplexNode):
         code += '    __TK__bindblock = __TK__runtime.bind(__TK__context, ' \
                 'block=True)\n'
 
-        if extended:
-            # an extended template does not have a __main__ (it is inherited)
-            code += '    __TK__parent_template.binder_func(__TK__context)\n'
-
+        # bind gettext early!
         for i in ['egettext']:
             if i in free_variables:
                 free_variables.add('gettext')
@@ -730,6 +727,12 @@ class PyRootNode(PyComplexNode):
         if 'gettext' in free_variables:
             code += '    def egettext(msg):\n'
             code += '        return __TK__escape(gettext(msg))\n'
+            code += '    gettext = __TK__context["gettext"]\n'
+            free_variables.discard('gettext')
+
+        if extended:
+            # an extended template does not have a __main__ (it is inherited)
+            code += '    __TK__parent_template.binder_func(__TK__context)\n'
 
         for i in free_variables:
             code += '    if "%s" in __TK__context:\n' % i

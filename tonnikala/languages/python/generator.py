@@ -730,6 +730,8 @@ class PyRootNode(PyComplexNode):
             code += '    gettext = __TK__context["gettext"]\n'
             free_variables.discard('gettext')
 
+        code += '    raise\n'  # a placeholder
+
         if extended:
             # an extended template does not have a __main__ (it is inherited)
             code += '    __TK__parent_template.binder_func(__TK__context)\n'
@@ -758,8 +760,12 @@ class PyRootNode(PyComplexNode):
 
         # inject the other top level funcs in the binder
         binder = locator.binder
-        binder.body[3:3] = toplevel_funcs
-        binder.body[3:3] = generator.imports
+        for i, e in enumerate(binder.body):
+            if isinstance(e, Raise):
+                break
+
+        binder.body[i:i + 1] = toplevel_funcs
+        binder.body[i:i] = generator.imports
 
         coalesce_outputs(tree)
         return tree

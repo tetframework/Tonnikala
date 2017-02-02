@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, print_function, \
 
 from .nodes import (Element, Text,
                     MutableAttribute, ContainerNode, EscapedText, Root,
-                    DynamicAttributes, Unless, Comment, IRTree)
+                    DynamicAttributes, Unless, Comment, IRTree, EmptyAttrVal)
 
 from ..runtime.exceptions import TemplateSyntaxError
 
@@ -187,7 +187,11 @@ class BaseDOMIRGenerator(BaseIRGenerator):
         cattr = element.get_constant_attributes()
         code = []
         for name, value in cattr.items():
-            code.append(' %s="%s"' % (name, value.escaped()))
+            if isinstance(value, EmptyAttrVal):
+                code.append(' ')
+                code.append(name)
+            else:
+                code.append(' %s="%s"' % (name, value.escaped()))
 
         return ''.join(code)
 

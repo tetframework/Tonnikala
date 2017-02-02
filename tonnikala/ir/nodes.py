@@ -42,6 +42,20 @@ class Text(BaseNode):
         return escape(self.text)
 
 
+class EmptyAttrVal(BaseNode):
+    is_cdata = False
+    translatable = False
+
+    def __init__(self):
+        pass
+
+    def __str__(self):  # pragma: no cover
+        return "<empty>"
+
+    def escaped(self):
+        return ""
+
+
 class TranslatableText(Text):
     translatable = True
 
@@ -205,7 +219,7 @@ class Element(ContainerNode):
         return self.guard_expression
 
     def set_attribute(self, name, value):
-        if isinstance(value, Text) and not value.translatable:
+        if isinstance(value, (Text, EmptyAttrVal)) and not value.translatable:
             self.constant_attributes[name] = value
         else:
             self.mutable_attributes[name] = value

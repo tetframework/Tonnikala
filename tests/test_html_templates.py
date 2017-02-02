@@ -322,6 +322,9 @@ class TestHtmlTemplates(unittest.TestCase):
         attrs = None
         self.are('<html><div></div></html>', fragment, debug=False, foo=attrs)
 
+    def test_empty_attribute(self):
+        self.are('<html foobar></html>', '<html foobar></html>', debug=False)
+
     def test_case_folding(self):
         self.are('<html></html>', '<html></HTML>', debug=False)
 
@@ -349,6 +352,7 @@ class TestHtmlTemplates(unittest.TestCase):
     def test_import(self):
         self.assert_file_rendering_equals('importing.tk', 'importing.tk',
                                           foo='bar')
+
 
     def test_invalid_control_attribute(self):
         self.assert_loader_throws(

@@ -199,6 +199,9 @@ class TestJsTemplates(unittest.TestCase):
         self.are('<html a="abcnull&lt;"></html>', fragment, foo=None)
         self.are('<html a="abctrue&lt;"></html>', fragment, foo=True)
 
+    def test_empty_attribute(self):
+        self.are('<html foobar></html>', '<html foobar></html>')
+
     def test_dollars(self):
         fragment = '<html><script>$.fn $(abc) $$a $a</script></html>'
         self.are('<html><script>$.fn $(abc) $a foobar</script></html>',

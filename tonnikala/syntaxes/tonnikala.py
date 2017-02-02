@@ -7,8 +7,7 @@ from __future__ import absolute_import, division, print_function, \
 
 from xml.dom.minidom import Node
 from tonnikala.ir.nodes import Element, If, For, Define, Import, \
-    EscapedText, Block, Extends, \
-    Expression, Code, With
+    EscapedText, Block, Extends, Expression, Code, With, EmptyAttrVal
 from ..expr import handle_text_node  # TODO: move this elsewhere.
 from ..ir.generate import BaseDOMIRGenerator
 from .docparser import TonnikalaHTMLParser
@@ -49,8 +48,15 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
                  self.syntax_error("Unknown control attribute {}".format(k),
                      node=v)
 
+        # allow handling None as attributes; i.e. html attributes without value
+        def handle_attribute_value(k, v):
+            if v is not None:
+                return handle_text_node(v, translatable=self.is_attr_translatable(k))
+            else:
+                return EmptyAttrVal()
+
         attrs = [
-            (k, handle_text_node(v, translatable=self.is_attr_translatable(k)))
+            (k, handle_attribute_value(k, v))
             for (k, v)
             in dom_node.attributes.items()
         ]

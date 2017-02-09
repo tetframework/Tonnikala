@@ -376,11 +376,15 @@ Include `'tonnikala.pyramid'` into your config to enable Tonnikala. When include
 ``set_tonnikala_reload(reload)``
     If ``True``, makes Tonnikala not cache templates. Default is ``False``.
 
+``set_tonnikala_l10n(reload)``
+    If ``True``, makes Tonnikala translate templates. Default is ``False``.
+
+These 4 can also be controlled by ``tonnikala.extensions``, ``tonnikala.search_paths``, ``tonnikala.reload`` and ``tonnikala.l10n`` respectively in the deployment settings (the ``.ini`` files). 
+If ``tonnikala.reload`` is not set, Tonnikala shall follow the ``pyramid.reload_templates`` setting.
+
+
 ``set_debug_templates(debug)``
     If ``True``, makes Tonnikala skip some optimizations that make debugging harder.
-
-These 3 can also be controlled by ``tonnikala.extensions``, ``tonnikala.search_paths`` and ``tonnikala.reload`` respectively in the deployment settings (the ``.ini`` files). 
-If ``tonnikala.reload`` is not set, Tonnikala shall follow the ``pyramid.reload_templates`` setting.
 
 Status
 ======

@@ -208,7 +208,7 @@ class FileLoader(Loader):
         self.cache = {}
         self.paths = list(paths)
         self.reload = False
-        self.last_reload_check = time.time()
+        self._last_reload_check = time.time()
 
     def add_path(self, *a):
         self.paths.extend(a)
@@ -228,8 +228,15 @@ class FileLoader(Loader):
     def set_reload(self, flag):
         self.reload = flag
 
-    def check_reload(self):
-        if self.last_reload_check + MIN_CHECK_INTERVAL > time.time():
+    def _maybe_purge_cache(self):
+        """
+        If enough time since last check has elapsed, check if any
+        of the cached templates has changed. If any of the template
+        files were deleted, remove that file only. If any were
+        changed, then purge the entire cache.
+        """
+
+        if self._last_reload_check + MIN_CHECK_INTERVAL > time.time():
             return
 
         for name, tmpl in list(self.cache.items()):
@@ -238,14 +245,21 @@ class FileLoader(Loader):
                 continue
 
             if os.stat(tmpl.path).st_mtime > tmpl.mtime:
-                self.cache.pop(name)
-                continue
+                self.cache.clear()
+                break
 
-        self.last_reload_check = time.time()
+        self._last_reload_check = time.time()
 
     def load(self, name):
+        """
+        If not yet in the cache, load the named template and compiles it,
+        placing it into the cache.
+
+        If in cache, return the cached template.
+        """
+
         if self.reload:
-            self.check_reload()
+            self._maybe_purge_cache()
 
         template = self.cache.get(name)
         if template:

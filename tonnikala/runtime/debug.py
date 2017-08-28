@@ -58,6 +58,7 @@ class TracebackFrameProxy(object):
                 # on various python implementations.  We just catch errors
                 # down and ignore them if necessary.
                 pass
+
         self._tb_next = next
 
     @property
@@ -193,9 +194,7 @@ def translate_exception(exc_info, initial_skip=0):
         frames.append(make_frame_proxy(tb))
         tb = next
 
-    # if we don't have any exceptions in the frames left, we have to
-    # reraise it unchanged.
-    # XXX: can we backup here?  when could this happen?
+    # if we don't have any exceptions in the frames left, we have to reraise it unchanged. XXX: can we backup here?  when could this happen?
     if not frames:
         reraise(exc_info[0], exc_info[1], exc_info[2])
 
@@ -208,16 +207,6 @@ def fake_exc_info(exc_info, filename, lineno):
 
     # figure the real context out
     if tb is not None:
-        # real_locals = tb.tb_frame.f_locals.copy()
-        # ctx = real_locals.get('context')
-        # if ctx:
-        #     locals = ctx.get_all()
-        # else:
-        #     locals = {}
-        # for name, value in iteritems(real_locals):
-        #     if name.startswith('l_') and value is not missing:
-        #         locals[name[2:]] = value
-
         # if there is a local called __tonnikala_exception__, we get
         # rid of it to not break the debug functionality.
         locals = tb.tb_frame.f_locals.copy()
@@ -229,7 +218,7 @@ def fake_exc_info(exc_info, filename, lineno):
     globals = {
         '__name__':                        filename,
         '__file__':                        filename,
-        '__tonnikala_exception__': exc_info[:2],
+        '__tonnikala_exception__':         exc_info[:2],
 
         # we don't want to keep the reference to the template around
         # to not cause circular dependencies, but we mark it as Tonnikala
@@ -267,6 +256,7 @@ def fake_exc_info(exc_info, filename, lineno):
                             code.co_names, code.co_varnames, filename,
                             location, code.co_firstlineno,
                             code.co_lnotab, (), ())
+
         else:  # pragma: python2
             code = CodeType(0, code.co_nlocals, code.co_stacksize,
                             code.co_flags, code.co_code, code.co_consts,
@@ -305,37 +295,23 @@ def _init_ugly_crap():
             _Py_ssize_t = ctypes.c_int64
         else:  # pragma: no cover
             _Py_ssize_t = ctypes.c_int
-    elif ctypes.sizeof(ctypes.c_void_p) == 8:  # pragma: no cover
-        _Py_ssize_t = ctypes.c_int64
+    else:
+        _Py_ssize_t = ctypes.c_ssize_t
 
-    # regular python
-    class _PyObject(ctypes.Structure):
-        pass
-
-    _PyObject._fields_ = [
-        ('ob_refcnt', _Py_ssize_t),
-        ('ob_type', ctypes.POINTER(_PyObject))
-    ]
-
-    # python with trace
     if hasattr(sys, 'getobjects'):  # pragma: no cover
-        class _PyObject(ctypes.Structure):
-            pass
-    _PyObject._fields_ = [
-        ('_ob_next', ctypes.POINTER(_PyObject)),
-        ('_ob_prev', ctypes.POINTER(_PyObject)),
-        ('ob_refcnt', _Py_ssize_t),
-        ('ob_type', ctypes.POINTER(_PyObject))
-    ]
+        # cannot support this, as don't have access to it
+        raise Exception('traceback hacking not supported on tracing Python builds')
 
-    class _Traceback(_PyObject):
+    # this isn't the full structure definition but we don't need the rest anyway,
+    # these are enough here. All struct pointers being compatible we use a wrong
+    # struct pointer for ob_type.
+    class _Traceback(ctypes.Structure):
         pass
 
     _Traceback._fields_ = [
+        ('ob_refcnt', _Py_ssize_t),
+        ('ob_type', ctypes.POINTER(_Traceback)),
         ('tb_next', ctypes.POINTER(_Traceback)),
-        ('tb_frame', ctypes.POINTER(_PyObject)),
-        ('tb_lasti', ctypes.c_int),
-        ('tb_lineno', ctypes.c_int)
     ]
 
     def tb_set_next(tb, next):
@@ -363,6 +339,7 @@ tb_set_next = None
 if tproxy is None:  # pragma: no cover
     try:
         tb_set_next = _init_ugly_crap()
-    except:
+    except Exception:
         pass
+
     del _init_ugly_crap

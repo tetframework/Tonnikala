@@ -122,7 +122,7 @@ def do_setup(with_c_extension):
 
     setup(
         name='tonnikala',
-        version='1.0.0b3',
+        version='1.0.0b4',
         description='Python templating engine - the one ton solution',
         long_description=README,
         author='Antti Haapala',

@@ -94,8 +94,7 @@ class PyTest(TestCommand):
     def run_tests(self):
         # import here, cause outside the eggs aren't loaded
         import pytest
-        errno = pytest.main(
-            ' '.join(self.default_options) + ' ' + self.pytest_args)
+        errno = pytest.main(list(self.default_options) + list(self.pytest_args))
         sys.exit(errno)
 
 cmdclass['test'] = PyTest

@@ -15,6 +15,8 @@ from ..base import LanguageNode, ComplexNode, BaseGenerator
 from ...compat import string_types, PY2
 from ...helpers import StringWithLocation
 from ...runtime.debug import TemplateSyntaxError
+import sys
+
 
 try:  # pragma: no cover
     import sysconfig
@@ -48,6 +50,11 @@ else:  # pragma: python 3
 
 def simple_function_def(name, arguments=()):
     arguments = create_argument_list(arguments)
+    if sys.version_info >= (3, 8):
+        extra = {'posonlyargs': []}
+    else:
+        extra = {}
+
     return FunctionDef(
         name=name,
         args=ast.arguments(
@@ -58,7 +65,9 @@ def simple_function_def(name, arguments=()):
             kwarg=None,
             kwargannotation=None,
             defaults=[],
-            kw_defaults=[]),
+            kw_defaults=[],
+            **extra
+        ),
         body=[Pass()],
         decorator_list=[],
         returns=None

@@ -201,6 +201,35 @@ def translate_exception(exc_info, initial_skip=0):
     return ProcessedTraceback(exc_info[0], exc_info[1], frames)
 
 
+if sys.version_info >= (3, 8):
+    def copy_code(code, filename, location):
+        return CodeType(0, code.co_posonlyargcount,
+            code.co_kwonlyargcount, code.co_nlocals,
+            code.co_stacksize,
+            code.co_flags, code.co_code, code.co_consts,
+            code.co_names, code.co_varnames, filename,
+            location, code.co_firstlineno,
+            code.co_lnotab, (), ()
+        )
+elif sys.version_info >= (3, 0):
+    def copy_code(code, filename, location):
+        return CodeType(0, code.co_kwonlyargcount, code.co_nlocals,
+            code.co_stacksize,
+            code.co_flags, code.co_code, code.co_consts,
+            code.co_names, code.co_varnames, filename,
+            location, code.co_firstlineno,
+            code.co_lnotab, (), ()
+        )
+else:
+    def copy_code(code, filename, location):
+        return CodeType(0, code.co_nlocals, code.co_stacksize,
+            code.co_flags, code.co_code, code.co_consts,
+            code.co_names, code.co_varnames, filename,
+            location, code.co_firstlineno,
+            code.co_lnotab, (), ()
+        )
+
+
 def fake_exc_info(exc_info, filename, lineno):
     """Helper for `translate_exception`."""
     exc_type, exc_value, tb = exc_info
@@ -249,20 +278,7 @@ def fake_exc_info(exc_info, filename, lineno):
             else:
                 location = 'def "%s"' % function
 
-        if not PY2:  # pragma: python3
-            code = CodeType(0, code.co_kwonlyargcount, code.co_nlocals,
-                            code.co_stacksize,
-                            code.co_flags, code.co_code, code.co_consts,
-                            code.co_names, code.co_varnames, filename,
-                            location, code.co_firstlineno,
-                            code.co_lnotab, (), ())
-
-        else:  # pragma: python2
-            code = CodeType(0, code.co_nlocals, code.co_stacksize,
-                            code.co_flags, code.co_code, code.co_consts,
-                            code.co_names, code.co_varnames, filename,
-                            location, code.co_firstlineno,
-                            code.co_lnotab, (), ())
+        code = copy_code(code, filename, location)
 
     except Exception as e:
         pass

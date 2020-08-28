@@ -15,8 +15,8 @@ from setuptools import Distribution as _Distribution, Extension
 from setuptools.command.test import test as TestCommand
 
 
-if sys.version_info < (2, 7) or (3, 0) <= sys.version_info < (3, 3):
-    raise Exception('Tonnikala requires Python 2.7 or Python 3.3+')
+if sys.version_info < (3, 5):
+    raise Exception('Tonnikala requires Python 3.5+')
 
 
 # read in the README file
@@ -121,7 +121,7 @@ def do_setup(with_c_extension):
 
     setup(
         name='tonnikala',
-        version='1.0.0b4',
+        version='1.0.0b5',
         description='Python templating engine - the one ton solution',
         long_description=README,
         author='Antti Haapala',
@@ -135,11 +135,10 @@ def do_setup(with_c_extension):
             'License :: OSI Approved :: Apache Software License',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
-            'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: 3.3',
-            'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',
+            'Programming Language :: Python :: 3.8',
             'Programming Language :: Python :: Implementation :: CPython',
             'Programming Language :: Python :: Implementation :: PyPy',
             'Topic :: Internet :: WWW/HTTP :: Dynamic Content',

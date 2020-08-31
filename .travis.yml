@@ -1,12 +1,11 @@
 language: python
 
 python:
-- 2.7
-- pypy
-- 3.3
-- 3.4
 - 3.5
 - 3.6
+- 3.7
+- 3.8
+- nightly
 
 env:
   - secure: "KS1nWTmFH6LuNN42hEits+CqzL1GMAJJHw4nwbJxRED1teJkMdVf/Yof2F7xC6Y8rP8qvCFQz2omznrY2RcreX2iFo7dJUu3FMneKWuMqMjDbnmsZwLJxaKPf+fB6JVaPDcL/4CpWklF3UYKnuJZv4lCN55wbH7YFvakuh8mrEM="
@@ -26,7 +25,7 @@ addons:
 
 install:
 - travis_retry pip install --upgrade pytest pytest-cov coveralls twine
-- python setup.py develop
+- pip install -e .
 
 script:
 - |

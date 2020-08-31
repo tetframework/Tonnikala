@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e -x
 
-wget http://rpm.nodesource.com/pub/el/5/x86_64/nodejs-0.10.46-1nodesource.el5.centos.x86_64.rpm -O /tmp/nodejs.rpm --quiet
+curl -L -o /tmp/nodejs.rpm http://rpm.nodesource.com/pub/el/5/x86_64/nodejs-0.10.46-1nodesource.el5.centos.x86_64.rpm
 yum -y --nogpgcheck localinstall /tmp/nodejs.rpm
 
 PYTHONS=$(echo /opt/python/*27*/bin /opt/python/*3[3456789]*/bin)

@@ -119,7 +119,7 @@ class TestHtmlTemplates(unittest.TestCase):
         self.assert_loader_throws(TemplateSyntaxError, "<html>$foo(</html>")
 
     def test_unbraced_line_continuation_not_ending(self):
-        self.assert_loader_throws(TemplateSyntaxError, "<html>$foo(\</html>")
+        self.assert_loader_throws(TemplateSyntaxError, "<html>$foo(\\</html>")
 
     def test_if_else_expression(self):
         """

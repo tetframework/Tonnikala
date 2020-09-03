@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function, \
     unicode_literals
 
-from collections import Mapping
+from collections.abc import Mapping
 from markupsafe import escape
 
 from ..compat import text_type, PY3

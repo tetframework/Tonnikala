@@ -9,7 +9,7 @@ from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 from slimit.parser import Parser
 from slimit import ast
 from slimit.ast import *
-from collections import Iterable
+from collections.abc import Iterable
 from slimit.scope import SymbolTable
 from slimit.parser import Parser
 from slimit.visitors.scopevisitor import (

@@ -9,7 +9,7 @@ python:
 - nightly
 
 env:
-  - secure: "KS1nWTmFH6LuNN42hEits+CqzL1GMAJJHw4nwbJxRED1teJkMdVf/Yof2F7xC6Y8rP8qvCFQz2omznrY2RcreX2iFo7dJUu3FMneKWuMqMjDbnmsZwLJxaKPf+fB6JVaPDcL/4CpWklF3UYKnuJZv4lCN55wbH7YFvakuh8mrEM="
+  - secure: "VuHfHGIcPFuZaSaCT0Nf4qcUxfnsEi44ioT0ErzYY88szTTESCDYZu0bNApOYwHpYmk58ZX1uogK9hxVT8DUi7cm0UkqvoVdzAMhRAk9OWVAtEJ4LqCl9SF8LGQXnSdxaJgI9y47Z+dmlQS1900nI1H/tiCrzUZzHKNy9AeDExo="
 
 matrix:
   fast_finish: true

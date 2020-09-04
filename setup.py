@@ -121,7 +121,7 @@ def do_setup(with_c_extension):
 
     setup(
         name='tonnikala',
-        version='1.0.0b5',
+        version='1.0.0b6',
         description='Python templating engine - the one ton solution',
         long_description=README,
         author='Antti Haapala',
@@ -139,8 +139,8 @@ def do_setup(with_c_extension):
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8',
+            'Programming Language :: Python :: 3.9',
             'Programming Language :: Python :: Implementation :: CPython',
-            'Programming Language :: Python :: Implementation :: PyPy',
             'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
             'Topic :: Text Processing :: Markup :: HTML'
         ],

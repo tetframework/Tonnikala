@@ -81,4 +81,4 @@ def extract_tonnikala(fileobj, keywords, comment_tags, options):
             msgid = (msg.msgctxt,) + msgid
             prefix += 'p'
 
-        yield (msg.location[1], prefix + 'gettext', msgid, msg.comment)
+        yield msg.location[1], prefix + 'gettext', msgid, msg.comment

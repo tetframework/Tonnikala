@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, \
-    unicode_literals
-
 """XML parser"""
 
 from tonnikala.ir.nodes import Element, If, For, EscapedText, Expression
@@ -13,7 +9,6 @@ from tonnikala.syntaxes.docparser import \
     TonnikalaHTMLParser
 
 
-# noinspection PyMethodMayBeStatic
 class ChameleonIRGenerator(BaseDOMIRGenerator):
     def __init__(self, *a, **kw):
         super(ChameleonIRGenerator, self).__init__(*a, **kw)

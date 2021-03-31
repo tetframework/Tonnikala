@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """
 This module allows the tonnikala templating language --
 http://pypi.python.org/pypi/tonnikala/
@@ -9,12 +6,9 @@ http://pypi.python.org/pypi/tonnikala/
 http://docs.pylonshq.com/
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 import os
 import pkg_resources
-from pyramid.compat import is_nonstr_iter
+from ..helpers import is_nonstr_iter
 from pyramid.settings import asbool, aslist
 
 import tonnikala.loader

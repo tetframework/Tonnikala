@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 "Test expressions"
 
 import unittest
@@ -39,5 +37,3 @@ class TestExpressions(unittest.TestCase):
                        expr_parser=javascript.parse_expression))
         expected = 'DynamicText([Text(foo), JavascriptExpression(a.baz["bar]"].xyz("ham)")), Text()...)])'
         self.assertEqual(content, expected)
-
-

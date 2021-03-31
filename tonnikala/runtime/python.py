@@ -1,10 +1,5 @@
-from __future__ import absolute_import, division, print_function, \
-    unicode_literals
-
 from collections.abc import Mapping
 from markupsafe import escape
-
-from ..compat import text_type, PY3
 
 NoneType = type(None)
 
@@ -20,7 +15,7 @@ class _TKPythonBufferImpl(object):
                 if obj.__class__ is self.__class__:
                     e(obj._buffer)
                 else:
-                    a(text_type(obj))
+                    a(str(obj))
 
         self.output = do_output
 
@@ -47,14 +42,7 @@ class _TKPythonBufferImpl(object):
     def join(self):
         return ''.join(self._buffer)
 
-    if PY3:  # pragma: no cover
-        __str__ = join
-
-    else:  # pragma: no cover
-        __unicode__ = join
-
-        def __str__(self):
-            return self.join().encode('UTF-8')
+    __str__ = join
 
 
 try:  # pragma: no cover

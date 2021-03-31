@@ -1,6 +1,3 @@
-from __future__ import absolute_import, division, print_function, \
-    unicode_literals
-
 import json
 import subprocess
 import unittest
@@ -11,7 +8,7 @@ import os.path
 import os.path
 
 from tonnikala.loader import JSLoader
-from tonnikala.compat import text_type
+
 
 js_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'js')
 output_dir = os.path.join(js_dir, 'tmp')
@@ -51,7 +48,7 @@ def execute_nodejs_runner(template_name, context):
 
 def render(template, debug=False, **args):
     compile_js_template(template, 'scratch.js')
-    return text_type(execute_nodejs_runner('scratch.js', args))
+    return str(execute_nodejs_runner('scratch.js', args))
 
 
 class TestJsTemplates(unittest.TestCase):

@@ -1,25 +1,17 @@
-# -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
+from io import StringIO
 import re
 import token
 from tokenize import generate_tokens, TokenError
 from ...ir.nodes import InterpolatedExpression
 from ...runtime.debug import TemplateSyntaxError
-from ...compat import PY2, next_method, StringIO
 
 
 class PythonExpression(InterpolatedExpression):
     pass
 
 
-if PY2:  # pragma: no cover
-    identifier_match = re.compile(r'[^\d\W]\w*')
-    expr_continuation = re.compile(r'[{([]|(\.[^\d\W]\w*)')
-else:
-    identifier_match = re.compile(r'[^\d\W]\w*', re.UNICODE)
-    expr_continuation = re.compile(r'[([]|(\.[^\d\W]\w*)', re.UNICODE)
+identifier_match = re.compile(r'[^\d\W]\w*', re.UNICODE)
+expr_continuation = re.compile(r'[([]|(\.[^\d\W]\w*)', re.UNICODE)
 
 
 class TokenReadLine(object):
@@ -39,7 +31,7 @@ class TokenReadLine(object):
         return self.io.tell()
 
     def get_readline(self):
-        return next_method(self.readline())
+        return self.readline().__next__
 
 
 def gen_tokens(text, pos):

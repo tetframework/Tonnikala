@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     tonnikala.runtime.debug
     ~~~~~~~~~~~~~~~~~~~~~~~
@@ -17,8 +16,7 @@ import traceback
 from types import TracebackType, CodeType
 
 from .exceptions import TemplateSyntaxError
-from ..compat import reraise, PY2
-from ..helpers import internal_code
+from ..helpers import internal_code, reraise
 
 # on pypy we can take advantage of transparent proxies
 try:
@@ -285,6 +283,7 @@ def fake_exc_info(exc_info, filename, lineno):
 
     # execute the code and catch the new traceback
     try:
+        new_tb = None
         exec(code, globals, locals)
     except:
         exc_info = sys.exc_info()
@@ -303,16 +302,7 @@ def _init_ugly_crap():
     import ctypes
     from types import TracebackType
 
-    # figure out size of _Py_ssize_t
-
-    _Py_ssize_t = ctypes.c_int
-    if PY2:  # pragma: python2
-        if hasattr(ctypes.pythonapi, 'Py_InitModule4_64'):  # pragma: no cover
-            _Py_ssize_t = ctypes.c_int64
-        else:  # pragma: no cover
-            _Py_ssize_t = ctypes.c_int
-    else:
-        _Py_ssize_t = ctypes.c_ssize_t
+    _Py_ssize_t = ctypes.c_ssize_t
 
     if hasattr(sys, 'getobjects'):  # pragma: no cover
         # cannot support this, as don't have access to it

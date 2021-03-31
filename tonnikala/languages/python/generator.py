@@ -1,18 +1,10 @@
-# -*- coding: utf-8 -*-
-
-# notice: this module cannot be sanely written to take use of
-# unicode_literals, bc some of the arguments need to be str on
-# both python2 and 3
-from __future__ import absolute_import, division, print_function
-
 import ast
 from ast import *
 
-from collections import Iterable
+from collections.abc import Iterable
 
 from .astalyzer import FreeVarFinder
 from ..base import LanguageNode, ComplexNode, BaseGenerator
-from ...compat import string_types, PY2
 from ...helpers import StringWithLocation
 from ...runtime.debug import TemplateSyntaxError
 import sys
@@ -39,13 +31,8 @@ def simple_call(func, args=None):
                 kwargs=None)
 
 
-if PY2:  # pragma: python2
-    def create_argument_list(arguments):
-        return [Name(id=id, ctx=Param()) for id in arguments]
-
-else:  # pragma: python 3
-    def create_argument_list(arguments):
-        return [arg(arg=id, annotation=None) for id in arguments]
+def create_argument_list(arguments):
+    return [arg(arg=id, annotation=None) for id in arguments]
 
 
 def simple_function_def(name, arguments=()):
@@ -107,12 +94,14 @@ def adjust_locations(ast_node, first_lineno, first_offset):
 
 
 def get_fragment_ast(expression, mode='eval', adjust=(0, 0)):
-    if not isinstance(expression, string_types):
+    if not isinstance(expression, str):
         return expression
 
-    t = None
     position = getattr(expression, 'position', (1, 0))
     position = position[0] + adjust[0], position[1] + adjust[1]
+
+    tree = None
+    t = None
     try:
         exp = expression
         if expression[-1:] != '\n':
@@ -123,7 +112,7 @@ def get_fragment_ast(expression, mode='eval', adjust=(0, 0)):
         lineno += position[0] - 1
         t = TemplateSyntaxError(e.msg, lineno=lineno)
 
-    if t:
+    if tree is None:
         raise t
 
     adjust_locations(tree, position[0], position[1])

@@ -1,4 +1,4 @@
-from tonnikala.compat import text_type
+str = str
 
 
 def escape(string):
@@ -15,9 +15,9 @@ def internalcode(f):
     return f
 
 
-class StringWithLocation(text_type):
-    def __new__(cls, value, lineno, offset):
-        val = text_type.__new__(cls, value)
+class StringWithLocation(str):
+    def __new__(cls, value: str, lineno, offset):
+        val = str.__new__(cls, value)
         val.position = lineno, offset
         return val
 
@@ -25,7 +25,7 @@ class StringWithLocation(text_type):
         return self.__getitem__(slice(start, end))
 
     def __getitem__(self, i):
-        s = text_type(self)
+        s = str(self)
         if isinstance(i, slice):
             start = i.indices(len(self))[0]
             position = calculate_position(s, start, self.position)
@@ -51,3 +51,17 @@ def calculate_position(source, offset, start=None):
 
 
 internal_code = set()
+
+
+def is_nonstr_iter(v):
+    if isinstance(v, str):
+        return False
+    return hasattr(v, '__iter__')
+
+
+def reraise(tp, value, tb=None):  # pragma: no cover
+    if value is None:
+        value = tp()
+    if value.__traceback__ is not tb:
+        raise value.with_traceback(tb)
+    raise value

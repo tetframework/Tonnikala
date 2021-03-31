@@ -1,14 +1,11 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import unittest
 
 
-from tonnikala.compat import text_type
 from tonnikala.loader import Loader
 
 def render(template, **args):
     compiled = Loader(syntax='chameleon').load_string(template)
-    return text_type(compiled.render(args))
+    return str(compiled.render(args))
 
 class TestHtmlTemplates(unittest.TestCase):
     def are(self, result, template, **args):

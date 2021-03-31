@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, \
-    unicode_literals
-
-
 """XML parser"""
 
 import sys
+from html import parser as html_parser
+from html.entities import entitydefs as html_entity_defs
+from io import StringIO, BytesIO
 from xml import sax
 from xml.dom import minidom as dom
 
-from ..compat import (html_entity_defs, html_parser,
-                      text_type, unichr, BytesIO, StringIO)
 from ..helpers import StringWithLocation
 from ..runtime.exceptions import TemplateSyntaxError
 
@@ -95,7 +91,7 @@ class TonnikalaXMLParser(sax.ContentHandler):
         if not content:
             raise RuntimeError("Unknown HTML entity &%s;" % name)
 
-        return self.characters(text_type(content))
+        return self.characters(str(content))
 
     def startElementNS(self, name, qname, attrs):  # pragma no cover
         raise NotImplementedError('startElementNS')
@@ -302,7 +298,7 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
     def handle_entityref(self, name):
         # Encoding?
         try:
-            content = text_type(html_entity_defs[name])
+            content = str(html_entity_defs[name])
         except KeyError:
             self.syntax_error("Unknown HTML entity &%s;" % name)
 
@@ -316,7 +312,7 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
             else:
                 cp = int(code, 10)
 
-            content = unichr(cp)
+            content = chr(cp)
             return self.handle_data(content)
         except Exception as e:
             self.syntax_error("Invalid HTML charref &#%s;: %s" % (code, e))

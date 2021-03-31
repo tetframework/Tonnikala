@@ -1,17 +1,17 @@
+import codecs
 import errno
+import os
 import sys
 import time
+from typing import Iterable, Optional
 
-import codecs
-import os
-
-from .compat import reraise
+from .helpers import reraise
 from .languages.javascript.generator import Generator as JavascriptGenerator
 from .languages.python.generator import Generator as PythonGenerator
 from .runtime import python, exceptions
 from .syntaxes.chameleon import parse as parse_chameleon
-from .syntaxes.tonnikala import parse as parse_tonnikala, \
-    parse_js as parse_js_tonnikala
+from .syntaxes.tonnikala import (parse as parse_tonnikala,
+                                 parse_js as parse_js_tonnikala)
 
 _make_traceback = None
 MIN_CHECK_INTERVAL = 0.25
@@ -35,7 +35,7 @@ helpers.gettext = lambda x: x
 helpers.egettext = lambda x: escape(x)
 
 
-def get_builtins_with_chain(chain=[helpers]):
+def get_builtins_with_chain(chain=(helpers,)):
     builtins = {}
     for i in [__builtin__] + list(reversed(chain)):
         for j in dir(i):
@@ -121,9 +121,9 @@ class Template(object):
 
 
 parsers = {
-    'tonnikala':    parse_tonnikala,
+    'tonnikala': parse_tonnikala,
     'js_tonnikala': parse_js_tonnikala,
-    'chameleon':    parse_chameleon,
+    'chameleon': parse_chameleon,
 }
 
 
@@ -138,11 +138,11 @@ class TemplateInfo(object):
 
 def _new_globals(runtime):
     return {
-        '__TK__runtime':      runtime,
-        '__TK__mkbuffer':     runtime.Buffer,
-        '__TK__escape':       runtime.escape,
+        '__TK__runtime': runtime,
+        '__TK__mkbuffer': runtime.Buffer,
+        '__TK__escape': runtime.escape,
         '__TK__output_attrs': runtime.output_attrs,
-        'literal':            helpers.literal
+        'literal': helpers.literal
     }
 
 
@@ -176,6 +176,7 @@ class Loader(object):
 
         if exc_info:
             self.handle_exception(exc_info, string, tb_override=None)
+            return
 
         if self.debug:
             import ast
@@ -202,18 +203,26 @@ class Loader(object):
 
 
 class FileLoader(Loader):
-    def __init__(self, paths=[], debug=False, syntax='tonnikala', *args, **kwargs):
-        super(FileLoader, self).__init__(*args, debug=debug, syntax=syntax, **kwargs)
+    def __init__(
+            self,
+            paths: Iterable[str] = (),
+            debug: bool = False,
+            syntax: str = 'tonnikala',
+            *args,
+            **kwargs
+    ):
+        super(FileLoader, self).__init__(*args, debug=debug, syntax=syntax,
+                                         **kwargs)
 
         self.cache = {}
         self.paths = list(paths)
         self.reload = False
         self._last_reload_check = time.time()
 
-    def add_path(self, *a):
+    def add_path(self, *a: str) -> None:
         self.paths.extend(a)
 
-    def resolve(self, name):
+    def resolve(self, name: str) -> Optional[str]:
         if os.path.isabs(name):
             if os.path.exists(name):
                 return name
@@ -225,7 +234,7 @@ class FileLoader(Loader):
 
         return None
 
-    def set_reload(self, flag):
+    def set_reload(self, flag: bool) -> None:
         self.reload = flag
 
     def _maybe_purge_cache(self):
@@ -282,16 +291,21 @@ class FileLoader(Loader):
 
 
 class JSLoader(object):
-    def __init__(self, debug=False, syntax='js_tonnikala', minify=False):
+    def __init__(
+            self,
+            debug: bool = False,
+            syntax: str = 'js_tonnikala',
+            minify: bool = False
+    ):
         self.debug = debug
         self.syntax = syntax
         self.minify = minify
 
-    def load_string(self, string, filename="<string>"):
+    def load_string(self, string: str, filename: str = "<string>"):
         parser_func = parsers.get(self.syntax)
         if not parser_func:
             raise ValueError("Invalid parser syntax %s: valid syntaxes: %r"
-                             % sorted(parsers.keys()))
+                              % (self.syntax, sorted(parsers.keys())))
 
         tree = parser_func(filename, string)
         code = JavascriptGenerator(tree).generate_ast()

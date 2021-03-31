@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
-
-"""Tonnikala compiler. Produces source code from XML."""
+"""Tonnikala expression compiler."""
 
 import re
 from tonnikala.ir.nodes import Text, DynamicText, TranslatableText
 from tonnikala.languages import python
+
 
 _dollar_strip_re = re.compile(r'\$[a-zA-Z_{$]')
 
@@ -91,7 +89,7 @@ def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False,
         pass
 
     nodes = []
-    stringrun = []
+    string_run = []
     max_index = len(text)
     pos = 0
 
@@ -99,28 +97,28 @@ def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False,
         m = _expr_find_code.match(text, pos)
         pos = m.end()
 
-        if m.group(1) != None:  # any
-            stringrun.append(m.group(1))
+        if m.group(1) is not None:  # any
+            string_run.append(m.group(1))
 
         elif m.group(2):  # $$
-            stringrun.append('$')
+            string_run.append('$')
 
         elif m.group(3):
-            if stringrun:
-                nodes.append(create_text_nodes(''.join(stringrun),
+            if string_run:
+                nodes.append(create_text_nodes(''.join(string_run),
                                                translatable=translatable))
 
-            stringrun = []
+            string_run = []
             expr = expr_parser(text, m.start(3))
             pos = m.start(3) + len(expr.string)
             nodes.append(expr)
 
         else:  # group 4, a sole $
-            stringrun.append('$')
+            string_run.append('$')
 
-    if stringrun:
+    if string_run:
         nodes.append(
-            create_text_nodes(''.join(stringrun), translatable=translatable))
+            create_text_nodes(''.join(string_run), translatable=translatable))
 
     if len(nodes) == 1:
         return nodes[0]

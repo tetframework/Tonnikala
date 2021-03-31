@@ -9,20 +9,9 @@ struct Buffer_module_state {
     PyObject *space;
 };
 
-#if PY_MAJOR_VERSION >= 3
-
 static PyModuleDef buffermodule;
 
 #define GETSTATE(m) ((struct Buffer_module_state*)PyModule_GetState(m))
-#define IS_PY3 1
-
-#else
-
-#define GETSTATE(m) (&_state)
-static struct Buffer_module_state _state;
-
-#define IS_PY3 0
-#endif
 
 typedef struct {
     PyObject_HEAD
@@ -49,10 +38,7 @@ Buffer_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     self = (Buffer *)type->tp_alloc(type, 0);
     if (self != NULL) {
-#if IS_PY3
         PyObject* module = PyState_FindModule(&buffermodule);
-#else
-#endif
         self->buffer_list = PyList_New(0);
         if (self->buffer_list == NULL) {
             Py_DECREF(self);
@@ -206,11 +192,7 @@ error:
 static PyObject *
 Buffer_join(PyObject *self, PyObject *args) {
     PyObject *sep, *rv;
-#if IS_PY3
     sep = PyUnicode_InternFromString("");
-#else
-    sep = PyUnicode_FromString("");
-#endif
     rv = PyUnicode_Join(sep, ((Buffer*)self)->buffer_list);
     Py_DECREF(sep);
     return rv;
@@ -322,7 +304,6 @@ static PyTypeObject buffer_BufferType = {
 #define BUFFER_DOC "Accelerated Buffer type for speeding up" \
                    "output ops on Tonnikala templates"
 
-#if IS_PY3
 static PyModuleDef buffermodule = {
     PyModuleDef_HEAD_INIT,
     "buffer",
@@ -343,15 +324,6 @@ PyInit__buffer(void)
     m = PyModule_Create(&buffermodule);
 
 #define ERROR_RET NULL
-#else // Python 2
-
-PyMODINIT_FUNC
-init_buffer(void) {
-    PyObject *m;
-    m = Py_InitModule3("_buffer", Buffer_module_methods, BUFFER_DOC);
-
-#define ERROR_RET
-#endif
 
     if (m == NULL)
         return ERROR_RET;
@@ -371,7 +343,5 @@ init_buffer(void) {
     st->space = PyUnicode_FromString(" ");
     st->quot = PyUnicode_FromString("\"");
 
-#if IS_PY3
     return m;
-#endif
 }

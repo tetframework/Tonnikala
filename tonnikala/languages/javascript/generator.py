@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import json
@@ -19,7 +17,6 @@ from slimit.visitors.scopevisitor import (
     mangle_scope_tree,
     NameManglerVisitor,
     )
-from ...compat import string_types
 from ...runtime.debug import TemplateSyntaxError
 
 
@@ -158,7 +155,7 @@ def parse(expression, mode='eval'):
 
 
 def get_fragment_ast(expression, mode='eval'):
-    if not isinstance(expression, string_types):
+    if not isinstance(expression, str):
         return expression
 
     tree = parse(expression, mode=mode)

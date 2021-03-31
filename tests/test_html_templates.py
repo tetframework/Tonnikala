@@ -1,13 +1,10 @@
-from __future__ import absolute_import, division, print_function, \
-    unicode_literals
-
 import unittest
 
 import codecs
 import os.path
 from collections import OrderedDict
 
-from tonnikala.compat import text_type
+
 from tonnikala.loader import FileLoader
 from tonnikala.runtime import python
 from tonnikala.runtime.exceptions import TemplateSyntaxError
@@ -15,7 +12,7 @@ from tonnikala.runtime.exceptions import TemplateSyntaxError
 
 def render(template, debug=False, translatable=False, **args):
     compiled = FileLoader(debug=debug, translatable=translatable).load_string(template)
-    return text_type(compiled.render(args))
+    return str(compiled.render(args))
 
 
 data_dir = os.path.abspath(os.path.dirname(__file__))

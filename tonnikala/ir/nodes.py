@@ -1,14 +1,6 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-
-import collections
-
-import re
-
 from tonnikala.helpers import escape
-from ..compat import text_type
 from collections import OrderedDict
+import re
 
 
 class BaseNode(object):
@@ -265,7 +257,7 @@ class Define(ContainerNode):
         self.funcspec = funcspec
 
     def __str__(self):  # pragma: no cover
-        return ', '.join([self.funcspec, text_type(self.children)])
+        return ', '.join([self.funcspec, str(self.children)])
 
 
 class Import(BaseNode):

@@ -1,15 +1,44 @@
 """
-    tonnikala.runtime.debug
-    ~~~~~~~~~~~~~~~~~~~~~~~
+tonnikala.runtime.debug
+~~~~~~~~~~~~~~~~~~~~~~~
 
-    Implements the debug interface for Tonnikala. This module does some pretty
-    ugly stuff with the Python traceback system in order to achieve tracebacks
-    with correct line numbers, locals and contents.
+Implements the debug interface for Tonnikala. This module does some pretty
+ugly stuff with the Python traceback system in order to achieve tracebacks
+with correct line numbers, locals and contents.
 
-    Based on Jinja2 module `jinja2.debug`,
-    :copyright: (c) 2010 by the Jinja Team.
-    :license: BSD, see LICENSE for more details.
+Based on Jinja2 module `jinja2.debug`, original code is
+
+:copyright: (c) 2010 by the Jinja Team.
+
+Copyright 2007 Pallets
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+Redistributions of source code must retain the above copyright notice, this
+list of conditions and the following disclaimer.
+
+Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+Neither the name of the copyright holder nor the names of its contributors
+may be used to endorse or promote products derived from this software without
+specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
 """
+
 import sys
 import traceback
 
@@ -18,12 +47,13 @@ from types import TracebackType, CodeType
 from .exceptions import TemplateSyntaxError
 from ..helpers import internal_code, reraise
 
+
 # on pypy we can take advantage of transparent proxies
 try:
     from __pypy__ import tproxy
 except ImportError:
     tproxy = None
-''
+
 
 # how does the raise helper look like?
 try:
@@ -192,7 +222,8 @@ def translate_exception(exc_info, initial_skip=0):
         frames.append(make_frame_proxy(tb))
         tb = next
 
-    # if we don't have any exceptions in the frames left, we have to reraise it unchanged. XXX: can we backup here?  when could this happen?
+    # if we don't have any exceptions in the frames left, we have to
+    # reraise it unchanged. XXX: can we backup here?  when could this happen?
     if not frames:
         reraise(exc_info[0], exc_info[1], exc_info[2])
 
@@ -200,31 +231,27 @@ def translate_exception(exc_info, initial_skip=0):
 
 
 if sys.version_info >= (3, 8):
-    def copy_code(code, filename, location):
-        return CodeType(0, code.co_posonlyargcount,
-            code.co_kwonlyargcount, code.co_nlocals,
-            code.co_stacksize,
-            code.co_flags, code.co_code, code.co_consts,
-            code.co_names, code.co_varnames, filename,
-            location, code.co_firstlineno,
-            code.co_lnotab, (), ()
-        )
-elif sys.version_info >= (3, 0):
-    def copy_code(code, filename, location):
-        return CodeType(0, code.co_kwonlyargcount, code.co_nlocals,
-            code.co_stacksize,
-            code.co_flags, code.co_code, code.co_consts,
-            code.co_names, code.co_varnames, filename,
-            location, code.co_firstlineno,
-            code.co_lnotab, (), ()
-        )
+    def code_with_custom_location(code, filename, location):
+        return code.replace(co_filename=filename, co_name=location)
+
 else:
-    def copy_code(code, filename, location):
-        return CodeType(0, code.co_nlocals, code.co_stacksize,
-            code.co_flags, code.co_code, code.co_consts,
-            code.co_names, code.co_varnames, filename,
-            location, code.co_firstlineno,
-            code.co_lnotab, (), ()
+    def code_with_custom_location(code, filename, location):
+        return CodeType(
+            code.co_argcount,
+            code.co_kwonlyargcount,
+            code.co_nlocals,
+            code.co_stacksize,
+            code.co_flags,
+            code.co_code,
+            code.co_consts,
+            code.co_names,
+            code.co_varnames,
+            filename,
+            location,
+            code.co_firstlineno,
+            code.co_lnotab,
+            code.co_freevars,
+            code.co_cellvars
         )
 
 
@@ -276,7 +303,7 @@ def fake_exc_info(exc_info, filename, lineno):
             else:
                 location = 'def "%s"' % function
 
-        code = copy_code(code, filename, location)
+        code = code_with_custom_location(code, filename, location)
 
     except Exception as e:
         pass
@@ -339,13 +366,22 @@ def _init_ugly_crap():
     return tb_set_next
 
 
-# try to get a tb_set_next implementation if we don't have transparent
-# proxies.
-tb_set_next = None
-if tproxy is None:  # pragma: no cover
-    try:
-        tb_set_next = _init_ugly_crap()
-    except Exception:
-        pass
+if sys.version_info >= (3, 7):
+    # tb_next is directly assignable as of Python 3.7
+    def tb_set_next(
+        tb, tb_next
+    ) -> TracebackType:
+        tb.tb_next = tb_next
+        return tb
 
-    del _init_ugly_crap
+else:
+    # try to get a tb_set_next implementation if we don't have transparent
+    # proxies.
+    tb_set_next = None
+    if tproxy is None:  # pragma: no cover
+        try:
+            tb_set_next = _init_ugly_crap()
+        except Exception:
+            pass
+
+        del _init_ugly_crap

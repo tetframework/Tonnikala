@@ -189,18 +189,18 @@ class TestJsTemplates(unittest.TestCase):
 """
     def test_translation(self):
         fragment = '<html alt="foo"> abc </html>'
-        self.are('<html alt="foo"> abc </html>', fragment, debug=False, translateable=True)
+        self.are('<html alt="foo"> abc </html>', fragment, debug=False, translatable=True)
 
         def gettext(x):
             return '<"%s&>' % x
 
         self.are('<html alt="&lt;&#34;foo&amp;&gt;"> &lt;&#34;abc&amp;&gt; </html>',
-            fragment, debug=False, translateable=True, gettext=gettext)
+            fragment, debug=False, translatable=True, gettext=gettext)
 
         def gettext(x):
             return '<%s' % x
 
-        self.are('<html>&lt;&gt;</html>', '<html>&gt;</html>', debug=False, translateable=True, gettext=gettext)
+        self.are('<html>&lt;&gt;</html>', '<html>&gt;</html>', debug=False, translatable=True, gettext=gettext)
 
     def assert_file_rendering_equals(self, input_file, output_file, debug=False, **context):
         loader = get_loader(debug=debug)

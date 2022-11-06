@@ -4,10 +4,6 @@ import unittest
 
 from tonnikala import expr
 from tonnikala.languages import javascript
-from os import path
-from tonnikala.languages.python.generator import Generator as PythonGenerator
-from tonnikala.languages.javascript.generator import Generator as JavascriptGenerator
-from tonnikala.loader import Loader
 
 
 class TestExpressions(unittest.TestCase):

@@ -107,7 +107,7 @@ class Template(object):
             self.bind(context)
             return context[funcname]()
 
-        except Exception as e:
+        except Exception:
             exc_info = sys.exc_info()
 
         try:

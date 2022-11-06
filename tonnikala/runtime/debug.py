@@ -309,14 +309,14 @@ def fake_exc_info(exc_info, filename, lineno):
 
         code = code_with_custom_location(code, filename, location)
 
-    except Exception as e:
+    except Exception:
         pass
 
     # execute the code and catch the new traceback
     try:
         new_tb = None
         exec(code, globals, locals)
-    except:
+    except BaseException:
         exc_info = sys.exc_info()
         new_tb = exc_info[2].tb_next
 

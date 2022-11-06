@@ -144,7 +144,7 @@ def static_eval(expr):
 def static_expr_to_bool(expr):
     try:
         return bool(static_eval(expr))
-    except:
+    except BaseException:
         return None
 
 
@@ -310,10 +310,10 @@ class PyIfNode(PyComplexNode):
         test = get_fragment_ast(self.expression)
         boolean = static_expr_to_bool(test)
 
-        if boolean == False:
+        if boolean is False:
             return []
 
-        if boolean == True:
+        if boolean is True:
             return self.generate_child_ast(generator, parent)
 
         node = If(test=test, body=self.generate_child_ast(generator, self), orelse=[])
@@ -560,9 +560,11 @@ def coalesce_outputs(tree):
 
     coalesce_all_outputs = True
     if coalesce_all_outputs:
-        should_coalesce = lambda n: True
+        def should_coalesce(node):
+            return True
     else:
-        should_coalesce = lambda n: n.output_args[0].__class__ is Str
+        def should_coalesce(node):
+            return node.output_args[0].__class__ is Str
 
     class OutputCoalescer(NodeVisitor):
         def visit(self, node):

@@ -839,7 +839,6 @@ class Generator(BaseGenerator):
 
     def generate_ast(self):
         tree = super(Generator, self).generate_ast()
-        loc_mapper = LocationMapper()
-        loc_mapper.map_linenos(tree)
-        self.lnotab = loc_mapper.lineno_map
+        self.lnotab = {}
+        ast.fix_missing_locations(tree)
         return tree

@@ -2,9 +2,19 @@ import json
 
 from slimit import ast
 from slimit.ast import (
-    String, Identifier, ExprStatement, DotAccessor,
-    VarStatement, VarDecl, FunctionCall, Assign as JSAssign, UnaryOp, If, Block,
-    Return as JSReturn, FuncDecl
+    String,
+    Identifier,
+    ExprStatement,
+    DotAccessor,
+    VarStatement,
+    VarDecl,
+    FunctionCall,
+    Assign as JSAssign,
+    UnaryOp,
+    If,
+    Block,
+    Return as JSReturn,
+    FuncDecl,
 )
 from slimit.parser import Parser
 from slimit.scope import SymbolTable
@@ -287,6 +297,7 @@ class JsCodeNode(JavascriptNode):
     def generate_ast(self, generator, parent):
         return get_fragment_ast(self.source, mode="exec")
 
+
 #
 # def coalesce_strings(args):
 #     rv = []
@@ -307,6 +318,7 @@ class JsCodeNode(JavascriptNode):
 #
 #     return rv
 #
+
 
 class JsComplexNode(ComplexNode, JavascriptNode):
     def generate_child_ast(self, generator, parent_for_children):

@@ -108,8 +108,7 @@ class ImportedTemplate(object):
 
     def __getattr__(self, item):
         raise AttributeError(
-            f"Imported template {self._name!r} "
-            f"has no attribute {item!r}"
+            f"Imported template {self._name!r} " f"has no attribute {item!r}"
         )
 
 

@@ -1,14 +1,16 @@
 import ast
-from ast import *
-
+import sys
+from ast import (
+    Call, FunctionDef, Pass, UnaryOp, iter_child_nodes, literal_eval,
+    NodeVisitor, If, Expr, Assign, Attribute,
+    Str, Name, Load, Store, Not, arg, Raise, Return
+)
 from collections.abc import Iterable
 
 from .astalyzer import FreeVarFinder
 from ..base import LanguageNode, ComplexNode, BaseGenerator
 from ...helpers import StringWithLocation
 from ...runtime.debug import TemplateSyntaxError
-import sys
-
 
 try:  # pragma: no cover
     import sysconfig
@@ -73,10 +75,10 @@ def adjust_locations(ast_node, first_lineno, first_offset):
     line_delta = first_lineno - 1
 
     def _fix(node):
-        for prefix in ['', 'end_']:
-            if prefix + 'lineno' in node._attributes:
-                lineno_attr = prefix + 'lineno'
-                col_offset_attr = prefix + 'col_offset'
+        for prefix in ["", "end_"]:
+            if prefix + "lineno" in node._attributes:
+                lineno_attr = prefix + "lineno"
+                col_offset_attr = prefix + "col_offset"
 
                 lineno = getattr(node, lineno_attr)
                 col = getattr(node, col_offset_attr)
@@ -133,7 +135,8 @@ def gen_name(typename=None):
 
 def static_eval(expr):
     if isinstance(expr, UnaryOp) and isinstance(expr.op, Not):
-        return not static_eval(expr.operand)
+        # bogus error from PyCharm
+        return not static_eval(expr.operand)  # NoQA
 
     return literal_eval(expr)
 
@@ -257,7 +260,7 @@ class PyExpressionNode(PythonNode):
         return get_fragment_ast(self.expr)
 
     def generate_ast(self, generator, parent):
-        return self.generate_output_ast(self.get_expression(), generator, parent)
+        return self.generate_output_ast([self.get_expression()], generator, parent)
 
 
 class PyCodeNode(PythonNode):
@@ -401,8 +404,7 @@ class PyAttrsNode(PythonNode):
         expression = get_fragment_ast(self.expression)
 
         output = simple_call(NameX("__TK__output_attrs"), args=[expression])
-
-        return self.generate_output_ast(output, generator, parent)
+        return self.generate_output_ast([output], generator, parent)
 
 
 class PyForNode(PyComplexNode):
@@ -749,7 +751,7 @@ class PyRootNode(PyComplexNode):
             if isinstance(e, Raise):
                 break
 
-        binder.body[i : i + 1] = toplevel_funcs
+        binder.body[i:i + 1] = toplevel_funcs
         binder.body[i:i] = generator.imports
 
         coalesce_outputs(tree)

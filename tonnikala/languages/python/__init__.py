@@ -86,7 +86,10 @@ def parse_brace_enclosed_expression(text, start_pos, position):
         s = text[pos:]
         raise TemplateSyntaxError("Unclosed braced Python expression", node=s)
 
-    return PythonExpression(text[start_pos:end_pos], text[start_pos + 2 : end_pos - 1])
+    return PythonExpression(
+        text[start_pos:end_pos],
+        text[start_pos + 2 : end_pos - 1],
+    )
 
 
 def parse_unenclosed_expression(text, start_pos, position):

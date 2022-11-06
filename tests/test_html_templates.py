@@ -391,6 +391,16 @@ class TestHtmlTemplates(unittest.TestCase):
     def test_import(self):
         self.assert_file_rendering_equals("importing.tk", "importing.tk", foo="bar")
 
+    def test_nonexistent_attribute_from_import(self):
+        loader = get_loader(debug=False)
+        template = loader.load("importing_invalid.tk")
+        try:
+            template.render({'foo': 'bar'})
+            assert False, "should have raised an exception"
+
+        except AttributeError as e:
+            assert "imported.tk" in str(e), "should have mentioned imported.tk"
+
     def test_invalid_control_attribute(self):
         self.assert_loader_throws(
             TemplateSyntaxError, '<html py:notcorrect="foo"></html>'

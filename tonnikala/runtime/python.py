@@ -106,6 +106,11 @@ class ImportedTemplate(object):
     def __repr__(self):  # pragma: no cover
         return "<ImportedTemplate '%r'>" % self._name
 
+    def __getattr__(self, item):
+        raise AttributeError(
+            f"Imported template {self._name!r} "
+            f"has no attribute {item!r}"
+        )
 
 class TonnikalaRuntime(object):
     bind = staticmethod(bind)

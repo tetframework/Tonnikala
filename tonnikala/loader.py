@@ -10,8 +10,7 @@ from .languages.javascript.generator import Generator as JavascriptGenerator
 from .languages.python.generator import Generator as PythonGenerator
 from .runtime import python, exceptions
 from .syntaxes.chameleon import parse as parse_chameleon
-from .syntaxes.tonnikala import (parse as parse_tonnikala,
-                                 parse_js as parse_js_tonnikala)
+from .syntaxes.tonnikala import parse as parse_tonnikala, parse_js as parse_js_tonnikala
 
 _make_traceback = None
 MIN_CHECK_INTERVAL = 0.25
@@ -20,10 +19,10 @@ try:  # pragma: python3
     import builtins as __builtin__
 except ImportError:  # pragma: python2
     # noinspection PyUnresolvedReferences,PyCompatibility
-    exec('import __builtin__')
+    exec("import __builtin__")
 
 
-class Helpers():
+class Helpers:
     pass
 
 
@@ -39,7 +38,7 @@ def get_builtins_with_chain(chain=(helpers,)):
     builtins = {}
     for i in [__builtin__] + list(reversed(chain)):
         for j in dir(i):
-            if not j.startswith('__') and not j.endswith('__'):
+            if not j.startswith("__") and not j.endswith("__"):
                 builtins[j] = getattr(i, j)
 
     return builtins
@@ -102,7 +101,7 @@ class Template(object):
     def bind(self, context):
         self.binder_func(context)
 
-    def render_to_buffer(self, context, funcname='__main__'):
+    def render_to_buffer(self, context, funcname="__main__"):
         try:
             context = make_template_context(context)
             self.bind(context)
@@ -116,14 +115,14 @@ class Template(object):
         finally:
             del exc_info
 
-    def render(self, context, funcname='__main__'):
+    def render(self, context, funcname="__main__"):
         return self.render_to_buffer(context, funcname).join()
 
 
 parsers = {
-    'tonnikala': parse_tonnikala,
-    'js_tonnikala': parse_js_tonnikala,
-    'chameleon': parse_chameleon,
+    "tonnikala": parse_tonnikala,
+    "js_tonnikala": parse_js_tonnikala,
+    "chameleon": parse_chameleon,
 }
 
 
@@ -138,11 +137,11 @@ class TemplateInfo(object):
 
 def _new_globals(runtime):
     return {
-        '__TK__runtime': runtime,
-        '__TK__mkbuffer': runtime.Buffer,
-        '__TK__escape': runtime.escape,
-        '__TK__output_attrs': runtime.output_attrs,
-        'literal': helpers.literal
+        "__TK__runtime": runtime,
+        "__TK__mkbuffer": runtime.Buffer,
+        "__TK__escape": runtime.escape,
+        "__TK__output_attrs": runtime.output_attrs,
+        "literal": helpers.literal,
     }
 
 
@@ -150,7 +149,7 @@ class Loader(object):
     handle_exception = staticmethod(handle_exception)
     runtime = python.TonnikalaRuntime
 
-    def __init__(self, debug=False, syntax='tonnikala', translatable=False):
+    def __init__(self, debug=False, syntax="tonnikala", translatable=False):
         self.debug = debug
         self.syntax = syntax
         self.translatable = translatable
@@ -158,8 +157,9 @@ class Loader(object):
     def load_string(self, string, filename="<string>"):
         parser_func = parsers.get(self.syntax)
         if not parser_func:
-            raise ValueError("Invalid parser syntax %s: valid syntaxes: %r"
-                             % sorted(parsers.keys()))
+            raise ValueError(
+                "Invalid parser syntax %s: valid syntaxes: %r" % sorted(parsers.keys())
+            )
 
         try:
             tree = parser_func(filename, string, translatable=self.translatable)
@@ -185,6 +185,7 @@ class Loader(object):
 
             try:
                 import astor
+
                 print(astor.codegen.to_source(code))
             except ImportError:
                 print("Not reversing AST to source as astor was not installed")
@@ -193,26 +194,25 @@ class Loader(object):
         runtime.loader = self
         glob = _new_globals(runtime)
 
-        compiled = compile(code, filename, 'exec')
-        glob['__TK_template_info__'] = TemplateInfo(filename, gen.lnotab_info())
+        compiled = compile(code, filename, "exec")
+        glob["__TK_template_info__"] = TemplateInfo(filename, gen.lnotab_info())
 
         exec(compiled, glob, glob)
 
-        template_func = glob['__TK__binder']
+        template_func = glob["__TK__binder"]
         return Template(template_func)
 
 
 class FileLoader(Loader):
     def __init__(
-            self,
-            paths: Iterable[str] = (),
-            debug: bool = False,
-            syntax: str = 'tonnikala',
-            *args,
-            **kwargs
+        self,
+        paths: Iterable[str] = (),
+        debug: bool = False,
+        syntax: str = "tonnikala",
+        *args,
+        **kwargs
     ):
-        super(FileLoader, self).__init__(*args, debug=debug, syntax=syntax,
-                                         **kwargs)
+        super(FileLoader, self).__init__(*args, debug=debug, syntax=syntax, **kwargs)
 
         self.cache = {}
         self.paths = list(paths)
@@ -278,7 +278,7 @@ class FileLoader(Loader):
         if not path:
             raise OSError(errno.ENOENT, "File not found: %s" % name)
 
-        with codecs.open(path, 'r', encoding='UTF-8') as f:
+        with codecs.open(path, "r", encoding="UTF-8") as f:
             contents = f.read()
             mtime = os.fstat(f.fileno()).st_mtime
 
@@ -292,10 +292,7 @@ class FileLoader(Loader):
 
 class JSLoader(object):
     def __init__(
-            self,
-            debug: bool = False,
-            syntax: str = 'js_tonnikala',
-            minify: bool = False
+        self, debug: bool = False, syntax: str = "js_tonnikala", minify: bool = False
     ):
         self.debug = debug
         self.syntax = syntax
@@ -304,8 +301,10 @@ class JSLoader(object):
     def load_string(self, string: str, filename: str = "<string>"):
         parser_func = parsers.get(self.syntax)
         if not parser_func:
-            raise ValueError("Invalid parser syntax %s: valid syntaxes: %r"
-                              % (self.syntax, sorted(parsers.keys())))
+            raise ValueError(
+                "Invalid parser syntax %s: valid syntaxes: %r"
+                % (self.syntax, sorted(parsers.keys()))
+            )
 
         tree = parser_func(filename, string)
         code = JavascriptGenerator(tree).generate_ast()
@@ -316,6 +315,7 @@ class JSLoader(object):
 
         if self.minify:
             from slimit import minify
+
             code = minify(code, mangle=True)
 
         return code

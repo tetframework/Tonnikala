@@ -1,12 +1,23 @@
 """Generates IR nodes from DOM tree"""
 
-from .nodes import (Element, Text,
-                    MutableAttribute, ContainerNode, EscapedText, Root,
-                    DynamicAttributes, Unless, Comment, IRTree, EmptyAttrVal)
+from .nodes import (
+    Element,
+    Text,
+    MutableAttribute,
+    ContainerNode,
+    EscapedText,
+    Root,
+    DynamicAttributes,
+    Unless,
+    Comment,
+    IRTree,
+    EmptyAttrVal,
+)
 
 from ..runtime.exceptions import TemplateSyntaxError
 
-html5_empty_tags = frozenset('''
+html5_empty_tags = frozenset(
+    """
     br
     hr
     input
@@ -22,12 +33,15 @@ html5_empty_tags = frozenset('''
     command
     keygen
     source
-'''.split())
+""".split()
+)
 
-html5_cdata_elements = frozenset('''
+html5_cdata_elements = frozenset(
+    """
     script
     style
-'''.split())
+""".split()
+)
 
 
 class all_set(object):
@@ -45,10 +59,8 @@ class BaseIRGenerator(object):
 
     def syntax_error(self, message, lineno=None):
         raise TemplateSyntaxError(
-            message,
-            lineno,
-            source=self.source,
-            filename=self.filename)
+            message, lineno, source=self.source, filename=self.filename
+        )
 
     def merge_text_nodes_on(self, node):
         """Merges all consecutive non-translatable text nodes into one"""
@@ -63,13 +75,13 @@ class BaseIRGenerator(object):
                 text_run.append(i.escaped())
             else:
                 if text_run:
-                    new_children.append(EscapedText(''.join(text_run)))
+                    new_children.append(EscapedText("".join(text_run)))
                     text_run = []
 
                 new_children.append(i)
 
         if text_run:
-            new_children.append(EscapedText(''.join(text_run)))
+            new_children.append(EscapedText("".join(text_run)))
 
         node.children = new_children
         for i in node.children:
@@ -116,24 +128,25 @@ class Validator(object):
         source = self.domirgen.source
         filename = self.domirgen.filename
         lineno = node.position[0]
-        raise TemplateSyntaxError(message=message, source=source,
-                                  filename=filename, lineno=lineno)
+        raise TemplateSyntaxError(
+            message=message, source=source, filename=filename, lineno=lineno
+        )
 
 
 class BaseDOMIRGenerator(BaseIRGenerator):
-    def __init__(self, document=None, mode='html5', *a, **kw):
+    def __init__(self, document=None, mode="html5", *a, **kw):
         super(BaseDOMIRGenerator, self).__init__(*a, **kw)
         self.dom_document = document
         self.mode = mode
 
-        if mode in ['html', 'html5', 'xhtml']:
+        if mode in ["html", "html5", "xhtml"]:
             self.empty_elements = html5_empty_tags
             self.cdata_elements = html5_cdata_elements
-            self.empty_tag_closing_string = ' />'
+            self.empty_tag_closing_string = " />"
 
-        elif mode == 'xml':
+        elif mode == "xml":
             self.empty_elements = all_set()
-            self.empty_tag_closing_string = '/>'
+            self.empty_tag_closing_string = "/>"
             self.cdata_elements = set()
 
         else:  # pragma: no cover
@@ -153,16 +166,17 @@ class BaseDOMIRGenerator(BaseIRGenerator):
             ir_node.set_attribute(name, value)
 
     def generate_ir_node(self, dom_node):  # pragma: no cover
-        raise NotImplementedError('abstract method not implemented')
+        raise NotImplementedError("abstract method not implemented")
 
     def enter_node(self, ir_node):
         """
         Enter the given element; keeps track of `cdata`;
         subclasses may extend by overriding
         """
-        this_is_cdata = (isinstance(ir_node, Element)
-                         and ir_node.name in self.cdata_elements)
-        self.state['is_cdata'] = bool(self.state.get('is_cdata')) or this_is_cdata
+        this_is_cdata = (
+            isinstance(ir_node, Element) and ir_node.name in self.cdata_elements
+        )
+        self.state["is_cdata"] = bool(self.state.get("is_cdata")) or this_is_cdata
 
     def exit_node(self, ir_node):
         pass
@@ -184,16 +198,16 @@ class BaseDOMIRGenerator(BaseIRGenerator):
         code = []
         for name, value in cattr.items():
             if isinstance(value, EmptyAttrVal):
-                code.append(' ')
+                code.append(" ")
                 code.append(name)
             else:
                 code.append(' %s="%s"' % (name, value.escaped()))
 
-        return ''.join(code)
+        return "".join(code)
 
     def get_start_tag_nodes(self, element):
         start_tag_nodes = []
-        pre_text_node = '<%s' % element.name
+        pre_text_node = "<%s" % element.name
         if element.attributes:
             pre_text_node += self.render_constant_attributes(element)
 
@@ -216,9 +230,9 @@ class BaseDOMIRGenerator(BaseIRGenerator):
                 continue
 
             elif isinstance(i, Comment):
-                new_children.append(EscapedText('<!--'))
+                new_children.append(EscapedText("<!--"))
                 new_children.append(EscapedText(i.escaped()))
-                new_children.append(EscapedText('-->'))
+                new_children.append(EscapedText("-->"))
 
             else:
                 # this is complicated because of the stupid strip syntax :)
@@ -229,14 +243,15 @@ class BaseDOMIRGenerator(BaseIRGenerator):
                 if not i.children:
                     if i.name in self.empty_elements:
                         start_tag_nodes.append(
-                            EscapedText(self.empty_tag_closing_string))
+                            EscapedText(self.empty_tag_closing_string)
+                        )
 
                     else:
-                        start_tag_nodes.append(EscapedText('></%s>' % i.name))
+                        start_tag_nodes.append(EscapedText("></%s>" % i.name))
 
                 else:
-                    start_tag_nodes.append(EscapedText('>'))
-                    end_tag_nodes = [EscapedText('</%s>' % i.name)]
+                    start_tag_nodes.append(EscapedText(">"))
+                    end_tag_nodes = [EscapedText("</%s>" % i.name)]
 
                 child_nodes = []
                 for j in i.children:
@@ -266,7 +281,7 @@ class BaseDOMIRGenerator(BaseIRGenerator):
             self.flatten_element_nodes_on(node)
 
         for i in node.children:
-            if hasattr(i, 'children') and i.children:
+            if hasattr(i, "children") and i.children:
                 self.flatten_element_nodes_on(i)
 
     def flatten_element_nodes(self, tree):

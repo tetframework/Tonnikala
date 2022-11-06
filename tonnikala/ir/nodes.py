@@ -7,7 +7,7 @@ class BaseNode(object):
     position = (None, None)
 
     def __repr__(self):
-        return self.__class__.__name__ + '(%s)' % str(self)
+        return self.__class__.__name__ + "(%s)" % str(self)
 
     def validate(self, validator):
         pass
@@ -55,7 +55,7 @@ class TranslatableText(Text):
         super(TranslatableText, self).__init__(text, is_cdata=is_cdata)
 
     def __str__(self):  # pragma: no cover
-        return '_t(%s)' % self.text
+        return "_t(%s)" % self.text
 
     @property
     def needs_escape(self):
@@ -69,13 +69,13 @@ class TranslatableText(Text):
 
 
 def escape_comment(text):
-    if text.startswith('>'):
-        text = text.replace('>', '&gt', 1)
+    if text.startswith(">"):
+        text = text.replace(">", "&gt", 1)
 
-    if text.endswith('-'):
-        text = text[:-1] + '&#45;'
+    if text.endswith("-"):
+        text = text[:-1] + "&#45;"
 
-    return text.replace('--', '&#45;&#45;')
+    return text.replace("--", "&#45;&#45;")
 
 
 class Comment(BaseNode):
@@ -129,7 +129,7 @@ class InterpolatedExpression(Expression):
 class ContainerNode(BaseNode):
     def __init__(self):
         self.attributes = OrderedDict()
-        self.children   = []
+        self.children = []
 
     def add_child(self, child):
         """
@@ -141,7 +141,7 @@ class ContainerNode(BaseNode):
         self.attributes[name] = value
 
     def __repr__(self):
-        return self.__class__.__name__ + '(%s)' % str(self)
+        return self.__class__.__name__ + "(%s)" % str(self)
 
     def __str__(self):  # pragma: no cover
         return str(self.children)
@@ -198,14 +198,16 @@ class Element(ContainerNode):
         self.name = name
         self.guard_expression = guard_expression
         self.constant_attributes = OrderedDict()
-        self.mutable_attributes  = OrderedDict()
-        self.dynamic_attrs       = None
+        self.mutable_attributes = OrderedDict()
+        self.dynamic_attrs = None
 
     def __str__(self):  # pragma: no cover
         attrs = str(self.attributes)
         children = str(self.children)
 
-        return ', '.join([self.name, 'guard=%s' % self.guard_expression, attrs, children])
+        return ", ".join(
+            [self.name, "guard=%s" % self.guard_expression, attrs, children]
+        )
 
     def get_guard_expression(self):
         return self.guard_expression
@@ -229,7 +231,7 @@ class Element(ContainerNode):
 
 
 class For(ContainerNode):
-    IN_RE = re.compile('\s+in\s+')
+    IN_RE = re.compile("\s+in\s+")
 
     def __init__(self, expression):
         super(For, self).__init__()
@@ -241,13 +243,14 @@ class For(ContainerNode):
         if len(self.parts) != 2:
             validator.syntax_error(
                 "for does not have proper format: var[, var...] in expression",
-                node=self)
+                node=self,
+            )
 
         super(For, self).validate(validator)
 
     def __str__(self):  # pragma: no cover
         children = str(self.children)
-        return ', '.join([("(%s in %s)" % tuple(self.parts)), children])
+        return ", ".join([("(%s in %s)" % tuple(self.parts)), children])
 
 
 class Define(ContainerNode):
@@ -257,7 +260,7 @@ class Define(ContainerNode):
         self.funcspec = funcspec
 
     def __str__(self):  # pragma: no cover
-        return ', '.join([self.funcspec, str(self.children)])
+        return ", ".join([self.funcspec, str(self.children)])
 
 
 class Import(BaseNode):
@@ -268,7 +271,7 @@ class Import(BaseNode):
         self.alias = alias
 
     def __str__(self):  # pragma: no cover
-        return ', '.join([self.href, self.alias])
+        return ", ".join([self.href, self.alias])
 
 
 class If(ContainerNode):
@@ -279,7 +282,7 @@ class If(ContainerNode):
 
     def __str__(self):  # pragma: no cover
         children = str(self.children)
-        return ', '.join([("(%s)" % self.expression), children])
+        return ", ".join([("(%s)" % self.expression), children])
 
 
 class Unless(ContainerNode):
@@ -290,7 +293,7 @@ class Unless(ContainerNode):
 
     def __str__(self):  # pragma: no cover
         children = str(self.children)
-        return ', '.join([("(%s)" % self.expression), children])
+        return ", ".join([("(%s)" % self.expression), children])
 
 
 class Block(ContainerNode):
@@ -321,7 +324,7 @@ class Extends(ContainerNode):
 
     def __str__(self):  # pragma: no cover
         children = str(self.children)
-        return ', '.join([("(%s)" % self.expression), children])
+        return ", ".join([("(%s)" % self.expression), children])
 
     def add_child(self, child):
         """
@@ -343,14 +346,15 @@ class Extends(ContainerNode):
         for child in self.children:
             if isinstance(child, Text):
                 validator.syntax_error(
-                    "No Text allowed within an Extends block", node=child)
+                    "No Text allowed within an Extends block", node=child
+                )
 
             if not isinstance(child, (Block, Define, Import)):
                 validator.syntax_error(
                     "Only nodes of type Block, Import or Define "
-                    "allowed within an Extends block, not %s" %
-                        child.__class__.__name__,
-                    child
+                    "allowed within an Extends block, not %s"
+                    % child.__class__.__name__,
+                    child,
                 )
 
         super(Extends, self).validate(validator)
@@ -370,13 +374,13 @@ class IRTree(object):
         return repr(self)
 
     def __repr__(self):
-        return 'IRTree(%r)' % self.root
+        return "IRTree(%r)" % self.root
 
     def __iter__(self):
         stack = deque()
         stack.append(self.root)
         while stack:
             item = stack.popleft()
-            if hasattr(item, 'children'):
+            if hasattr(item, "children"):
                 stack.extendleft(item.children or [])
             yield item

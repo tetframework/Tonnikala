@@ -10,8 +10,8 @@ class PythonExpression(InterpolatedExpression):
     pass
 
 
-identifier_match = re.compile(r'[^\d\W]\w*', re.UNICODE)
-expr_continuation = re.compile(r'[([]|(\.[^\d\W]\w*)', re.UNICODE)
+identifier_match = re.compile(r"[^\d\W]\w*", re.UNICODE)
+expr_continuation = re.compile(r"[([]|(\.[^\d\W]\w*)", re.UNICODE)
 
 
 class TokenReadLine(object):
@@ -20,7 +20,7 @@ class TokenReadLine(object):
         self.pos = pos
         self.io = StringIO(string)
         self.io.seek(pos)
-        self.last_line = ''
+        self.last_line = ""
 
     def readline(self):
         for l in self.io:
@@ -60,8 +60,8 @@ def gen_tokens(text, pos):
 
 
 braces = {
-    '(': ')',
-    '[': ']',
+    "(": ")",
+    "[": "]",
 }
 
 
@@ -71,14 +71,14 @@ def parse_brace_enclosed_expression(text, start_pos, position):
 
     tokens = gen_tokens(text, start_pos + 2)
     for t_type, content, end_pos in tokens:
-        if content == '}':
+        if content == "}":
             if n_braces <= 0:
                 valid = True
                 break
 
             n_braces -= 1
 
-        elif content == '{':
+        elif content == "{":
             n_braces += 1
 
     if not valid:
@@ -86,8 +86,7 @@ def parse_brace_enclosed_expression(text, start_pos, position):
         s = text[pos:]
         raise TemplateSyntaxError("Unclosed braced Python expression", node=s)
 
-    return PythonExpression(text[start_pos:end_pos],
-                            text[start_pos + 2: end_pos - 1])
+    return PythonExpression(text[start_pos:end_pos], text[start_pos + 2 : end_pos - 1])
 
 
 def parse_unenclosed_expression(text, start_pos, position):
@@ -114,7 +113,8 @@ def parse_unenclosed_expression(text, start_pos, position):
                 if braces[last] != content:
                     raise TemplateSyntaxError(
                         "Syntax error parsing interpolated expression",
-                        node=text[end_pos - 1:])
+                        node=text[end_pos - 1 :],
+                    )
 
                 if not pars:
                     pos = end_pos
@@ -122,15 +122,15 @@ def parse_unenclosed_expression(text, start_pos, position):
 
             elif token.ISEOF(t_type) or t_type == token.ERRORTOKEN:
                 raise TemplateSyntaxError(
-                    "Syntax error parsing interpolated expression",
-                    node=text[end_pos:])
+                    "Syntax error parsing interpolated expression", node=text[end_pos:]
+                )
 
-    expr = text[start_pos + 1:pos]
-    return PythonExpression('$' + expr, expr)
+    expr = text[start_pos + 1 : pos]
+    return PythonExpression("$" + expr, expr)
 
 
 def parse_expression(text, start_pos=0, position=(0, 0)):
-    if text[start_pos + 1] != '{':
+    if text[start_pos + 1] != "{":
         return parse_unenclosed_expression(text, start_pos, position)
 
     return parse_brace_enclosed_expression(text, start_pos, position)

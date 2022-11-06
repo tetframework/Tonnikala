@@ -9,6 +9,7 @@ from tonnikala.languages.python.generator import Generator as PythonGenerator
 from tonnikala.languages.javascript.generator import Generator as JavascriptGenerator
 from tonnikala.loader import Loader
 
+
 class TestExpressions(unittest.TestCase):
     def test_python_expression(self):
         content = repr(expr.handle_text_node('${a\n+\n"}"}'))
@@ -20,20 +21,33 @@ class TestExpressions(unittest.TestCase):
 
     def test_javascript_expression(self):
         # a divide operator
-        content = repr(expr.handle_text_node('a ${1 / 0} /} }',
-            expr_parser=javascript.parse_expression))
+        content = repr(
+            expr.handle_text_node(
+                "a ${1 / 0} /} }", expr_parser=javascript.parse_expression
+            )
+        )
 
-        self.assertEqual(content,
-            'DynamicText([Text(a ), JavascriptExpression(1 / 0), Text( /} })])')
+        self.assertEqual(
+            content, "DynamicText([Text(a ), JavascriptExpression(1 / 0), Text( /} })])"
+        )
 
         # a regexp literal
-        content = repr(expr.handle_text_node('a ${1 + / 0} /} }',
-            expr_parser=javascript.parse_expression))
+        content = repr(
+            expr.handle_text_node(
+                "a ${1 + / 0} /} }", expr_parser=javascript.parse_expression
+            )
+        )
 
-        self.assertEqual(content,
-            'DynamicText([Text(a ), JavascriptExpression(1 + / 0} /), Text( })])')
+        self.assertEqual(
+            content,
+            "DynamicText([Text(a ), JavascriptExpression(1 + / 0} /), Text( })])",
+        )
 
-        content = repr(expr.handle_text_node('foo$a.baz["bar]"].xyz("ham)"))...',
-                       expr_parser=javascript.parse_expression))
+        content = repr(
+            expr.handle_text_node(
+                'foo$a.baz["bar]"].xyz("ham)"))...',
+                expr_parser=javascript.parse_expression,
+            )
+        )
         expected = 'DynamicText([Text(foo), JavascriptExpression(a.baz["bar]"].xyz("ham)")), Text()...)])'
         self.assertEqual(content, expected)

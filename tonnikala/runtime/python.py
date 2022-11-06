@@ -22,12 +22,12 @@ class _TKPythonBufferImpl(object):
         def output_boolean_attr(name, value):
             t = type(value)
             if t in (bool, NoneType):
-                value and do_output(' ' + name + '="' + name + '"')
+                value and do_output(" " + name + '="' + name + '"')
 
                 # skip on false, None
                 return
 
-            do_output(' ' + name + '="')
+            do_output(" " + name + '="')
             do_output(escape(value))
             do_output('"')
 
@@ -40,7 +40,7 @@ class _TKPythonBufferImpl(object):
         return self
 
     def join(self):
-        return ''.join(self._buffer)
+        return "".join(self._buffer)
 
     __str__ = join
 
@@ -58,7 +58,7 @@ del _set_escape_method
 
 def output_attrs(values):
     if not values:
-        return ''
+        return ""
 
     if not isinstance(values, Mapping):
         values = iter(values)
@@ -81,8 +81,9 @@ def bind(context, block=False):
     """
 
     if block:
+
         def decorate(func):
-            name = func.__name__.replace('__TK__block__', '')
+            name = func.__name__.replace("__TK__block__", "")
             if name not in context:
                 context[name] = func
             return context[name]

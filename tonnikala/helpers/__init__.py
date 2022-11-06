@@ -2,11 +2,13 @@ str = str
 
 
 def escape(string):
-    return (string.replace('&', '&amp;')
-            .replace('<', '&lt;')
-            .replace('>', '&gt;')
-            .replace('"', '&#34;')
-            .replace("'", '&#39;'))
+    return (
+        string.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&#34;")
+        .replace("'", "&#39;")
+    )
 
 
 def internalcode(f):
@@ -39,8 +41,8 @@ def calculate_position(source, offset, start=None):
         start = (1, 0)
 
     fragment = source[:offset]
-    lines = fragment.count('\n')
-    column_offset = offset - fragment.rfind('\n') if lines else offset
+    lines = fragment.count("\n")
+    column_offset = offset - fragment.rfind("\n") if lines else offset
 
     if lines:
         pos = start[0] + lines, column_offset
@@ -56,7 +58,7 @@ internal_code = set()
 def is_nonstr_iter(v):
     if isinstance(v, str):
         return False
-    return hasattr(v, '__iter__')
+    return hasattr(v, "__iter__")
 
 
 def reraise(tp, value, tb=None):  # pragma: no cover

@@ -5,14 +5,15 @@ class TemplateError(Exception):
 class TemplateSyntaxError(TemplateError):
     """Raised to tell the user that there is a problem with the template."""
 
-    def __init__(self, message, lineno=None, name=None,
-                 source=None, filename=None, node=None):
+    def __init__(
+        self, message, lineno=None, name=None, source=None, filename=None, node=None
+    ):
         TemplateError.__init__(self, message)
         self.message = message
 
         self.lineno = lineno
         if lineno is None and node is not None:
-            self.lineno = getattr(node, 'position', (1, 0))[0]
+            self.lineno = getattr(node, "position", (1, 0))[0]
 
         self.name = name
         self.filename = filename
@@ -28,12 +29,12 @@ class TemplateSyntaxError(TemplateError):
             return self.message
 
         # otherwise attach some stuff
-        location = 'line %d' % self.lineno
+        location = "line %d" % self.lineno
         name = self.filename or self.name
 
         if name:
             location = 'File "%s", %s' % (name, location)
-        lines = [self.message, '  ' + location]
+        lines = [self.message, "  " + location]
 
         # if the source is set, add the line to the output
         if self.source is not None:
@@ -42,6 +43,6 @@ class TemplateSyntaxError(TemplateError):
             except IndexError:
                 line = None
             if line:
-                lines.append('    ' + line.strip())
+                lines.append("    " + line.strip())
 
-        return u'\n'.join(lines)
+        return u"\n".join(lines)

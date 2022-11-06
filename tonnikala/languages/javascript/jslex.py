@@ -40,8 +40,7 @@ class Lexer(object):
                 groupid = "t%d" % tok.id
                 self.toks[groupid] = tok
                 parts.append("(?P<%s>%s)" % (groupid, tok.regex))
-            self.regexes[state] = re.compile("|".join(parts),
-                                             re.MULTILINE | re.VERBOSE)
+            self.regexes[state] = re.compile("|".join(parts), re.MULTILINE | re.VERBOSE)
 
         self.state = first
 
@@ -99,21 +98,34 @@ class JsLexer(Lexer):
         Tok("comment", r"/\*(.|\n)*?\*/"),
         Tok("linecomment", r"//.*?$"),
         Tok("ws", r"\s+"),
-        Tok("keyword", literals("""
+        Tok(
+            "keyword",
+            literals(
+                """
                                 break case catch class const continue debugger
                                 default delete do else enum export extends
                                 finally for function if import in instanceof new
                                 return super switch this throw try typeof var
                                 void while with
-                                """, suffix=r"\b"), next='reg'),
-        Tok("reserved", literals("null true false", suffix=r"\b"), next='div'),
-        Tok("id", r"""
+                                """,
+                suffix=r"\b",
+            ),
+            next="reg",
+        ),
+        Tok("reserved", literals("null true false", suffix=r"\b"), next="div"),
+        Tok(
+            "id",
+            r"""
                             ([a-zA-Z_$   ]|\\u[0-9a-fA-Z]{4})       # first char
                             ([a-zA-Z_$0-9]|\\u[0-9a-fA-F]{4})*      # rest chars
-                            """, next='div'),
-        Tok("hnum", r"0[xX][0-9a-fA-F]+", next='div'),
+                            """,
+            next="div",
+        ),
+        Tok("hnum", r"0[xX][0-9a-fA-F]+", next="div"),
         Tok("onum", r"0[0-7]+"),
-        Tok("dnum", r"""
+        Tok(
+            "dnum",
+            r"""
                             (   (0|[1-9][0-9]*)         # DecimalIntegerLiteral
                                 \.                      # dot
                                 [0-9]*                  # DecimalDigits-opt
@@ -126,16 +138,23 @@ class JsLexer(Lexer):
                                 (0|[1-9][0-9]*)         # DecimalIntegerLiteral
                                 ([eE][-+]?[0-9]+)?      # ExponentPart-opt
                             )
-                            """, next='div'),
-        Tok("punct", literals("""
+                            """,
+            next="div",
+        ),
+        Tok(
+            "punct",
+            literals(
+                """
                                 >>>= === !== >>> <<= >>= <= >= == != << >> &&
                                 || += -= *= %= &= |= ^=
-                                """), next="reg"),
-        Tok("punct", literals("++ -- ) ]"), next='div'),
-        Tok("punct", literals("{ } ( [ . ; , < > + - * % & | ^ ! ~ ? : ="),
-            next='reg'),
-        Tok("string", r'"([^"\\]|(\\(.|\n)))*?"', next='div'),
-        Tok("string", r"'([^'\\]|(\\(.|\n)))*?'", next='div'),
+                                """
+            ),
+            next="reg",
+        ),
+        Tok("punct", literals("++ -- ) ]"), next="div"),
+        Tok("punct", literals("{ } ( [ . ; , < > + - * % & | ^ ! ~ ? : ="), next="reg"),
+        Tok("string", r'"([^"\\]|(\\(.|\n)))*?"', next="div"),
+        Tok("string", r"'([^'\\]|(\\(.|\n)))*?'", next="div"),
     ]
 
     both_after = [
@@ -143,15 +162,16 @@ class JsLexer(Lexer):
     ]
 
     states = {
-        'div':  # slash will mean division
-            both_before + [
-                Tok("punct", literals("/= /"), next='reg'),
-            ] + both_after,
-
-        'reg':  # slash will mean regex
-            both_before + [
-                Tok("regex",
-                    r"""
+        "div": both_before  # slash will mean division
+        + [
+            Tok("punct", literals("/= /"), next="reg"),
+        ]
+        + both_after,
+        "reg": both_before  # slash will mean regex
+        + [
+            Tok(
+                "regex",
+                r"""
                         /                       # opening slash
                         # First character is..
                         (   [^*\\/[]            # anything but * \ / or [
@@ -174,9 +194,12 @@ class JsLexer(Lexer):
                         )*                      # many times
                         /                       # closing slash
                         [a-zA-Z0-9]*            # trailing flags
-                    """, next='div'),
-            ] + both_after,
+                    """,
+                next="div",
+            ),
+        ]
+        + both_after,
     }
 
     def __init__(self):
-        super(JsLexer, self).__init__(self.states, 'reg')
+        super(JsLexer, self).__init__(self.states, "reg")

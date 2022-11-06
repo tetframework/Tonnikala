@@ -5,7 +5,7 @@ from tonnikala.ir.nodes import Text, DynamicText, TranslatableText
 from tonnikala.languages import python
 
 
-_dollar_strip_re = re.compile(r'\$[a-zA-Z_{$]')
+_dollar_strip_re = re.compile(r"\$[a-zA-Z_{$]")
 
 
 class HasExprException(Exception):
@@ -22,26 +22,32 @@ def _strip_dollars_fast(text):
     """
 
     def _sub(m):
-        if m.group(0) == '$$':
-            return '$'
+        if m.group(0) == "$$":
+            return "$"
 
         raise HasExprException()
 
     return _dollar_strip_re.sub(_sub, text)
 
 
-_expr_find_code = re.compile(r"""
+_expr_find_code = re.compile(
+    r"""
   ([^$]+)        # match any chars except \n or $ (group 1)
 | (\$\$)         # match double dollars (group 2)
 | (\$[{a-zA-Z_]) # match beginning of expressions (group 3)
 | (\$)
-""", re.VERBOSE | re.DOTALL)
+""",
+    re.VERBOSE | re.DOTALL,
+)
 
-_strip_ws_re = re.compile(r"""
+_strip_ws_re = re.compile(
+    r"""
     (\s*)
     (.*?)
     (\s*)$
-""", re.VERBOSE | re.DOTALL)
+""",
+    re.VERBOSE | re.DOTALL,
+)
 
 
 def partition_translatable_text(text):
@@ -77,13 +83,16 @@ def create_text_nodes(text, is_cdata=False, translatable=False):
     return node
 
 
-def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False,
-                     translatable=False,
-                     whole_translatable=False):
+def handle_text_node(
+    text,
+    expr_parser=python.parse_expression,
+    is_cdata=False,
+    translatable=False,
+    whole_translatable=False,
+):
     try:
         text = _strip_dollars_fast(text)
-        return create_text_nodes(text, is_cdata=is_cdata,
-                                 translatable=translatable)
+        return create_text_nodes(text, is_cdata=is_cdata, translatable=translatable)
 
     except HasExprException:
         pass
@@ -101,12 +110,13 @@ def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False,
             string_run.append(m.group(1))
 
         elif m.group(2):  # $$
-            string_run.append('$')
+            string_run.append("$")
 
         elif m.group(3):
             if string_run:
-                nodes.append(create_text_nodes(''.join(string_run),
-                                               translatable=translatable))
+                nodes.append(
+                    create_text_nodes("".join(string_run), translatable=translatable)
+                )
 
             string_run = []
             expr = expr_parser(text, m.start(3))
@@ -114,11 +124,10 @@ def handle_text_node(text, expr_parser=python.parse_expression, is_cdata=False,
             nodes.append(expr)
 
         else:  # group 4, a sole $
-            string_run.append('$')
+            string_run.append("$")
 
     if string_run:
-        nodes.append(
-            create_text_nodes(''.join(string_run), translatable=translatable))
+        nodes.append(create_text_nodes("".join(string_run), translatable=translatable))
 
     if len(nodes) == 1:
         return nodes[0]

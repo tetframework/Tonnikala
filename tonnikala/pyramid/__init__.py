@@ -33,9 +33,9 @@ class PyramidTonnikalaLoader(tonnikala.loader.FileLoader):
         Resolve the name using the given search paths.
         """
 
-        if ':' in name:
+        if ":" in name:
             try:
-                module, path = name.split(':', 1)
+                module, path = name.split(":", 1)
                 name = pkg_resources.resource_filename(module, path)
                 if name and os.path.exists(name):
                     return name
@@ -64,7 +64,7 @@ class TonnikalaTemplateRenderer(object):
         return self
 
     def __call__(self, value, system, fragment=False):
-        """ ``value`` is the result of the view.
+        """``value`` is the result of the view.
         Returns a result (a string or unicode object useful as a
         response body). Values computed by the system are passed in the
         ``system`` parameter, which is a dictionary containing:
@@ -75,14 +75,15 @@ class TonnikalaTemplateRenderer(object):
         * ``request`` (the request object passed to the view).
         """
 
-        name = system['renderer_name']
+        name = system["renderer_name"]
         compiled = self.loader.load(name)
 
         try:
             system.update(value)
         except (TypeError, ValueError):
-            raise ValueError('TonnikalaTemplateRenderer was passed a '
-                             'non-dictionary as value.')
+            raise ValueError(
+                "TonnikalaTemplateRenderer was passed a " "non-dictionary as value."
+            )
 
         finalize = str
         if fragment:
@@ -91,7 +92,7 @@ class TonnikalaTemplateRenderer(object):
         return finalize(compiled.render(system))
 
     def fragment(self, tmpl, value, system):
-        system['renderer_name'] = tmpl
+        system["renderer_name"] = tmpl
         return self(value, system, fragment=True)
 
 
@@ -115,22 +116,22 @@ class TonnikalaRendererFactory(object):
 
 def add_tonnikala_extensions(config, *extensions):
     for extension in extensions:
-        if not extension.startswith('.'):
-            extension = '.' + extension
+        if not extension.startswith("."):
+            extension = "." + extension
 
-        config.add_renderer(extension,
-                            config.registry.tonnikala_renderer_factory)
+        config.add_renderer(extension, config.registry.tonnikala_renderer_factory)
 
 
 def add_tonnikala_search_paths(config, *paths):
     for path in paths:
-        module_name, dummy, base_dir = path.partition(':')
+        module_name, dummy, base_dir = path.partition(":")
         if not base_dir:
             base_dir = module_name
             module_name = None
 
-        config.registry.tonnikala_renderer_factory.add_search_path(module_name,
-                                                                   base_dir)
+        config.registry.tonnikala_renderer_factory.add_search_path(
+            module_name, base_dir
+        )
 
 
 def set_tonnikala_reload(config, flag):
@@ -152,38 +153,37 @@ def set_tonnikala_l10n(config, flag):
 
 
 def includeme(config):
-    if hasattr(config.registry, 'tonnikala_renderer_factory'):
+    if hasattr(config.registry, "tonnikala_renderer_factory"):
         return
 
     config.registry.tonnikala_renderer_factory = TonnikalaRendererFactory()
 
-    config.add_directive('add_tonnikala_extensions', add_tonnikala_extensions)
-    config.add_directive('add_tonnikala_search_paths',
-                         add_tonnikala_search_paths)
-    config.add_directive('set_tonnikala_reload', set_tonnikala_reload)
-    config.add_directive('set_tonnikala_l10n', set_tonnikala_l10n)
+    config.add_directive("add_tonnikala_extensions", add_tonnikala_extensions)
+    config.add_directive("add_tonnikala_search_paths", add_tonnikala_search_paths)
+    config.add_directive("set_tonnikala_reload", set_tonnikala_reload)
+    config.add_directive("set_tonnikala_l10n", set_tonnikala_l10n)
 
     settings = config.registry.settings
 
-    if 'tonnikala.extensions' in settings:
-        extensions = settings['tonnikala.extensions']
+    if "tonnikala.extensions" in settings:
+        extensions = settings["tonnikala.extensions"]
         if not is_nonstr_iter(extensions):
             extensions = aslist(extensions, flatten=True)
 
         config.add_tonnikala_extensions(*extensions)
 
-    if 'tonnikala.search_paths' in settings:
-        paths = settings['tonnikala.search_paths']
+    if "tonnikala.search_paths" in settings:
+        paths = settings["tonnikala.search_paths"]
         if not is_nonstr_iter(paths):
             paths = aslist(paths, flatten=True)
 
         config.add_tonnikala_search_paths(*paths)
 
-    tk_reload = settings.get('tonnikala.reload')
+    tk_reload = settings.get("tonnikala.reload")
     if tk_reload is None:
-        tk_reload = settings.get('pyramid.reload_templates')
+        tk_reload = settings.get("pyramid.reload_templates")
 
     config.set_tonnikala_reload(asbool(tk_reload))
 
-    l10n = asbool(settings.get('tonnikala.l10n'))
+    l10n = asbool(settings.get("tonnikala.l10n"))
     config.set_tonnikala_l10n(l10n)

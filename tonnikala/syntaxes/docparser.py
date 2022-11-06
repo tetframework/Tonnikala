@@ -10,11 +10,11 @@ from xml.dom import minidom as dom
 from ..helpers import StringWithLocation
 from ..runtime.exceptions import TemplateSyntaxError
 
-impl = dom.getDOMImplementation(' ')
+impl = dom.getDOMImplementation(" ")
 
 html_parser_extra_kw = {}
 if sys.version_info >= (3, 4):
-    html_parser_extra_kw['convert_charrefs'] = False
+    html_parser_extra_kw["convert_charrefs"] = False
 
 
 class TonnikalaXMLParser(sax.ContentHandler):
@@ -52,7 +52,7 @@ class TonnikalaXMLParser(sax.ContentHandler):
 
     def _checkAndClearChrs(self):
         if self._characters:
-            node = self.doc.createTextNode(''.join(self._characters[1]))
+            node = self.doc.createTextNode("".join(self._characters[1]))
             node.lineno = self._characters[0]
             self.elements[-1].appendChild(node)
 
@@ -94,22 +94,22 @@ class TonnikalaXMLParser(sax.ContentHandler):
         return self.characters(str(content))
 
     def startElementNS(self, name, qname, attrs):  # pragma no cover
-        raise NotImplementedError('startElementNS')
+        raise NotImplementedError("startElementNS")
 
     def endElementNS(self, name, qname):  # pragma no cover
-        raise NotImplementedError('startElementNS')
+        raise NotImplementedError("startElementNS")
 
     def startPrefixMapping(self, prefix, uri):  # pragma no cover
-        raise NotImplementedError('startPrefixMapping')
+        raise NotImplementedError("startPrefixMapping")
 
     def endPrefixMapping(self, prefix):  # pragma no cover
-        raise NotImplementedError('endPrefixMapping')
+        raise NotImplementedError("endPrefixMapping")
 
     # LexicalHandler implementation
     def comment(self, text):
         self.flush_character_data()
 
-        if not text.strip().startswith('!'):
+        if not text.strip().startswith("!"):
             node = self.doc.createComment(text)
             node.lineno = self._parser.getLineNumber()
             self.elements[-1].appendChild(node)
@@ -127,12 +127,12 @@ class TonnikalaXMLParser(sax.ContentHandler):
         pass
 
 
-if hasattr(html_parser, 'attrfind_tolerant'):  # pragma: no cover
+if hasattr(html_parser, "attrfind_tolerant"):  # pragma: no cover
     attrfind = html_parser.attrfind_tolerant
 else:
     attrfind = html_parser.attrfind
 
-if hasattr(html_parser, 'tagfind_tolerant'):  # pragma: no cover
+if hasattr(html_parser, "tagfind_tolerant"):  # pragma: no cover
     tagfind = html_parser.tagfind_tolerant
 else:
     tagfind = html_parser.tagfind
@@ -140,9 +140,23 @@ else:
 
 # object to force a new-style class!
 class TonnikalaHTMLParser(html_parser.HTMLParser, object):
-    void_elements = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
-                     'keygen', 'link', 'meta', 'param', 'source', 'track',
-                     'wbr'}
+    void_elements = {
+        "area",
+        "base",
+        "br",
+        "col",
+        "embed",
+        "hr",
+        "img",
+        "input",
+        "keygen",
+        "link",
+        "meta",
+        "param",
+        "source",
+        "track",
+        "wbr",
+    }
 
     def __init__(self, filename, source):
         super(TonnikalaHTMLParser, self).__init__(**html_parser_extra_kw)
@@ -164,7 +178,7 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
 
     def flush_character_data(self):
         if self.characters:
-            text = ''.join(self.characters)
+            text = "".join(self.characters)
 
             if isinstance(self.elements[-1], dom.Document):
                 # Special case: just skip adding whitespace to document root,
@@ -172,7 +186,8 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
                 if len(text.strip()) > 0:
                     self.syntax_error(
                         "Text data outside of root element",
-                        lineno=self.characters_start[0])
+                        lineno=self.characters_start[0],
+                    )
 
                 else:
                     self.characters = None
@@ -205,8 +220,8 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         start = match.end()
         attr_pos = {}
 
-        lineoffset = source[:start].count('\n')
-        colpos = start - source[:start].rfind('\n') if lineoffset else start + 1
+        lineoffset = source[:start].count("\n")
+        colpos = start - source[:start].rfind("\n") if lineoffset else start + 1
 
         for m in attrfind.finditer(source, start, len(source) - 1):
             if not m.group(2):
@@ -217,9 +232,9 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
                 attrstart += 1
 
             advance = source[start:attrstart]
-            linedelta = advance.count('\n')
+            linedelta = advance.count("\n")
             if linedelta:
-                colpos = len(advance) - advance.rfind('\n')
+                colpos = len(advance) - advance.rfind("\n")
             else:
                 colpos += len(advance)
 
@@ -261,7 +276,8 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
 
         if name.lower() != popped.name.lower():
             self.syntax_error(
-                "Invalid end tag </%s> (expected </%s>)" % (name, popped.name))
+                "Invalid end tag </%s> (expected </%s>)" % (name, popped.name)
+            )
 
     def handle_startendtag(self, name, attrs):
         self.handle_starttag(name, attrs, self_closing=True)
@@ -280,7 +296,7 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
         # (python 2 split does not take keyword arguments :( )
         type_, data = data.split(None, 1)
 
-        if data.endswith('?'):
+        if data.endswith("?"):
             # XML syntax parsed as SGML, remove trailing '?'
             data = data[:-1]
 
@@ -293,7 +309,8 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
             message,
             lineno or self.getlineno(),
             source=self.source,
-            filename=self.filename)
+            filename=self.filename,
+        )
 
     def handle_entityref(self, name):
         # Encoding?
@@ -307,7 +324,7 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
     def handle_charref(self, code):
         # Encoding?
         try:
-            if code.startswith('x'):
+            if code.startswith("x"):
                 cp = int(code[1:], 16)
             else:
                 cp = int(code, 10)
@@ -321,7 +338,7 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
     def handle_comment(self, text):
         self.flush_character_data()
 
-        if not text.strip().startswith('!'):
+        if not text.strip().startswith("!"):
             node = self.doc.createComment(text)
             node.position = self.getpos()
             self.elements[-1].appendChild(node)

@@ -10,39 +10,39 @@ from tonnikala.loader import parsers
 class TonnikalaExtractor(Extractor):
     "Extract strings from tonnikala templates, defaulting to Python expressions"
 
-    extensions = ['.tk']
-    syntax = 'tonnikala'
+    extensions = [".tk"]
+    syntax = "tonnikala"
 
     def parse_python(self, node, filename, lineno, options):
         start_line = (node.position[0] or 1) + lineno
-        for message in _extract_python(
-            filename,
-            node.expression,
-            options,
-            start_line
-        ):
-            yield Message(*message[:6],
-                          location=(
-                              filename,
-                              lineno +
-                              message.location[1]))
+        for message in _extract_python(filename, node.expression, options, start_line):
+            yield Message(
+                *message[:6], location=(filename, lineno + message.location[1])
+            )
 
     def __call__(self, filename, options, fileobj=None, lineno=0):
         self.filename = filename
         if fileobj is None:
-            fileobj = io.open(filename, encoding='utf-8')
+            fileobj = io.open(filename, encoding="utf-8")
 
         parser_func = parsers.get(self.syntax)
         source = fileobj.read()
         if isinstance(source, bytes):
-            source = source.decode('UTF-8')
+            source = source.decode("UTF-8")
 
         tree = parser_func(filename, source, translatable=True)
 
         for node in tree:
             if isinstance(node, TranslatableText):
-                yield Message(None, node.text, None, [], u'', u'',
-                              (filename, lineno + (node.position[0] or 1)))
+                yield Message(
+                    None,
+                    node.text,
+                    None,
+                    [],
+                    u"",
+                    u"",
+                    (filename, lineno + (node.position[0] or 1)),
+                )
             elif isinstance(node, Expression):
                 for m in self.parse_python(node, filename, lineno, options):
                     yield m
@@ -70,15 +70,15 @@ def extract_tonnikala(fileobj, keywords, comment_tags, options):
     """
     extractor = TonnikalaExtractor()
     for msg in extractor(filename=None, fileobj=fileobj, options=Options()):
-        msgid = msg.msgid,
+        msgid = (msg.msgid,)
 
-        prefix = ''
+        prefix = ""
         if msg.msgid_plural:
             msgid = (msg.msgid_plural,) + msgid
-            prefix = 'n'
+            prefix = "n"
 
         if msg.msgctxt:
             msgid = (msg.msgctxt,) + msgid
-            prefix += 'p'
+            prefix += "p"
 
-        yield msg.location[1], prefix + 'gettext', msgid, msg.comment
+        yield msg.location[1], prefix + "gettext", msgid, msg.comment

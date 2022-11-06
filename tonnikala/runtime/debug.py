@@ -59,11 +59,12 @@ except ImportError:
 try:
     exec("raise TypeError, 'foo'")
 except SyntaxError:  # pragma: python3
-    raise_helper = '__tonnikala_exception__[1].__traceback__ = None; raise ' \
-                   '__tonnikala_exception__[1]'
+    raise_helper = (
+        "__tonnikala_exception__[1].__traceback__ = None; raise "
+        "__tonnikala_exception__[1]"
+    )
 except TypeError:  # pragma: python2
-    raise_helper = 'raise __tonnikala_exception__[0], ' \
-                   '__tonnikala_exception__[1]'
+    raise_helper = "raise __tonnikala_exception__[0], " "__tonnikala_exception__[1]"
 
 
 class TracebackFrameProxy(object):
@@ -91,7 +92,7 @@ class TracebackFrameProxy(object):
 
     @property
     def is_tonnikala_frame(self):
-        return '__tonnikala_template__' in self.tb.tb_frame.f_globals
+        return "__tonnikala_template__" in self.tb.tb_frame.f_globals
 
     def __getattr__(self, name):
         return getattr(self.tb, name)
@@ -103,9 +104,9 @@ def make_frame_proxy(frame):
         return proxy
 
     def operation_handler(operation, *args, **kwargs):
-        if operation in ('__getattribute__', '__getattr__'):
+        if operation in ("__getattribute__", "__getattr__"):
             return getattr(proxy, args[0])
-        elif operation == '__setattr__':
+        elif operation == "__setattr__":
             proxy.__setattr__(*args, **kwargs)
         else:
             return getattr(proxy, operation)(*args, **kwargs)
@@ -117,7 +118,7 @@ class ProcessedTraceback(object):
     """Holds a Tonnikala preprocessed traceback for printing or reraising."""
 
     def __init__(self, exc_type, exc_value, frames):
-        assert frames, 'no frames for this traceback?'
+        assert frames, "no frames for this traceback?"
         self.exc_type = exc_type
         self.exc_value = exc_value
         self.frames = frames
@@ -132,16 +133,18 @@ class ProcessedTraceback(object):
 
     def render_as_text(self, limit=None):
         """Return a string with the traceback."""
-        lines = traceback.format_exception(self.exc_type, self.exc_value,
-                                           self.frames[0], limit=limit)
-        return ''.join(lines).rstrip()
+        lines = traceback.format_exception(
+            self.exc_type, self.exc_value, self.frames[0], limit=limit
+        )
+        return "".join(lines).rstrip()
 
     def render_as_html(self, full=False):
         """Return a unicode string with the traceback as rendered HTML."""
         from jinja2.debugrenderer import render_traceback
-        return u'%s\n\n<!--\n%s\n-->' % (
+
+        return u"%s\n\n<!--\n%s\n-->" % (
             render_traceback(self, full=full),
-            self.render_as_text().decode('utf-8', 'replace')
+            self.render_as_text().decode("utf-8", "replace"),
         )
 
     @property
@@ -183,7 +186,7 @@ def translate_syntax_error(error, source=None):
     exc_info = (error.__class__, error, None)
     filename = error.filename
     if filename is None:
-        filename = '<unknown>'
+        filename = "<unknown>"
     return fake_exc_info(exc_info, filename, error.lineno)
 
 
@@ -213,11 +216,10 @@ def translate_exception(exc_info, initial_skip=0):
         next = tb.tb_next
 
         # fake template exceptions
-        template = tb.tb_frame.f_globals.get('__TK_template_info__')
+        template = tb.tb_frame.f_globals.get("__TK_template_info__")
         if template is not None:
             lineno = template.get_corresponding_lineno(tb.tb_lineno)
-            tb = fake_exc_info(exc_info[:2] + (tb,), template.filename,
-                               lineno)[2]
+            tb = fake_exc_info(exc_info[:2] + (tb,), template.filename, lineno)[2]
 
         frames.append(make_frame_proxy(tb))
         tb = next
@@ -231,10 +233,13 @@ def translate_exception(exc_info, initial_skip=0):
 
 
 if sys.version_info >= (3, 8):
+
     def code_with_custom_location(code, filename, location):
         return code.replace(co_filename=filename, co_name=location)
 
+
 else:
+
     def code_with_custom_location(code, filename, location):
         return CodeType(
             code.co_argcount,
@@ -251,7 +256,7 @@ else:
             code.co_firstlineno,
             code.co_lnotab,
             code.co_freevars,
-            code.co_cellvars
+            code.co_cellvars,
         )
 
 
@@ -264,42 +269,41 @@ def fake_exc_info(exc_info, filename, lineno):
         # if there is a local called __tonnikala_exception__, we get
         # rid of it to not break the debug functionality.
         locals = tb.tb_frame.f_locals.copy()
-        locals.pop('__tonnikala_exception__', None)
+        locals.pop("__tonnikala_exception__", None)
     else:
         locals = {}
 
     # assemble fake globals we need
     globals = {
-        '__name__':                        filename,
-        '__file__':                        filename,
-        '__tonnikala_exception__':         exc_info[:2],
-
+        "__name__": filename,
+        "__file__": filename,
+        "__tonnikala_exception__": exc_info[:2],
         # we don't want to keep the reference to the template around
         # to not cause circular dependencies, but we mark it as Tonnikala
         # frame for the ProcessedTraceback
-        '__TK_template_info__':            None
+        "__TK_template_info__": None,
     }
 
     # and fake the exception
     lineno = lineno or 0
-    code = compile('\n' * (lineno - 1) + raise_helper, filename, 'exec')
+    code = compile("\n" * (lineno - 1) + raise_helper, filename, "exec")
 
     # if it's possible, change the name of the code.  This won't work
     # on some python environments such as google appengine
     try:
         if tb is None:
-            location = 'template'
+            location = "template"
         else:
             function = tb.tb_frame.f_code.co_name
-            if function == '__main__':
-                location = 'top-level template code'
-            elif function.startswith('__TK__block__'):
+            if function == "__main__":
+                location = "top-level template code"
+            elif function.startswith("__TK__block__"):
                 location = 'block "%s"' % function[13:]
-            elif function.startswith('__TK__typed__'):
-                functype = function[13:].split('__')[0].replace('_', ' ')
+            elif function.startswith("__TK__typed__"):
+                functype = function[13:].split("__")[0].replace("_", " ")
                 location = functype
-            elif function.startswith('__TK_'):
-                location = 'template'
+            elif function.startswith("__TK_"):
+                location = "template"
             else:
                 location = 'def "%s"' % function
 
@@ -331,9 +335,9 @@ def _init_ugly_crap():
 
     _Py_ssize_t = ctypes.c_ssize_t
 
-    if hasattr(sys, 'getobjects'):  # pragma: no cover
+    if hasattr(sys, "getobjects"):  # pragma: no cover
         # cannot support this, as don't have access to it
-        raise Exception('traceback hacking not supported on tracing Python builds')
+        raise Exception("traceback hacking not supported on tracing Python builds")
 
     # this isn't the full structure definition but we don't need the rest anyway,
     # these are enough here. All struct pointers being compatible we use a wrong
@@ -342,16 +346,18 @@ def _init_ugly_crap():
         pass
 
     _Traceback._fields_ = [
-        ('ob_refcnt', _Py_ssize_t),
-        ('ob_type', ctypes.POINTER(_Traceback)),
-        ('tb_next', ctypes.POINTER(_Traceback)),
+        ("ob_refcnt", _Py_ssize_t),
+        ("ob_type", ctypes.POINTER(_Traceback)),
+        ("tb_next", ctypes.POINTER(_Traceback)),
     ]
 
     def tb_set_next(tb, next):
         """Set the tb_next attribute of a traceback object."""
-        if not (isinstance(tb, TracebackType) and
-                    (next is None or isinstance(next, TracebackType))):
-            raise TypeError('tb_set_next arguments must be traceback objects')
+        if not (
+            isinstance(tb, TracebackType)
+            and (next is None or isinstance(next, TracebackType))
+        ):
+            raise TypeError("tb_set_next arguments must be traceback objects")
         obj = _Traceback.from_address(id(tb))
         if tb.tb_next is not None:
             old = _Traceback.from_address(id(tb.tb_next))
@@ -368,11 +374,10 @@ def _init_ugly_crap():
 
 if sys.version_info >= (3, 7):
     # tb_next is directly assignable as of Python 3.7
-    def tb_set_next(
-        tb, tb_next
-    ) -> TracebackType:
+    def tb_set_next(tb, tb_next) -> TracebackType:
         tb.tb_next = tb_next
         return tb
+
 
 else:
     # try to get a tb_set_next implementation if we don't have transparent

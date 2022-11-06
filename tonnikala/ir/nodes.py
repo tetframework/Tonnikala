@@ -1,5 +1,5 @@
 from tonnikala.helpers import escape
-from collections import OrderedDict
+from collections import OrderedDict, deque
 import re
 
 
@@ -373,7 +373,7 @@ class IRTree(object):
         return 'IRTree(%r)' % self.root
 
     def __iter__(self):
-        stack = collections.deque()
+        stack = deque()
         stack.append(self.root)
         while stack:
             item = stack.popleft()

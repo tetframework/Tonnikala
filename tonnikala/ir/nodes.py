@@ -231,7 +231,7 @@ class Element(ContainerNode):
 
 
 class For(ContainerNode):
-    IN_RE = re.compile("\s+in\s+")
+    IN_RE = re.compile(r"\s+in\s+")
 
     def __init__(self, expression):
         super(For, self).__init__()

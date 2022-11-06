@@ -112,6 +112,7 @@ class ImportedTemplate(object):
             f"has no attribute {item!r}"
         )
 
+
 class TonnikalaRuntime(object):
     bind = staticmethod(bind)
     Buffer = staticmethod(Buffer)

@@ -1,7 +1,11 @@
 import json
 
 from slimit import ast
-from slimit.ast import *
+from slimit.ast import (
+    String, Identifier, ExprStatement, DotAccessor,
+    VarStatement, VarDecl, FunctionCall, Assign as JSAssign, UnaryOp, If, Block,
+    Return as JSReturn, FuncDecl
+)
 from slimit.parser import Parser
 from slimit.scope import SymbolTable
 from slimit.visitors.scopevisitor import (
@@ -9,8 +13,8 @@ from slimit.visitors.scopevisitor import (
     ScopeTreeVisitor,
     fill_scope_references,
 )
-from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 
+from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 from ...runtime.debug import TemplateSyntaxError
 
 
@@ -88,9 +92,6 @@ def SimpleCall(func, args=None):
     return FunctionCall(identifier=func, args=args)
 
 
-JSAssign = Assign
-
-
 def Assign(targets, value):
     if len(targets) != 1:
         raise TypeError("Only single assignments supported")
@@ -100,9 +101,6 @@ def Assign(targets, value):
 
 def AssignNewVariable(targets, value):
     return VarStatement([VarDecl(targets[0], value)])
-
-
-JSReturn = Return
 
 
 def Return(value=None):
@@ -173,18 +171,10 @@ def gen_name():
     return "__TK__%d__" % name_counter
 
 
-def static_eval(expr):
-    if isinstance(expr, UnaryOp) and isinstance(expr.op, Not):
-        return not static_eval(expr.operand)
-
-    return literal_eval(expr)
-
-
 def static_expr_to_bool(expr):
-    try:
-        return bool(static_eval(expr))
-    except:
-        return None
+    # currently not supported at all
+    # TODO: implement
+    return None
 
 
 class JavascriptNode(LanguageNode):
@@ -227,9 +217,6 @@ class JavascriptNode(LanguageNode):
 
         else:
             new_body.extend(body)
-
-        if not new_body:
-            new_body.append(Pass())
 
         return func
 
@@ -300,26 +287,26 @@ class JsCodeNode(JavascriptNode):
     def generate_ast(self, generator, parent):
         return get_fragment_ast(self.source, mode="exec")
 
-
-def coalesce_strings(args):
-    rv = []
-    str_on = None
-
-    for i in args:
-        if isinstance(i, Str):
-            if str_on:
-                str_on.s += i.s
-                continue
-
-            str_on = i
-
-        else:
-            str_on = None
-
-        rv.append(i)
-
-    return rv
-
+#
+# def coalesce_strings(args):
+#     rv = []
+#     str_on = None
+#
+#     for i in args:
+#         if isinstance(i, Str):
+#             if str_on:
+#                 str_on.s += i.s
+#                 continue
+#
+#             str_on = i
+#
+#         else:
+#             str_on = None
+#
+#         rv.append(i)
+#
+#     return rv
+#
 
 class JsComplexNode(ComplexNode, JavascriptNode):
     def generate_child_ast(self, generator, parent_for_children):

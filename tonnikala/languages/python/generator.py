@@ -73,18 +73,22 @@ def adjust_locations(ast_node, first_lineno, first_offset):
     line_delta = first_lineno - 1
 
     def _fix(node):
-        if "lineno" in node._attributes:
-            lineno = node.lineno
-            col = node.col_offset
+        for prefix in ['', 'end_']:
+            if prefix + 'lineno' in node._attributes:
+                lineno_attr = prefix + 'lineno'
+                col_offset_attr = prefix + 'col_offset'
 
-            # adjust the offset on the first line
-            if lineno == 1:
-                col += first_offset
+                lineno = getattr(node, lineno_attr)
+                col = getattr(node, col_offset_attr)
 
-            lineno += line_delta
+                # adjust the offset on the first line
+                if lineno == 1:
+                    col += first_offset
 
-            node.lineno = lineno
-            node.col_offset = col
+                lineno += line_delta
+
+                setattr(node, lineno_attr, lineno)
+                setattr(node, col_offset_attr, col)
 
         for child in iter_child_nodes(node):
             _fix(child)

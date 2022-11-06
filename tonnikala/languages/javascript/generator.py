@@ -1,22 +1,16 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import json
-import warnings
-from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
 
-from slimit.parser import Parser
 from slimit import ast
 from slimit.ast import *
-from collections.abc import Iterable
-from slimit.scope import SymbolTable
 from slimit.parser import Parser
+from slimit.scope import SymbolTable
 from slimit.visitors.scopevisitor import (
     Visitor,
     ScopeTreeVisitor,
     fill_scope_references,
-    mangle_scope_tree,
-    NameManglerVisitor,
 )
+from tonnikala.languages.base import LanguageNode, ComplexNode, BaseGenerator
+
 from ...runtime.debug import TemplateSyntaxError
 
 
@@ -345,10 +339,10 @@ class JsIfNode(JsComplexNode):
         test = get_fragment_ast(self.expression)
         boolean = static_expr_to_bool(test)
 
-        if boolean == False:
+        if boolean is False:
             return []
 
-        if boolean == True:
+        if boolean is True:
             return self.generate_child_ast(generator, parent)
 
         node = If(

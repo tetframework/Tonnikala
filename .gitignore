@@ -9,3 +9,6 @@ tests/js/tmp
 htmlcov
 nose2-junit.xml
 coverage.xml
+.cache
+.idea
+

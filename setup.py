@@ -111,7 +111,7 @@ features = dict(speedups=speedups)
 install_requires = [
     "markupsafe>=0.18",
     "slimit @ git+https://github.com/rspivak/slimit@3533eba9ad5b39f3a015ae6269670022ab310847#egg=slimit-0.8.1",
-    "ply>=3.11.0",
+    "ply>=3.4.0",
 ]
 
 

@@ -85,11 +85,11 @@ class TonnikalaTemplateRenderer(object):
                 "TonnikalaTemplateRenderer was passed a " "non-dictionary as value."
             )
 
-        compiled.render(system)
+        rendered = compiled.render(system)
         if not fragment:
-            compiled = str(compiled)
+            rendered = str(rendered)
 
-        return compiled
+        return rendered
 
     def fragment(self, tmpl, value, system):
         system["renderer_name"] = tmpl

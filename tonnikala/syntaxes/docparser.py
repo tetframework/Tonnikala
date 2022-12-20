@@ -45,7 +45,7 @@ class TonnikalaXMLParser(sax.ContentHandler):
         parser.parse(source)
         return self.doc
 
-    ## ContentHandler implementation
+    # ContentHandler implementation
     def startDocument(self):
         self.doc = dom.Document()
         self.elements.append(self.doc)

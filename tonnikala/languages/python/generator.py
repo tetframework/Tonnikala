@@ -486,7 +486,7 @@ class PyBlockNode(PyComplexNode):
         is_extended = isinstance(parent, PyExtendsNode)
 
         name = self.name
-        blockfunc_name = "__TK__block__%s" % name
+        blockfunc_name = f"__TK__block__{name}"
         position = getattr(name, "position", (1, 0))
         body = get_fragment_ast(
             StringWithLocation(
@@ -496,9 +496,6 @@ class PyBlockNode(PyComplexNode):
         )
         def_node = body[0]
         def_node.body = self.make_buffer_frame(self.generate_child_ast(generator, self))
-
-        if not isinstance(name, str):  # pragma: python2
-            name = name.encode("UTF-8")
 
         generator.add_block(str(name), def_node, blockfunc_name)
 

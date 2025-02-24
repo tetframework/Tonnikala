@@ -5,9 +5,6 @@ Tonnikala
    :alt: Join the chat at https://gitter.im/tetframework/Tonnikala
    :target: https://gitter.im/tetframework/Tonnikala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
-.. image:: https://next.travis-ci.org/tetframework/Tonnikala.svg?branch=master
-   :target: https://next.travis-ci.org/tetframework/Tonnikala
-
 .. image:: https://coveralls.io/repos/github/tetframework/Tonnikala/badge.svg?branch=master
    :target: https://coveralls.io/github/tetframework/Tonnikala?branch=master 
 

@@ -7,7 +7,26 @@ http://docs.pylonshq.com/
 """
 
 import os
-import pkg_resources
+try:
+    import pkg_resources
+
+    def resource_filepath(module, path):
+        return pkg_resources.resource_filename(module, path)
+except ImportError as e:
+    import importlib.resources
+    import pathlib
+
+    _PATHLIB_CLASS = pathlib.Path().__class__
+
+    def resource_filepath(module, path):
+        path = importlib.resources.files(module).joinpath(path)
+        if not isinstance(path, _PATHLIB_CLASS):
+            raise FileNotFoundError(
+                f"Tonnikala is unable to resolve {module}:{path} as a file, might be zipped?"
+            )
+
+        return str(path)
+
 from ..helpers import is_nonstr_iter
 from pyramid.settings import asbool, aslist
 
@@ -36,7 +55,7 @@ class PyramidTonnikalaLoader(tonnikala.loader.FileLoader):
         if ":" in name:
             try:
                 module, path = name.split(":", 1)
-                name = pkg_resources.resource_filename(module, path)
+                name = resource_filepath(module, path)
                 if name and os.path.exists(name):
                     return name
 
@@ -46,7 +65,7 @@ class PyramidTonnikalaLoader(tonnikala.loader.FileLoader):
         for module, directory in self.search_paths:
             path = os.path.join(directory, name)
             if module:
-                path = pkg_resources.resource_filename(module, path)
+                path = resource_filepath(module, path)
 
             if os.path.exists(path):
                 return path

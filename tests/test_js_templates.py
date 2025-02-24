@@ -1,8 +1,19 @@
 import json
 import subprocess
 import unittest
-import pkg_resources
-from distutils.spawn import find_executable
+
+
+try:
+    import pkg_resources
+
+    runtime_code = pkg_resources.resource_string("tonnikala.runtime", "javascript.js")
+except ImportError as e:
+    import importlib.resources
+
+    runtime_code = importlib.resources.files("tonnikala.runtime")\
+        .joinpath("javascript.js").read_binary()
+
+from shutil import which
 
 import os.path
 import os.path
@@ -14,7 +25,7 @@ js_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "js")
 output_dir = os.path.join(js_dir, "tmp")
 js_driver = os.path.join(js_dir, "runner.js")
 
-node_exe = find_executable("nodejs") or find_executable("node")
+node_exe = which("nodejs") or which("node")
 
 
 def compile_js_template(contents, target_filename):
@@ -23,7 +34,6 @@ def compile_js_template(contents, target_filename):
         os.makedirs(tonnikala_module_dir)
 
     # ensure that the runtime is properly in path.
-    runtime_code = pkg_resources.resource_string("tonnikala.runtime", "javascript.js")
     with open(os.path.join(tonnikala_module_dir, "runtime.js"), "wb") as f:
         f.write(runtime_code)
 

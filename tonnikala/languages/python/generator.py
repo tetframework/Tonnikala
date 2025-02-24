@@ -3,8 +3,31 @@ import sys
 from ast import (
     Call, FunctionDef, Pass, UnaryOp, iter_child_nodes, literal_eval,
     NodeVisitor, If, Expr, Assign, Attribute,
-    Str, Name, Load, Store, Not, arg, Raise, Return
+    Name, Load, Store, Not, arg, Raise, Return
 )
+
+try:
+    from ast import Constant
+
+    def Str(s):
+        return Constant(value=s)
+
+    def is_str_node(node):
+        return isinstance(node, Constant) and isinstance(node.value, str)
+
+    def catenate_str_node(node1, node2):
+        node1.value += node2.value
+
+except:
+    from ast import Str
+
+    def is_str_node(node):
+        return isinstance(node, Str)
+
+    def catenate_str_node(node1, node2):
+        node1.s += node2.s
+
+
 from collections.abc import Iterable
 
 from .astalyzer import FreeVarFinder
@@ -277,9 +300,9 @@ def coalesce_strings(args):
     str_on = None
 
     for i in args:
-        if isinstance(i, Str):
+        if is_str_node(i):
             if str_on:
-                str_on.s += i.s
+                catenate_str_node(str_on, i)
                 continue
 
             str_on = i

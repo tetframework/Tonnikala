@@ -36,28 +36,31 @@ jobs:
           python -m pip freeze
           if [[ "${{ matrix.python-version }}" == "3.14-dev" ]]; then
             echo "Running with debugging for Python 3.14-dev"
-            echo "System info:"
-            uname -a
-            ldd --version
-            echo "libc version:"
-            ldd $(which python) | grep libc
-            ls -la /lib/x86_64-linux-gnu/libc.so.6 2>/dev/null || echo "libc not found in expected location"
-            echo "gdb version:"
-            gdb --version | head -1 || echo "gdb not available"
+            echo "Python version info:"
+            python -c "import sys; print(sys.version)"
+            echo "Testing basic imports first..."
+            python -c "import tonnikala; print('Basic tonnikala import: OK')" || echo "Basic import failed"
+            echo "Testing C extension import..."
+            python -c "from tonnikala.runtime._buffer import Buffer; print('C extension: OK')" || echo "C extension failed"
+            echo "Testing JavaScript loader..."
+            python -c "from tonnikala.loader import JSLoader; print('JSLoader import: OK')" || echo "JSLoader import failed"
+            echo "Running single test to isolate issue..."
             ulimit -c unlimited
-            python -X dev -m pytest -v --tb=long || {
-              echo "Test failed, checking for core dumps..."
-              if ls core* 2>/dev/null; then
-                echo "Core dump found, analyzing with gdb (with symbols):"
-                gdb -batch -ex "set logging on" -ex "bt full" -ex "info registers" -ex "x/20i \$pc-40" -ex "quit" python core* 2>/dev/null || echo "gdb analysis failed"
-              else
-                echo "No core dumps found"
+            echo "Core pattern:"
+            cat /proc/sys/kernel/core_pattern || echo "Cannot read core pattern"
+            echo "Running pytest with minimal output first..."
+            timeout 60 python -m pytest tests/ -x -v --tb=short || {
+              exit_code=$?
+              echo "Exit code: $exit_code"
+              if [ $exit_code -eq 124 ]; then
+                echo "Test timed out after 60 seconds"
+              elif [ $exit_code -eq 139 ]; then
+                echo "Segmentation fault detected"
               fi
-              echo "Python version info:"
-              python -c "import sys; print(sys.version)"
-              echo "C extension info:"
-              python -c "try: from tonnikala.runtime._buffer import Buffer; print('C extension loaded successfully')
-              except Exception as e: print(f'C extension failed: {e}')"
+              echo "Checking for core dumps in current directory..."
+              ls -la core* /var/lib/systemd/coredump/core* 2>/dev/null || echo "No core dumps found"
+              echo "Checking dmesg for segfault info..."
+              dmesg | tail -20 | grep -i "segfault\|killed\|signal" || echo "No segfault info in dmesg"
               exit 1
             }
           else

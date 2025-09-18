@@ -33,7 +33,7 @@ try:
     def catenate_str_node(node1, node2):
         node1.value += node2.value
 
-except:
+except ImportError:
     from ast import Str
 
     def is_str_node(node):
@@ -488,7 +488,6 @@ class PyDefineNode(PyComplexNode):
             "exec",
         )
         def_node = body[0]
-        name = self.funcspec.partition("(")[0]
         def_node.body = self.make_buffer_frame(self.generate_child_ast(generator, self))
 
         # move the function out of the closure

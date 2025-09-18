@@ -201,7 +201,6 @@ def translate_exception(exc_info, initial_skip=0):
     for x in range(initial_skip):
         if tb is not None:
             tb = tb.tb_next
-    initial_tb = tb
 
     while tb is not None:
         # skip frames decorated with @internalcode.  These are internal

@@ -259,8 +259,8 @@ class TonnikalaHTMLParser(html_parser.HTMLParser, object):
 
         for k, v in attrs:
             if k in attr_pos:
-                l, o = attr_pos[k]
-                v = StringWithLocation(v, l, o)
+                line, offset = attr_pos[k]
+                v = StringWithLocation(v, line, offset)
 
             el.setAttribute(k, v)
 

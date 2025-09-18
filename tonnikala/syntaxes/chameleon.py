@@ -33,8 +33,6 @@ class ChameleonIRGenerator(BaseDOMIRGenerator):
         return None
 
     def create_control_nodes(self, dom_node):
-        name = dom_node.tagName
-
         ir_node_stack = []
 
         # if self.is_control_name(name, 'import'):

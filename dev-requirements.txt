@@ -1,4 +1,4 @@
 pytest
 pytest-cov
 markupsafe>=0.18
-slimit>=0.8.1
+slimit3k

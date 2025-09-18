@@ -23,9 +23,9 @@ class TokenReadLine(object):
         self.last_line = ""
 
     def readline(self):
-        for l in self.io:
-            self.last_line = l
-            yield l
+        for line in self.io:
+            self.last_line = line
+            yield line
 
     def tell(self):
         return self.io.tell()

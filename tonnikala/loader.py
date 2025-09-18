@@ -6,6 +6,10 @@ import time
 from typing import Iterable, Optional
 
 from .helpers import reraise
+from .languages.python.generator import Generator as PythonGenerator
+from .runtime import python, exceptions
+from .syntaxes.chameleon import parse as parse_chameleon
+from .syntaxes.tonnikala import parse as parse_tonnikala, parse_js as parse_js_tonnikala
 
 has_slimit = True
 
@@ -13,7 +17,7 @@ try:
     from .languages.javascript.generator import Generator as JavascriptGenerator
 except ImportError as e:
     try:
-        import slimit as _slimit
+        import slimit3k as _slimit
 
         del _slimit
     except ImportError:
@@ -21,12 +25,6 @@ except ImportError as e:
 
     else:
         raise e
-
-
-from .languages.python.generator import Generator as PythonGenerator
-from .runtime import python, exceptions
-from .syntaxes.chameleon import parse as parse_chameleon
-from .syntaxes.tonnikala import parse as parse_tonnikala, parse_js as parse_js_tonnikala
 
 _make_traceback = None
 MIN_CHECK_INTERVAL = 0.25
@@ -310,7 +308,7 @@ if not has_slimit:
 
     class JSLoader(object):
         def __init__(self, *args, **kwargs):
-            raise ImportError("Use of JSLoader requires slimit")
+            raise ImportError("Use of JSLoader requires slimit3k")
 
 else:
 
@@ -341,7 +339,7 @@ else:
                 print(code)
 
             if self.minify:
-                from slimit import minify
+                from slimit3k import minify
 
                 code = minify(code, mangle=True)
 

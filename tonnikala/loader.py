@@ -17,7 +17,7 @@ try:
     from .languages.javascript.generator import Generator as JavascriptGenerator
 except ImportError as e:
     try:
-        import slimit3k as _slimit
+        import slimit as _slimit
 
         del _slimit
     except ImportError:
@@ -339,7 +339,7 @@ else:
                 print(code)
 
             if self.minify:
-                from slimit3k import minify
+                from slimit import minify
 
                 code = minify(code, mangle=True)
 

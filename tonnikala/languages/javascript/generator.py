@@ -1,7 +1,7 @@
 import json
 
-from slimit3k import ast
-from slimit3k.ast import (
+from slimit import ast
+from slimit.ast import (
     String,
     Identifier,
     ExprStatement,
@@ -16,9 +16,9 @@ from slimit3k.ast import (
     Return as JSReturn,
     FuncDecl,
 )
-from slimit3k.parser import Parser
-from slimit3k.scope import SymbolTable
-from slimit3k.visitors.scopevisitor import (
+from slimit.parser import Parser
+from slimit.scope import SymbolTable
+from slimit.visitors.scopevisitor import (
     Visitor,
     ScopeTreeVisitor,
     fill_scope_references,

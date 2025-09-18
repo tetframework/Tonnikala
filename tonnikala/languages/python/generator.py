@@ -1,9 +1,24 @@
 import ast
 import sys
 from ast import (
-    Call, FunctionDef, Pass, UnaryOp, iter_child_nodes, literal_eval,
-    NodeVisitor, If, Expr, Assign, Attribute,
-    Name, Load, Store, Not, arg, Raise, Return
+    Call,
+    FunctionDef,
+    Pass,
+    UnaryOp,
+    iter_child_nodes,
+    literal_eval,
+    NodeVisitor,
+    If,
+    Expr,
+    Assign,
+    Attribute,
+    Name,
+    Load,
+    Store,
+    Not,
+    arg,
+    Raise,
+    Return,
 )
 
 try:
@@ -77,7 +92,7 @@ def simple_function_def(name, arguments=()):
             kwargannotation=None,
             defaults=[],
             kw_defaults=[],
-            **extra
+            **extra,
         ),
         body=[Pass()],
         decorator_list=[],
@@ -580,9 +595,11 @@ def coalesce_outputs(tree):
 
     coalesce_all_outputs = True
     if coalesce_all_outputs:
+
         def should_coalesce(node):
             return True
     else:
+
         def should_coalesce(node):
             return node.output_args[0].__class__ is Str
 
@@ -773,7 +790,7 @@ class PyRootNode(PyComplexNode):
             if isinstance(e, Raise):
                 break
 
-        binder.body[i:i + 1] = toplevel_funcs
+        binder.body[i : i + 1] = toplevel_funcs
         binder.body[i:i] = generator.imports
 
         coalesce_outputs(tree)

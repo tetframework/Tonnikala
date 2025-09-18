@@ -45,4 +45,4 @@ class TemplateSyntaxError(TemplateError):
             if line:
                 lines.append("    " + line.strip())
 
-        return u"\n".join(lines)
+        return "\n".join(lines)

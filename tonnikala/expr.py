@@ -102,7 +102,7 @@ def handle_text_node(
     max_index = len(text)
     pos = 0
 
-    while pos < len(text):
+    while pos < max_index:
         m = _expr_find_code.match(text, pos)
         pos = m.end()
 

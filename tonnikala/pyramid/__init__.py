@@ -7,12 +7,13 @@ http://docs.pylonshq.com/
 """
 
 import os
+
 try:
     import pkg_resources
 
     def resource_filepath(module, path):
         return pkg_resources.resource_filename(module, path)
-except ImportError as e:
+except ImportError:
     import importlib.resources
     import pathlib
 
@@ -26,6 +27,7 @@ except ImportError as e:
             )
 
         return str(path)
+
 
 from ..helpers import is_nonstr_iter
 from pyramid.settings import asbool, aslist

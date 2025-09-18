@@ -1,4 +1,4 @@
-""""JsLex: a lexer for Javascript"""
+""" "JsLex: a lexer for Javascript"""
 # From https://bitbucket.org/ned/jslex
 
 import re

@@ -9,4 +9,3 @@ source  = python
 exclude_lines =
         pragma: no cover
         pragma: python2
-

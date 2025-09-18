@@ -110,9 +110,14 @@ features = dict(speedups=speedups)
 
 install_requires = [
     "markupsafe>=0.18",
-    "slimit @ git+https://github.com/rspivak/slimit@3533eba9ad5b39f3a015ae6269670022ab310847#egg=slimit-0.8.1",
-    "ply>=3.4.0",
 ]
+
+extras_require = {
+    "javascript": [
+        "slimit3k",
+        "ply>=3.4.0",
+    ],
+}
 
 
 def do_setup(with_c_extension):
@@ -120,7 +125,7 @@ def do_setup(with_c_extension):
 
     setup(
         name="tonnikala",
-        version="1.0.2",
+        version="1.0.0",
         description="Python templating engine - the one ton solution",
         long_description=README,
         author="Antti Haapala",
@@ -140,12 +145,16 @@ def do_setup(with_c_extension):
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
+            "Programming Language :: Python :: 3.12",
+            "Programming Language :: Python :: 3.13",
             "Programming Language :: Python :: Implementation :: CPython",
             "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
             "Topic :: Text Processing :: Markup :: HTML",
         ],
         scripts=["bin/tonnikala-compile-jstemplate"],
         install_requires=install_requires,
+        extras_require=extras_require,
         setup_requires=[],
         include_package_data=True,
         packages=find_packages(exclude=["tests"]),
@@ -166,7 +175,7 @@ def do_setup(with_c_extension):
 
 try:
     do_setup(True)
-except BuildFailed as exc:
+except BuildFailed:
     print("WARNING: failed to build the C speed-up extension!", file=sys.stderr)
     print("Proceeding installation without speedups.", file=sys.stderr)
     do_setup(False)

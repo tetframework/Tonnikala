@@ -30,4 +30,3 @@ jobs:
         run: |
           python -m pip freeze
           python -m pytest
-

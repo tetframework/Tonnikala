@@ -10,5 +10,5 @@ htmlcov
 nose2-junit.xml
 coverage.xml
 .cache
+.pytest_cache/
 .idea
-

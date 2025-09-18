@@ -398,7 +398,7 @@ class TestHtmlTemplates(unittest.TestCase):
         loader = get_loader(debug=False)
         template = loader.load("importing_invalid.tk")
         try:
-            template.render({'foo': 'bar'})
+            template.render({"foo": "bar"})
             assert False, "should have raised an exception"
 
         except AttributeError as e:

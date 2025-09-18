@@ -7,15 +7,17 @@ try:
     import pkg_resources
 
     runtime_code = pkg_resources.resource_string("tonnikala.runtime", "javascript.js")
-except ImportError as e:
+except ImportError:
     import importlib.resources
 
-    runtime_code = importlib.resources.files("tonnikala.runtime")\
-        .joinpath("javascript.js").read_bytes()
+    runtime_code = (
+        importlib.resources.files("tonnikala.runtime")
+        .joinpath("javascript.js")
+        .read_bytes()
+    )
 
 from shutil import which
 
-import os.path
 import os.path
 
 from tonnikala.loader import JSLoader

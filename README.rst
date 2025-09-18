@@ -6,17 +6,17 @@ Tonnikala
    :target: https://gitter.im/tetframework/Tonnikala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 .. image:: https://coveralls.io/repos/github/tetframework/Tonnikala/badge.svg?branch=master
-   :target: https://coveralls.io/github/tetframework/Tonnikala?branch=master 
+   :target: https://coveralls.io/github/tetframework/Tonnikala?branch=master
 
 
-Tonnikala is the latest reincarnation among the Python templating 
+Tonnikala is the latest reincarnation among the Python templating
 languages that feed on Kid-inspired XML syntax. It doesn't use the tagstreams and trees
-of Genshi or Kid, but follows in footsteps of Chameleon and Kajiki in making the 
-template to compile into Python bytecode directly. The syntax is very close to that of 
-Kajiki, but the internals are very different: Tonnikala writes code 
-as Abstract Syntax Trees and optimizes the resulting trees 
-extensively. In addition, there is an optional speed-up module, 
-that provides a specialized class used 
+of Genshi or Kid, but follows in footsteps of Chameleon and Kajiki in making the
+template to compile into Python bytecode directly. The syntax is very close to that of
+Kajiki, but the internals are very different: Tonnikala writes code
+as Abstract Syntax Trees and optimizes the resulting trees
+extensively. In addition, there is an optional speed-up module,
+that provides a specialized class used
 for output buffering.
 
 Examples
@@ -34,7 +34,7 @@ Examples
         </tr>
     </table>
     """
-    
+
     template = Loader().load_string(template_source)
 
     ctx = {
@@ -52,9 +52,9 @@ Within attributes and text, all contents starting with ``$`` followed
 by a ``{``, an alphabetic character or ``_`` is considered an interpolated expression.
 If the interpolated expression starts with ``${``, the expression continues until the matching ``}`` token.
 Otherwise the interpolation consists of an identifier, followed by any number of attribute accesses,
-indexing brackets ``[...]``, and method call operators ``(...)``, without any 
+indexing brackets ``[...]``, and method call operators ``(...)``, without any
 intervening whitespace (except within the brackets). The expression
-parsing stops whenever the next token cannot match this rule anymore. 
+parsing stops whenever the next token cannot match this rule anymore.
 
 While the form
 
@@ -70,15 +70,15 @@ is accepted, it is also perfectly OK to write
 
 In the above code, ``user`` is an object with ``name`` attribute or property, which
 evaluates to a string; ``upper()`` method  is called on the resulting string.
-Suppose the user's name is Antti Haapala, the resulting output would be 
-``HELLO, ANTTI HAAPALA.``. 
+Suppose the user's name is Antti Haapala, the resulting output would be
+``HELLO, ANTTI HAAPALA.``.
 
 The rules also ensure that you can do an interpolation as follows:
 
 .. code-block:: xml
 
     Your word $digit has the integer value ${{'one': 1, 'two': 2}[digit]}
- 
+
 Now, if ``digit == 'one'``, the output of this fragment would be
 
 .. code-block:: xml
@@ -94,15 +94,15 @@ efficient as it is optimized away in the compile time whenever possible.
 Control tags/attributes
 -----------------------
 
-Most of the control tags and attributes have a reach of one element (those which do 
-not, have an effect for the whole file). For all these you have the choice of 
+Most of the control tags and attributes have a reach of one element (those which do
+not, have an effect for the whole file). For all these you have the choice of
 using them as an attribute or as an element; e.g.
 
 .. code-block:: xml
 
     <py:for each="i in iterable"></py:for>
 
-or 
+or
 
 .. code-block:: xml
 
@@ -113,14 +113,14 @@ or structure necessitates the use of the element form.
 
 
 ``py:if``
-+++++++++ 
++++++++++
 
 
 .. code-block:: xml
 
     <py:if test="condition"><span>the condition was true</span></py:if>
 
-or 
+or
 
 .. code-block:: xml
 
@@ -146,7 +146,7 @@ if the ``condition`` was true
 
     <py:for each="i in range(5)"><td>$i</td></py:for>
 
-or 
+or
 
 .. code-block:: xml
 
@@ -197,7 +197,7 @@ With arguments:
 
 .. code-block:: xml
 
-    <button 
+    <button
          py:def="button(caption, type='submit' cls='btn-default', id=None)"
          class="btn $btn_cls"
          type="$type"
@@ -255,10 +255,10 @@ might render to
         <li style="color: #F00">Bad item 1</li>
         <li style="color: #F00">Bad item 2</li>
     </ul>
-    
+
 
 ``py:with``
-+++++++++++ 
++++++++++++
 
 
 ``py:with`` declares one or more lexical variable bindings to be available within the element.
@@ -269,7 +269,7 @@ This is useful in eliminating repeated calculations in a declarative context
 
     <py:with vars="a = 5; b = 6"><span>$a * $b = ${a * b}</span></py:with>
 
-or 
+or
 
 .. code-block:: xml
 
@@ -376,7 +376,7 @@ Include `'tonnikala.pyramid'` into your config to enable Tonnikala. When include
 ``set_tonnikala_l10n(reload)``
     If ``True``, makes Tonnikala translate templates. Default is ``False``.
 
-These 4 can also be controlled by ``tonnikala.extensions``, ``tonnikala.search_paths``, ``tonnikala.reload`` and ``tonnikala.l10n`` respectively in the deployment settings (the ``.ini`` files). 
+These 4 can also be controlled by ``tonnikala.extensions``, ``tonnikala.search_paths``, ``tonnikala.reload`` and ``tonnikala.l10n`` respectively in the deployment settings (the ``.ini`` files).
 If ``tonnikala.reload`` is not set, Tonnikala shall follow the ``pyramid.reload_templates`` setting.
 
 
@@ -388,7 +388,7 @@ Status
 
 Beta, working features are
 
-* Structural elements ``py:if``, ``py:unless``, ``py:def``, ``py:for``, 
+* Structural elements ``py:if``, ``py:unless``, ``py:def``, ``py:for``,
   ``py:replace``, ``py:content``
 * Basic template inheritance: ``py:extends`` and ``py:block``; the child
   template also inherits top level function declarations from the parent

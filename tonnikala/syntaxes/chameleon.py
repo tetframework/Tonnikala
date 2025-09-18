@@ -132,7 +132,7 @@ class ChameleonIRGenerator(BaseDOMIRGenerator):
             return ir_node
 
         if node_t == Node.COMMENT_NODE:
-            ir_node = EscapedText(u"<!--" + dom_node.nodeValue + u"-->")
+            ir_node = EscapedText("<!--" + dom_node.nodeValue + "-->")
             return ir_node
 
         raise ValueError("Unhandled node type %d" % node_t)

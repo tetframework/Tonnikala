@@ -6,7 +6,23 @@ import time
 from typing import Iterable, Optional
 
 from .helpers import reraise
-from .languages.javascript.generator import Generator as JavascriptGenerator
+
+has_slimit = True
+
+try:
+    from .languages.javascript.generator import Generator as JavascriptGenerator
+except ImportError as e:
+    try:
+        import slimit as _slimit
+
+        del _slimit
+    except ImportError:
+        has_slimit = False
+
+    else:
+        raise e
+
+
 from .languages.python.generator import Generator as PythonGenerator
 from .runtime import python, exceptions
 from .syntaxes.chameleon import parse as parse_chameleon
@@ -210,7 +226,7 @@ class FileLoader(Loader):
         debug: bool = False,
         syntax: str = "tonnikala",
         *args,
-        **kwargs
+        **kwargs,
     ):
         super(FileLoader, self).__init__(*args, debug=debug, syntax=syntax, **kwargs)
 
@@ -290,32 +306,43 @@ class FileLoader(Loader):
         return template
 
 
-class JSLoader(object):
-    def __init__(
-        self, debug: bool = False, syntax: str = "js_tonnikala", minify: bool = False
-    ):
-        self.debug = debug
-        self.syntax = syntax
-        self.minify = minify
+if not has_slimit:
 
-    def load_string(self, string: str, filename: str = "<string>"):
-        parser_func = parsers.get(self.syntax)
-        if not parser_func:
-            raise ValueError(
-                "Invalid parser syntax %s: valid syntaxes: %r"
-                % (self.syntax, sorted(parsers.keys()))
-            )
+    class JSLoader(object):
+        def __init__(self, *args, **kwargs):
+            raise ImportError("Use of JSLoader requires slimit")
 
-        tree = parser_func(filename, string)
-        code = JavascriptGenerator(tree).generate_ast()
+else:
 
-        if self.debug:
-            print("JS template output code for %s" % filename)
-            print(code)
+    class JSLoader(object):
+        def __init__(
+            self,
+            debug: bool = False,
+            syntax: str = "js_tonnikala",
+            minify: bool = False,
+        ):
+            self.debug = debug
+            self.syntax = syntax
+            self.minify = minify
 
-        if self.minify:
-            from slimit import minify
+        def load_string(self, string: str, filename: str = "<string>"):
+            parser_func = parsers.get(self.syntax)
+            if not parser_func:
+                raise ValueError(
+                    "Invalid parser syntax %s: valid syntaxes: %r"
+                    % (self.syntax, sorted(parsers.keys()))
+                )
 
-            code = minify(code, mangle=True)
+            tree = parser_func(filename, string)
+            code = JavascriptGenerator(tree).generate_ast()
 
-        return code
+            if self.debug:
+                print("JS template output code for %s" % filename)
+                print(code)
+
+            if self.minify:
+                from slimit import minify
+
+                code = minify(code, mangle=True)
+
+            return code

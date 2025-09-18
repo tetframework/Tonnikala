@@ -240,7 +240,7 @@ class TonnikalaIRGenerator(BaseDOMIRGenerator):
             return ir_node
 
         if node_t == Node.COMMENT_NODE:
-            ir_node = EscapedText(u"<!--" + dom_node.nodeValue + u"-->")
+            ir_node = EscapedText("<!--" + dom_node.nodeValue + "-->")
             return ir_node
 
         if node_t == Node.PROCESSING_INSTRUCTION_NODE:

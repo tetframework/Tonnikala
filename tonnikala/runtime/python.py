@@ -49,7 +49,7 @@ try:  # pragma: no cover
     from ._buffer import Buffer, _set_escape_method
 
     _set_escape_method(escape)
-except ImportError as e:  # pragma: no cover
+except ImportError:  # pragma: no cover
     Buffer = _TKPythonBufferImpl
     _set_escape_method = None
 

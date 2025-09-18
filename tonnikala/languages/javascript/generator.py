@@ -396,7 +396,6 @@ class JsAttributeNode(JsComplexNode):
 
     def generate_ast(self, generator, parent):
         if len(self.children) == 1 and isinstance(self.children[0], JsExpressionNode):
-
             # special case, the attribute contains a single
             # expression, these are handled by
             # _TK_output.output_boolean_attr,

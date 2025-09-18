@@ -39,8 +39,8 @@ class TonnikalaExtractor(Extractor):
                     node.text,
                     None,
                     [],
-                    u"",
-                    u"",
+                    "",
+                    "",
                     (filename, lineno + (node.position[0] or 1)),
                 )
             elif isinstance(node, Expression):

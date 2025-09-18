@@ -67,7 +67,23 @@ ALWAYS_BUILTINS = """
 
 
 def simple_call(func, args=None):
-    return Call(func=func, args=args or [], keywords=[], starargs=None, kwargs=None)
+    # Remove deprecated starargs and kwargs parameters in Python 3.13+
+    call_kwargs = {
+        "func": func,
+        "args": args or [],
+        "keywords": [],
+    }
+
+    # These parameters were deprecated in Python 3.13+
+    if sys.version_info < (3, 13):
+        call_kwargs.update(
+            {
+                "starargs": None,
+                "kwargs": None,
+            }
+        )
+
+    return Call(**call_kwargs)
 
 
 def create_argument_list(arguments):
@@ -722,7 +738,9 @@ class PyRootNode(PyComplexNode):
             main_func = self.make_function("__main__", main_body, add_buffer=True)
             generator.add_bind_decorator(main_func)
 
-            toplevel_funcs = [main_func] + toplevel_funcs
+            # In Python 3.13+, functions must be defined before they're referenced in closures
+            # Put block and top-level functions before the main function
+            toplevel_funcs = toplevel_funcs + [main_func]
 
         # analyze the set of free variables
         free_variables = set()
@@ -770,6 +788,15 @@ class PyRootNode(PyComplexNode):
         if extended:
             # an extended template does not have a __main__ (it is inherited)
             code += "    __TK__parent_template.binder_func(__TK__context)\n"
+
+        # Bind block functions to context in non-extended templates
+        if not extended:
+            for block_func in generator.blocks:
+                block_name = block_func.name
+                if block_name.startswith("__TK__block__"):
+                    # Extract the user-facing block name
+                    user_block_name = block_name[len("__TK__block__") :]
+                    code += f'    __TK__context["{user_block_name}"] = {block_name}\n'
 
         for i in free_variables:
             code += '    if "%s" in __TK__context:\n' % i

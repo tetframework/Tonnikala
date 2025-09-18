@@ -71,14 +71,17 @@ _do_append(Buffer *self, PyObject *args) {
         PyObject* obj;
         obj = PyTuple_GET_ITEM(args, i);
         if (Py_TYPE(obj) == &buffer_BufferType) {
-            PyObject *rv;
-            rv = _PyList_Extend((PyListObject*)self->buffer_list,
-                ((Buffer*)obj)->buffer_list);
-            if (! rv) {
-                return NULL;
+            // Use public API instead of private _PyList_Extend
+            PyObject *other_list = ((Buffer*)obj)->buffer_list;
+            Py_ssize_t other_size = PyList_GET_SIZE(other_list);
+            Py_ssize_t j;
+
+            for (j = 0; j < other_size; j++) {
+                PyObject *item = PyList_GET_ITEM(other_list, j);
+                if (PyList_Append(self->buffer_list, item) != 0) {
+                    return NULL;
+                }
             }
-            // extend returns Py_None on success
-            Py_DECREF(rv);
         }
         else {
             if (! PyUnicode_CheckExact(obj)) {

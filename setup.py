@@ -173,9 +173,15 @@ def do_setup(with_c_extension):
     )
 
 
-try:
-    do_setup(True)
-except BuildFailed:
-    print("WARNING: failed to build the C speed-up extension!", file=sys.stderr)
-    print("Proceeding installation without speedups.", file=sys.stderr)
+# Disable C extensions for Python 3.14+ due to ABI compatibility issues
+if sys.version_info >= (3, 14):
+    print("WARNING: Disabling C extensions for Python 3.14+", file=sys.stderr)
+    print("Using Python fallback implementation.", file=sys.stderr)
     do_setup(False)
+else:
+    try:
+        do_setup(True)
+    except BuildFailed:
+        print("WARNING: failed to build the C speed-up extension!", file=sys.stderr)
+        print("Proceeding installation without speedups.", file=sys.stderr)
+        do_setup(False)

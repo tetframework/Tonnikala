@@ -48,19 +48,39 @@ jobs:
             ulimit -c unlimited
             echo "Core pattern:"
             cat /proc/sys/kernel/core_pattern || echo "Cannot read core pattern"
-            echo "Running pytest with minimal output first..."
+            echo "First try without C extension to see if that's the issue..."
+            echo "Temporarily renaming C extension to force fallback to Python implementation..."
+            find . -name "_buffer*.so" -exec mv {} {}.disabled \; 2>/dev/null || echo "No C extension .so files found"
+            echo "Testing without C extension:"
+            timeout 30 python -m pytest tests/ -x -q || echo "Tests failed even without C extension"
+
+            echo "Now restoring C extension and trying with memory debugging..."
+            find . -name "_buffer*.so.disabled" -exec bash -c 'mv "$1" "${1%.disabled}"' _ {} \; 2>/dev/null || echo "No disabled .so files to restore"
+            export PYTHONMALLOC=debug
+            export PYTHONDEVMODE=1
+
+            echo "Running each test file individually to isolate the problematic one..."
+            for test_file in tests/test_*.py; do
+              if [ -f "$test_file" ]; then
+                echo "Running $test_file..."
+                timeout 15 python -m pytest "$test_file" -x -q || {
+                  exit_code=$?
+                  echo "FAILED: $test_file (exit code: $exit_code)"
+                  if [ $exit_code -eq 139 ]; then
+                    echo "SEGFAULT in $test_file - this is the problematic test!"
+                    echo "Checking for core dumps..."
+                    ls -la core* /var/lib/systemd/coredump/core* 2>/dev/null || echo "No core dumps found"
+                    echo "dmesg output:"
+                    dmesg | tail -10 | grep -i "segfault\|killed\|signal" || echo "No segfault info in dmesg"
+                    exit 1
+                  fi
+                }
+              fi
+            done
+            echo "All individual test files passed - running full suite..."
             timeout 60 python -m pytest tests/ -x -v --tb=short || {
               exit_code=$?
-              echo "Exit code: $exit_code"
-              if [ $exit_code -eq 124 ]; then
-                echo "Test timed out after 60 seconds"
-              elif [ $exit_code -eq 139 ]; then
-                echo "Segmentation fault detected"
-              fi
-              echo "Checking for core dumps in current directory..."
-              ls -la core* /var/lib/systemd/coredump/core* 2>/dev/null || echo "No core dumps found"
-              echo "Checking dmesg for segfault info..."
-              dmesg | tail -20 | grep -i "segfault\|killed\|signal" || echo "No segfault info in dmesg"
+              echo "Full suite failed with exit code: $exit_code"
               exit 1
             }
           else

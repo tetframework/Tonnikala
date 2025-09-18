@@ -26,7 +26,40 @@ jobs:
           flake8 tonnikala tests --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 tonnikala tests --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Install debugging tools for 3.14-dev
+        if: matrix.python-version == '3.14-dev'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdb libc6-dbg
       - name: Test with pytest
         run: |
           python -m pip freeze
-          python -m pytest
+          if [[ "${{ matrix.python-version }}" == "3.14-dev" ]]; then
+            echo "Running with debugging for Python 3.14-dev"
+            echo "System info:"
+            uname -a
+            ldd --version
+            echo "libc version:"
+            ldd $(which python) | grep libc
+            ls -la /lib/x86_64-linux-gnu/libc.so.6 2>/dev/null || echo "libc not found in expected location"
+            echo "gdb version:"
+            gdb --version | head -1 || echo "gdb not available"
+            ulimit -c unlimited
+            python -X dev -m pytest -v --tb=long || {
+              echo "Test failed, checking for core dumps..."
+              if ls core* 2>/dev/null; then
+                echo "Core dump found, analyzing with gdb (with symbols):"
+                gdb -batch -ex "set logging on" -ex "bt full" -ex "info registers" -ex "x/20i \$pc-40" -ex "quit" python core* 2>/dev/null || echo "gdb analysis failed"
+              else
+                echo "No core dumps found"
+              fi
+              echo "Python version info:"
+              python -c "import sys; print(sys.version)"
+              echo "C extension info:"
+              python -c "try: from tonnikala.runtime._buffer import Buffer; print('C extension loaded successfully')
+              except Exception as e: print(f'C extension failed: {e}')"
+              exit 1
+            }
+          else
+            python -m pytest
+          fi

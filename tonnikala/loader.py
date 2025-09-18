@@ -164,7 +164,12 @@ class Loader(object):
     runtime = python.TonnikalaRuntime
 
     def __init__(self, debug=False, syntax="tonnikala", translatable=False):
-        self.debug = debug
+        # Allow debug to be enabled via environment variable
+        self.debug = debug or os.environ.get("TONNIKALA_DEBUG", "").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
         self.syntax = syntax
         self.translatable = translatable
 
@@ -195,14 +200,23 @@ class Loader(object):
         if self.debug:
             import ast
 
+            print("=== AST DUMP ===")
             print(ast.dump(code, True, True))
 
+            print("=== GENERATED CODE ===")
             try:
-                import astor
+                # Try modern ast.unparse first (Python 3.9+)
+                if hasattr(ast, "unparse"):
+                    print(ast.unparse(code))
+                else:
+                    # Fallback to astor for older Python versions
+                    import astor
 
-                print(astor.codegen.to_source(code))
+                    print(astor.codegen.to_source(code))
             except ImportError:
-                print("Not reversing AST to source as astor was not installed")
+                print(
+                    "Not reversing AST to source as neither ast.unparse nor astor is available"
+                )
 
         runtime = self.runtime()
         runtime.loader = self

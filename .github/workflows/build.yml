@@ -29,4 +29,9 @@ jobs:
       - name: Test with pytest
         run: |
           python -m pip freeze
-          python -m pytest
+          if [[ "${{ matrix.python-version }}" == "3.13" || "${{ matrix.python-version }}" == "3.14-dev" ]]; then
+            echo "Running with debug output for Python ${{ matrix.python-version }}"
+            TONNIKALA_DEBUG=1 python -m pytest -v --tb=short -x
+          else
+            python -m pytest
+          fi

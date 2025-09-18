@@ -81,19 +81,29 @@ def simple_function_def(name, arguments=()):
     else:
         extra = {}
 
+    # Handle deprecated annotation parameters in Python 3.13+
+    args_kwargs = {
+        "args": arguments,
+        "vararg": None,
+        "kwonlyargs": [],
+        "kwarg": None,
+        "defaults": [],
+        "kw_defaults": [],
+        **extra,
+    }
+
+    # These annotation parameters were deprecated in Python 3.13+
+    if sys.version_info < (3, 13):
+        args_kwargs.update(
+            {
+                "varargannotation": None,
+                "kwargannotation": None,
+            }
+        )
+
     return FunctionDef(
         name=name,
-        args=ast.arguments(
-            args=arguments,
-            vararg=None,
-            varargannotation=None,
-            kwonlyargs=[],
-            kwarg=None,
-            kwargannotation=None,
-            defaults=[],
-            kw_defaults=[],
-            **extra,
-        ),
+        args=ast.arguments(**args_kwargs),
         body=[Pass()],
         decorator_list=[],
         returns=None,

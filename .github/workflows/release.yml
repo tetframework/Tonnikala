@@ -63,8 +63,8 @@ jobs:
           CIBW_MANYLINUX_S390X_IMAGE: manylinux2014
           # Install test dependencies
           CIBW_TEST_REQUIRES: "pytest slimit3k ply"
-          # Run tests
-          CIBW_TEST_COMMAND: "pytest {project}/tests"
+          # Run tests without coverage (override setup.cfg addopts)
+          CIBW_TEST_COMMAND: "pytest {project}/tests --no-cov -v"
           # Build settings
           CIBW_BUILD_VERBOSITY: 1
 

@@ -1,6 +1,10 @@
 Tonnikala
 =========
 
+.. image:: https://img.shields.io/pypi/v/tonnikala.svg
+   :alt: PyPI version
+   :target: https://pypi.org/project/tonnikala/
+
 .. image:: https://badges.gitter.im/Join%20Chat.svg
    :alt: Join the chat at https://gitter.im/tetframework/Tonnikala
    :target: https://gitter.im/tetframework/Tonnikala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge

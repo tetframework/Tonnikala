@@ -49,22 +49,22 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.2
+        uses: pypa/cibuildwheel@v3.1.4
         env:
-          # Build for Python 3.8-3.14 (including latest versions we support)
-          CIBW_BUILD: cp38-* cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*
-          # Skip PyPy and 32-bit builds
-          CIBW_SKIP: pp* *-win32 *-musllinux_i686
-          # Use manylinux2014 for C extensions (native code compatibility)
+          # Build for Python 3.8-3.14 (including latest dev version)
+          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
+          # Skip PyPy, 32-bit builds, and musllinux i686
+          CIBW_SKIP: "pp* *-win32 *-musllinux_i686"
+          # Use manylinux2014 for C extensions (Linux only)
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           CIBW_MANYLINUX_I686_IMAGE: manylinux2014
           CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
           CIBW_MANYLINUX_PPC64LE_IMAGE: manylinux2014
           CIBW_MANYLINUX_S390X_IMAGE: manylinux2014
           # Install test dependencies
-          CIBW_TEST_REQUIRES: pytest slimit3k ply
+          CIBW_TEST_REQUIRES: "pytest slimit3k ply"
           # Run tests
-          CIBW_TEST_COMMAND: pytest {project}/tests
+          CIBW_TEST_COMMAND: "pytest {project}/tests"
           # Build settings
           CIBW_BUILD_VERBOSITY: 1
 

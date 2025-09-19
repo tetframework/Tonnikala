@@ -1,11 +1,11 @@
 [run]
-branch  = True
+branch = True
 include = tonnikala/*
-omit    = tonnikala/tests/*
-          tonnikala/runtime/debug.py
-source  = python
+omit = tonnikala/tests/*
+      tonnikala/runtime/debug.py
+source = tonnikala
 
 [report]
 exclude_lines =
-        pragma: no cover
-        pragma: python2
+    pragma: no cover
+    pragma: python2

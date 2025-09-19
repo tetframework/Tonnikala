@@ -10,11 +10,7 @@ try:
 except ImportError:
     import importlib.resources
 
-    runtime_code = (
-        importlib.resources.files("tonnikala.runtime")
-        .joinpath("javascript.js")
-        .read_bytes()
-    )
+    runtime_code = importlib.resources.read_binary("tonnikala.runtime", "javascript.js")
 
 from shutil import which
 

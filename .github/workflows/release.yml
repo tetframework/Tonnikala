@@ -53,8 +53,8 @@ jobs:
         env:
           # Build for Python 3.8-3.14 (including latest dev version)
           CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
-          # Skip PyPy, 32-bit builds, and musllinux i686
-          CIBW_SKIP: "pp* *-win32 *-musllinux_i686"
+          # Skip 32-bit builds and musllinux i686 (PyPy not enabled by default in v3)
+          CIBW_SKIP: "*-win32 *-musllinux_i686"
           # Use manylinux2014 for C extensions (Linux only)
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           CIBW_MANYLINUX_I686_IMAGE: manylinux2014

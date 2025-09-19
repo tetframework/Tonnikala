@@ -88,9 +88,12 @@ jobs:
 
       - name: Build pure Python wheel
         run: |
-          python -m pip install --upgrade pip build
-          # Force pure Python build by setting environment variable
+          python -m pip install --upgrade pip build wheel
+          # Force pure Python universal wheel
           TONNIKALA_DISABLE_SPEEDUPS=1 python -m build --wheel
+          # Use wheel tool to convert to universal
+          cd dist
+          wheel tags --python-tag py3 --abi-tag none --platform-tag any *.whl
 
       - uses: actions/upload-artifact@v4
         with:

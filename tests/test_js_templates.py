@@ -1,22 +1,13 @@
+import importlib.resources
 import json
+import os.path
 import subprocess
 import unittest
-
-
-try:
-    import pkg_resources
-
-    runtime_code = pkg_resources.resource_string("tonnikala.runtime", "javascript.js")
-except ImportError:
-    import importlib.resources
-
-    runtime_code = importlib.resources.read_binary("tonnikala.runtime", "javascript.js")
-
 from shutil import which
 
-import os.path
-
 from tonnikala.loader import JSLoader
+
+runtime_code = importlib.resources.read_binary("tonnikala.runtime", "javascript.js")
 
 
 js_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "js")
@@ -63,7 +54,8 @@ def render(template, debug=False, **args):
 class TestJsTemplates(unittest.TestCase):
     def are(self, result, template, **args):
         """assert rendered equals"""
-
+        if node_exe is None:
+            self.skipTest("Node.js not available")
         self.assertEqual(render(template, **args).strip(), result.strip())
 
     def assert_compile_throws(self, exception_class, template):

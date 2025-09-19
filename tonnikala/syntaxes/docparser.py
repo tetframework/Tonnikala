@@ -1,130 +1,16 @@
-"""XML parser"""
+"""HTML parser for Tonnikala templates"""
 
 import sys
 from html import parser as html_parser
 from html.entities import entitydefs as html_entity_defs
-from io import StringIO, BytesIO
-from xml import sax
 from xml.dom import minidom as dom
 
 from ..helpers import StringWithLocation
 from ..runtime.exceptions import TemplateSyntaxError
 
-impl = dom.getDOMImplementation(" ")
-
 html_parser_extra_kw = {}
 if sys.version_info >= (3, 4):
     html_parser_extra_kw["convert_charrefs"] = False
-
-
-class TonnikalaXMLParser(sax.ContentHandler):
-    def __init__(self, filename, source):
-        super(TonnikalaXMLParser, self).__init__()
-        self.filename = filename
-        self.source = source
-        self.doc = None
-        self.elements = []
-        self._characters = None
-
-    def parse(self):
-        self._parser = parser = sax.make_parser()
-        parser.setFeature(sax.handler.feature_external_pes, False)
-        parser.setFeature(sax.handler.feature_external_ges, False)
-        parser.setFeature(sax.handler.feature_namespaces, False)
-        parser.setProperty(sax.handler.property_lexical_handler, self)
-        parser.setContentHandler(self)
-        source = sax.xmlreader.InputSource()
-
-        if isinstance(self.source, bytes):
-            stream = BytesIO(self.source)
-        else:
-            stream = StringIO(self.source)
-
-        source.setByteStream(stream)
-        source.setSystemId(self.filename)
-        parser.parse(source)
-        return self.doc
-
-    # ContentHandler implementation
-    def startDocument(self):
-        self.doc = dom.Document()
-        self.elements.append(self.doc)
-
-    def _checkAndClearChrs(self):
-        if self._characters:
-            node = self.doc.createTextNode("".join(self._characters[1]))
-            node.lineno = self._characters[0]
-            self.elements[-1].appendChild(node)
-
-        self._characters = None
-
-    def startElement(self, name, attrs):
-        self.flush_character_data()
-        el = self.doc.createElement(name)
-        el.lineno = self._parser.getLineNumber()
-        for k, v in attrs.items():
-            el.setAttribute(k, v)
-
-        self.elements[-1].appendChild(el)
-        self.elements.append(el)
-
-    def endElement(self, name):
-        self.flush_character_data()
-        popped = self.elements.pop()
-        assert name == popped.tagName
-
-    def characters(self, content):
-        if not self._characters:
-            self._characters = (self._parser.getLineNumber(), [])
-
-        self._characters[1].append(content)
-
-    def processingInstruction(self, target, data):
-        self.flush_character_data()
-        node = self.doc.createProcessingInstruction(target, data)
-        node.lineno = self._parser.getLineNumber()
-        self.elements[-1].appendChild(node)
-
-    def skippedEntity(self, name):
-        # Encoding?
-        content = html_entity_defs.get(name)
-        if not content:
-            raise RuntimeError("Unknown HTML entity &%s;" % name)
-
-        return self.characters(str(content))
-
-    def startElementNS(self, name, qname, attrs):  # pragma no cover
-        raise NotImplementedError("startElementNS")
-
-    def endElementNS(self, name, qname):  # pragma no cover
-        raise NotImplementedError("startElementNS")
-
-    def startPrefixMapping(self, prefix, uri):  # pragma no cover
-        raise NotImplementedError("startPrefixMapping")
-
-    def endPrefixMapping(self, prefix):  # pragma no cover
-        raise NotImplementedError("endPrefixMapping")
-
-    # LexicalHandler implementation
-    def comment(self, text):
-        self.flush_character_data()
-
-        if not text.strip().startswith("!"):
-            node = self.doc.createComment(text)
-            node.lineno = self._parser.getLineNumber()
-            self.elements[-1].appendChild(node)
-
-    def startCDATA(self):
-        pass
-
-    def endCDATA(self):
-        pass
-
-    def startDTD(self, name, pubid, sysid):
-        self.doc.doctype = impl.createDocumentType(name, pubid, sysid)
-
-    def endDTD(self):
-        pass
 
 
 if hasattr(html_parser, "attrfind_tolerant"):  # pragma: no cover
@@ -140,6 +26,14 @@ else:
 
 # object to force a new-style class!
 class TonnikalaHTMLParser(html_parser.HTMLParser, object):
+    # Override RCDATA_CONTENT_ELEMENTS to exclude title and textarea
+    # This allows py: control structures to be parsed as tags inside these elements
+    # Python 3.13+ treats title and textarea as RCDATA elements by default
+    RCDATA_CONTENT_ELEMENTS = ()  # Empty tuple - no RCDATA elements
+
+    # Keep CDATA elements as-is (script and style should remain text-only)
+    # CDATA_CONTENT_ELEMENTS = ('script', 'style')  # This is the default from parent class
+
     void_elements = {
         "area",
         "base",

@@ -61,9 +61,9 @@ jobs:
           CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
           CIBW_MANYLINUX_PPC64LE_IMAGE: manylinux2014
           CIBW_MANYLINUX_S390X_IMAGE: manylinux2014
-          # Install test dependencies including coverage for setup.cfg compatibility
-          CIBW_TEST_REQUIRES: "pytest pytest-cov slimit3k ply"
-          # Run tests (setup.cfg will be used with coverage available)
+          # Install test dependencies
+          CIBW_TEST_REQUIRES: "pytest slimit3k ply"
+          # Run tests
           CIBW_TEST_COMMAND: "pytest {project}/tests"
           # Build settings
           CIBW_BUILD_VERBOSITY: 1

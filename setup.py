@@ -142,9 +142,14 @@ def do_setup(with_c_extension):
     )
 
 
-try:
-    do_setup(True)
-except BuildFailed:
-    print("WARNING: failed to build the C speed-up extension!", file=sys.stderr)
-    print("Proceeding installation without speedups.", file=sys.stderr)
+# Allow disabling C extensions via environment variable
+if os.environ.get("TONNIKALA_DISABLE_SPEEDUPS"):
+    print("Disabling C extensions (TONNIKALA_DISABLE_SPEEDUPS set)", file=sys.stderr)
     do_setup(False)
+else:
+    try:
+        do_setup(True)
+    except BuildFailed:
+        print("WARNING: failed to build the C speed-up extension!", file=sys.stderr)
+        print("Proceeding installation without speedups.", file=sys.stderr)
+        do_setup(False)

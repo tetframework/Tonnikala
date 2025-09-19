@@ -7,10 +7,9 @@ from distutils.errors import DistutilsPlatformError
 
 from setuptools import Distribution as _Distribution, Extension
 from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
 
-if sys.version_info < (3, 5):
-    raise Exception("Tonnikala requires Python 3.5+")
+if sys.version_info < (3, 8):
+    raise Exception("Tonnikala requires Python 3.8+")
 
 # read in the README file
 try:
@@ -75,31 +74,7 @@ class Distribution(_Distribution):
         return True
 
 
-class PyTest(TestCommand):
-    # from https://pytest.org/latest/goodpractises.html
-    # #integration-with-setuptools-test-commands
-    user_options = [("pytest-args=", "a", "Arguments to pass to py.test")]
-
-    default_options = ["-q"]
-
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = ""
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-
-        errno = pytest.main(list(self.default_options) + list(self.pytest_args))
-        sys.exit(errno)
-
-
-cmdclass["test"] = PyTest
+# PyTest command removed - deprecated in setuptools
 # blatant SQLALchemy rip-off ends!
 
 
@@ -139,15 +114,13 @@ def do_setup(with_c_extension):
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
             "Programming Language :: Python",
-            "Programming Language :: Python :: 3.5",
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.11",
             "Programming Language :: Python :: 3.12",
             "Programming Language :: Python :: 3.13",
+            "Programming Language :: Python :: 3.14",
             "Programming Language :: Python :: Implementation :: CPython",
             "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
             "Topic :: Text Processing :: Markup :: HTML",
@@ -158,11 +131,7 @@ def do_setup(with_c_extension):
         setup_requires=[],
         include_package_data=True,
         packages=find_packages(exclude=["tests"]),
-        test_suite="tests.test_all",
-        tests_require=[
-            "pytest",
-            "pytest-cov",
-        ],
+        # test_suite and tests_require deprecated in setuptools
         cmdclass=cmdclass,
         distclass=Distribution,
         ext_modules=ext_modules,
@@ -173,15 +142,9 @@ def do_setup(with_c_extension):
     )
 
 
-# Disable C extensions for Python 3.14+ due to ABI compatibility issues
-if sys.version_info >= (3, 14):
-    print("WARNING: Disabling C extensions for Python 3.14+", file=sys.stderr)
-    print("Using Python fallback implementation.", file=sys.stderr)
+try:
+    do_setup(True)
+except BuildFailed:
+    print("WARNING: failed to build the C speed-up extension!", file=sys.stderr)
+    print("Proceeding installation without speedups.", file=sys.stderr)
     do_setup(False)
-else:
-    try:
-        do_setup(True)
-    except BuildFailed:
-        print("WARNING: failed to build the C speed-up extension!", file=sys.stderr)
-        print("Proceeding installation without speedups.", file=sys.stderr)
-        do_setup(False)

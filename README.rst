@@ -1,5 +1,8 @@
-Tonnikala
-=========
+.. image:: docs/_static/tonnikala.png
+   :alt: Tonnikala
+   :width: 400
+
+|
 
 .. image:: https://img.shields.io/pypi/v/tonnikala.svg
    :alt: PyPI version

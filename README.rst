@@ -404,7 +404,7 @@ If ``tonnikala.reload`` is not set, Tonnikala shall follow the ``pyramid.reload_
 Status
 ======
 
-Beta, working features are
+Stable. Features:
 
 * Structural elements ``py:if``, ``py:unless``, ``py:def``, ``py:for``,
   ``py:replace``, ``py:content``
@@ -416,7 +416,7 @@ Beta, working features are
 * Boolean attributes: ``<tag attr="${False}">``, ``<tag attr="$True">``
 * Implicit escaping
 * Disabling implicit escaping (``literal()``)
-* C speedups for both Python 2 and Python 3
+* C speedups for Python 3
 * Importing def blocks from another template: ``py:import``
 * Basic I18N using gettext.
 * Pyramid integration

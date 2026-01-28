@@ -1,13 +1,31 @@
 Tonnikala
 =========
 
-.. image:: https://badges.gitter.im/Join%20Chat.svg
-   :alt: Join the chat at https://gitter.im/tetframework/Tonnikala
-   :target: https://gitter.im/tetframework/Tonnikala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+.. image:: https://img.shields.io/pypi/v/tonnikala.svg
+   :alt: PyPI version
+   :target: https://pypi.org/project/tonnikala/
+
+.. image:: https://img.shields.io/pypi/pyversions/tonnikala.svg
+   :alt: Python versions
+   :target: https://pypi.org/project/tonnikala/
+
+.. image:: https://img.shields.io/pypi/l/tonnikala.svg
+   :alt: License
+   :target: https://pypi.org/project/tonnikala/
+
+.. image:: https://readthedocs.org/projects/tonnikala/badge/?version=latest
+   :alt: Documentation Status
+   :target: https://tonnikala.readthedocs.io/en/latest/?badge=latest
 
 .. image:: https://coveralls.io/repos/github/tetframework/Tonnikala/badge.svg?branch=master
+   :alt: Coverage Status
    :target: https://coveralls.io/github/tetframework/Tonnikala?branch=master
 
+.. image:: https://img.shields.io/github/stars/tetframework/Tonnikala.svg?style=social
+   :alt: GitHub stars
+   :target: https://github.com/tetframework/Tonnikala
+
+.. begin-content
 
 Tonnikala is the latest reincarnation among the Python templating
 languages that feed on Kid-inspired XML syntax. It doesn't use the tagstreams and trees

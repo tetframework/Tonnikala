@@ -7,7 +7,7 @@ Welcome to Tonnikala's documentation!
 =====================================
 
 .. include:: ../README.rst
-    :start-after: Tonnikala
+    :start-after: begin-content
     :end-before: Contributors
 
 Contents

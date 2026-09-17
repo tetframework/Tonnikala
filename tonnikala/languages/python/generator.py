@@ -703,6 +703,35 @@ def coalesce_outputs(tree):
     OutputCoalescer().visit(tree)
 
 
+def normalize_end_locations(node):
+    """
+    Ensure end_lineno/end_col_offset never precede lineno/col_offset.
+
+    Synthesised nodes, and nodes whose lineno is remapped by LocationMapper,
+    keep the end_* attributes they were parsed with. CPython 3.11 and later
+    validate the AST and reject any node whose end location precedes its
+    start, so the two have to be reconciled before compile().
+    """
+
+    def fix(node):
+        lineno = getattr(node, "lineno", None)
+        if lineno is not None:
+            end_lineno = getattr(node, "end_lineno", None)
+            if end_lineno is None or end_lineno < lineno:
+                node.end_lineno = end_lineno = lineno
+
+            if end_lineno == lineno:
+                col_offset = getattr(node, "col_offset", 0)
+                end_col_offset = getattr(node, "end_col_offset", None)
+                if end_col_offset is None or end_col_offset < col_offset:
+                    node.end_col_offset = col_offset
+
+        for child in iter_child_nodes(node):
+            fix(child)
+
+    fix(node)
+
+
 def remove_locations(node):
     """
     Removes locations from the given AST tree completely
@@ -918,4 +947,5 @@ class Generator(BaseGenerator):
         tree = super(Generator, self).generate_ast()
         self.lnotab = {}
         ast.fix_missing_locations(tree)
+        normalize_end_locations(tree)
         return tree

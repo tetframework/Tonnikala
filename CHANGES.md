@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   never precede the start location.
 - README rendering on PyPI: fixed inconsistent section heading level, use an
   absolute URL for the logo and declare the long description as reStructuredText.
+- Release workflow: the pure Python wheel job left a `linux_x86_64` wheel next to the
+  `py3-none-any` one, and PyPI rejected the upload.
+
+### Changed
+- Replaced the `codecs.open()` call in `FileLoader`, deprecated since Python 3.14, with
+  `open(..., newline="")`; line endings in template files are still preserved as-is.
 
 ### Added
 - Regression tests for generated AST end locations, including nested blocks

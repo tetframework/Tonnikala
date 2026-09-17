@@ -1,4 +1,3 @@
-import codecs
 import errno
 import os
 import sys
@@ -306,7 +305,7 @@ class FileLoader(Loader):
         if not path:
             raise OSError(errno.ENOENT, "File not found: %s" % name)
 
-        with codecs.open(path, "r", encoding="UTF-8") as f:
+        with open(path, "r", encoding="UTF-8", newline="") as f:
             contents = f.read()
             mtime = os.fstat(f.fileno()).st_mtime
 

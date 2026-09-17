@@ -1,7 +1,8 @@
 import unittest
 
-import codecs
 import os.path
+import tempfile
+import warnings
 from collections import OrderedDict
 
 
@@ -28,7 +29,7 @@ def get_loader(debug=False):
 
 def get_reference_output(name):
     path = os.path.join(output_dir, name)
-    with codecs.open(path, "r", encoding="UTF-8") as f:
+    with open(path, "r", encoding="UTF-8", newline="") as f:
         return f.read()
 
 
@@ -393,6 +394,29 @@ class TestHtmlTemplates(unittest.TestCase):
 
     def test_import(self):
         self.assert_file_rendering_equals("importing.tk", "importing.tk", foo="bar")
+
+    def test_file_loader_preserves_crlf_line_endings(self):
+        """
+        FileLoader must not translate line endings (codecs.open() did not,
+        and its replacement open(..., newline="") must not either), and
+        loading must not emit warnings such as the codecs.open()
+        DeprecationWarning on Python 3.14+.
+        """
+        source = '<html>\r\n<p py:if="flag">\r\n$foo\r\n</p>\r\n</html>\r\n'
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(os.path.join(tmpdir, "crlf.tk"), "wb") as f:
+                f.write(source.encode("UTF-8"))
+
+            loader = FileLoader()
+            loader.add_path(tmpdir)
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                template = loader.load("crlf.tk")
+
+        self.assertEqual(
+            str(template.render({"flag": True, "foo": "bar"})),
+            "<html>\r\n<p>\r\nbar\r\n</p>\r\n</html>",
+        )
 
     def test_nonexistent_attribute_from_import(self):
         loader = get_loader(debug=False)

@@ -11,7 +11,6 @@ The fix is ``normalize_end_locations`` in ``Generator.generate_ast``.
 """
 
 import ast
-import codecs
 import os.path
 import unittest
 
@@ -43,7 +42,7 @@ inner x
 
 
 def read_file(*path):
-    with codecs.open(os.path.join(data_dir, *path), "r", encoding="UTF-8") as f:
+    with open(os.path.join(data_dir, *path), "r", encoding="UTF-8", newline="") as f:
         return f.read()
 
 

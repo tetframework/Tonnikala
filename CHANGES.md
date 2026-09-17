@@ -5,6 +5,19 @@ All notable changes to Tonnikala will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-09-17
+
+### Fixed
+- Python 3.11+ compatibility: templates with a `py:block` nested inside another
+  block (typical for layouts used with `py:extends`) failed to compile with
+  `ValueError: AST node line range (98, 97) is not valid`. The generator now
+  normalizes `end_lineno`/`end_col_offset` of the generated AST so that they
+  never precede the start location.
+
+### Added
+- Regression tests for generated AST end locations, including nested blocks
+  in inherited templates.
+
 ## [1.0.0] - 2025-09-19
 
 ### Added

@@ -1,0 +1,7 @@
+<html>
+<py:block name="content">
+<h1>${title}</h1>
+
+<py:block name="inner">base inner</py:block>
+</py:block>
+</html>

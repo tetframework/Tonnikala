@@ -1,0 +1,7 @@
+<py:extends href="nested_base.tk">
+
+
+<py:block name="inner">
+child inner ${title}
+</py:block>
+</py:extends>

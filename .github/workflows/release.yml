@@ -91,9 +91,10 @@ jobs:
           python -m pip install --upgrade pip build wheel
           # Force pure Python universal wheel
           TONNIKALA_DISABLE_SPEEDUPS=1 python -m build --wheel
-          # Use wheel tool to convert to universal
+          # Use wheel tool to convert to universal; --remove drops the original
+          # linux_x86_64 wheel, which PyPI rejects
           cd dist
-          wheel tags --python-tag py3 --abi-tag none --platform-tag any *.whl
+          wheel tags --remove --python-tag py3 --abi-tag none --platform-tag any *.whl
 
       - uses: actions/upload-artifact@v4
         with:

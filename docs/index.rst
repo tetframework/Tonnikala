@@ -14,8 +14,8 @@ Welcome to Tonnikala's documentation!
    :alt: Python versions
    :target: https://pypi.org/project/tonnikala/
 
-.. image:: https://img.shields.io/badge/license-MIT-blue.svg
-   :alt: License: MIT
+.. image:: https://img.shields.io/pypi/l/tonnikala.svg
+   :alt: License
    :target: https://github.com/tetframework/Tonnikala/blob/master/LICENSE.txt
 
 .. image:: https://coveralls.io/repos/github/tetframework/Tonnikala/badge.svg?branch=master

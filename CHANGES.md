@@ -14,7 +14,7 @@ wheels with Apache license metadata) and was removed.
 - Package metadata declared the Apache license; the project has been MIT
   licensed since January 2026. Set `license="MIT"` and the MIT classifier.
 - The License badge in the README and documentation showed the Apache license
-  from PyPI metadata; it now shows MIT and links to `LICENSE.txt`.
+  from the PyPI metadata above; it now links to `LICENSE.txt`.
 - Python 3.11+ compatibility: templates with a `py:block` nested inside another
   block (typical for layouts used with `py:extends`) failed to compile with
   `ValueError: AST node line range (98, 97) is not valid`. The generator now

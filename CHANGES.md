@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ValueError: AST node line range (98, 97) is not valid`. The generator now
   normalizes `end_lineno`/`end_col_offset` of the generated AST so that they
   never precede the start location.
+- README rendering on PyPI: fixed inconsistent section heading level, use an
+  absolute URL for the logo and declare the long description as reStructuredText.
 
 ### Added
 - Regression tests for generated AST end locations, including nested blocks

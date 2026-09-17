@@ -103,6 +103,7 @@ def do_setup(with_c_extension):
         version="1.0.1",
         description="Python templating engine - the one ton solution",
         long_description=README,
+        long_description_content_type="text/x-rst",
         author="Antti Haapala",
         author_email="antti.haapala@interjektio.fi",
         url="https://github.com/tetframework/Tonnikala",

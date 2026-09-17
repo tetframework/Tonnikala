@@ -1,4 +1,4 @@
-.. image:: docs/_static/tonnikala.png
+.. image:: https://raw.githubusercontent.com/tetframework/Tonnikala/master/docs/_static/tonnikala.png
    :alt: Tonnikala
    :width: 400
 
@@ -405,7 +405,7 @@ If ``tonnikala.reload`` is not set, Tonnikala shall follow the ``pyramid.reload_
     If ``True``, makes Tonnikala skip some optimizations that make debugging harder.
 
 Status
-======
+------
 
 Stable. Features:
 

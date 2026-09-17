@@ -3,11 +3,16 @@ import json
 import os.path
 import subprocess
 import unittest
+import warnings
 from shutil import which
 
 from tonnikala.loader import JSLoader
 
-runtime_code = importlib.resources.read_binary("tonnikala.runtime", "javascript.js")
+with warnings.catch_warnings():
+    # read_binary() warns on Python 3.11 and 3.12 before 3.12.10; the
+    # deprecation was reverted in Python 3.13 and 3.12.10 (gh-116608).
+    warnings.filterwarnings("ignore", "read_binary is deprecated", DeprecationWarning)
+    runtime_code = importlib.resources.read_binary("tonnikala.runtime", "javascript.js")
 
 
 js_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "js")

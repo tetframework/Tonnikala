@@ -33,7 +33,6 @@ jobs:
           flake8 tonnikala tests --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Test with pytest
-        # Deprecation warnings fail the build. importlib.resources.read_binary()
-        # warns only on Python 3.11: it was undeprecated in 3.13 and 3.12.10.
+        # deprecation warnings fail the build
         run: |
-          python -m pytest -v -W error::DeprecationWarning -W error::PendingDeprecationWarning -W "ignore:read_binary is deprecated:DeprecationWarning"
+          python -m pytest -v -W error::DeprecationWarning -W error::PendingDeprecationWarning

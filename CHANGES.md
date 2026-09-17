@@ -12,9 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Python 3.15 in CI.
 
 ### Changed
-- CI fails on `DeprecationWarning` and `PendingDeprecationWarning`, except for
-  `importlib.resources.read_binary()` on Python 3.11, which was undeprecated in
-  Python 3.12.10 and 3.13.
+- CI fails on `DeprecationWarning` and `PendingDeprecationWarning`. The
+  `importlib.resources.read_binary()` warning (Python 3.11 and 3.12 before
+  3.12.10) is suppressed where it is called in the tests, as the deprecation was
+  reverted in Python 3.13 and 3.12.10.
 - Release workflow builds Python 3.8 wheels with cibuildwheel 3 and Python
   3.9-3.15 wheels with cibuildwheel 4, and uses the Node 24 based versions of
   the GitHub actions.

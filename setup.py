@@ -100,19 +100,20 @@ def do_setup(with_c_extension):
 
     setup(
         name="tonnikala",
-        version="1.0.1",
+        version="1.0.2",
         description="Python templating engine - the one ton solution",
         long_description=README,
         long_description_content_type="text/x-rst",
         author="Antti Haapala",
         author_email="antti.haapala@interjektio.fi",
         url="https://github.com/tetframework/Tonnikala",
+        license="MIT",
         classifiers=[
             "Development Status :: 4 - Beta",
             "Environment :: Web Environment",
             "Framework :: Pyramid",
             "Intended Audience :: Developers",
-            "License :: OSI Approved :: Apache Software License",
+            "License :: OSI Approved :: MIT License",
             "Operating System :: OS Independent",
             "Programming Language :: Python",
             "Programming Language :: Python :: 3.8",

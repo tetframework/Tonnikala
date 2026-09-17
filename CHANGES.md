@@ -5,9 +5,16 @@ All notable changes to Tonnikala will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2026-09-17
+## [1.0.2] - 2026-09-17
+
+Supersedes 1.0.1, which was only partially uploaded to PyPI (Python 3.10
+wheels with Apache license metadata) and was removed.
 
 ### Fixed
+- Package metadata declared the Apache license; the project has been MIT
+  licensed since January 2026. Set `license="MIT"` and the MIT classifier.
+- The License badge in the README and documentation showed the Apache license
+  from PyPI metadata; it now shows MIT and links to `LICENSE.txt`.
 - Python 3.11+ compatibility: templates with a `py:block` nested inside another
   block (typical for layouts used with `py:extends`) failed to compile with
   `ValueError: AST node line range (98, 97) is not valid`. The generator now

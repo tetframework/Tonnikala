@@ -407,7 +407,7 @@ If ``tonnikala.reload`` is not set, Tonnikala shall follow the ``pyramid.reload_
 Status
 ------
 
-Stable. Features:
+Stable. Supports CPython 3.8-3.15. Features:
 
 * Structural elements ``py:if``, ``py:unless``, ``py:def``, ``py:for``,
   ``py:replace``, ``py:content``
@@ -419,7 +419,7 @@ Stable. Features:
 * Boolean attributes: ``<tag attr="${False}">``, ``<tag attr="$True">``
 * Implicit escaping
 * Disabling implicit escaping (``literal()``)
-* C speedups for Python 3
+* C speedups for CPython, with pre-built wheels for Linux and macOS
 * Importing def blocks from another template: ``py:import``
 * Basic I18N using gettext.
 * Pyramid integration

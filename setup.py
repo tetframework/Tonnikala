@@ -123,6 +123,7 @@ def do_setup(with_c_extension):
             "Programming Language :: Python :: 3.12",
             "Programming Language :: Python :: 3.13",
             "Programming Language :: Python :: 3.14",
+            "Programming Language :: Python :: 3.15",
             "Programming Language :: Python :: Implementation :: CPython",
             "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
             "Topic :: Text Processing :: Markup :: HTML",

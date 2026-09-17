@@ -11,14 +11,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14-dev"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
+          # use the latest 3.15 release candidate until 3.15.0 is out
+          allow-prereleases: true
 
       - name: Install dependencies
         run: |
@@ -34,8 +36,10 @@ jobs:
           flake8 tonnikala tests --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Test with pytest
+        # Deprecation warnings fail the build. importlib.resources.read_binary()
+        # warns only on Python 3.11: it was undeprecated in 3.13 and 3.12.10.
         run: |
-          python -m pytest -v
+          python -m pytest -v -W error::DeprecationWarning -W error::PendingDeprecationWarning -W "ignore:read_binary is deprecated:DeprecationWarning"
 
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
@@ -45,30 +49,40 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
 
+    env:
+      # Skip 32-bit builds, musllinux i686 and free-threaded builds
+      CIBW_SKIP: "*-win32 *-musllinux_i686 cp3??t-*"
+      # Use manylinux2014 for C extensions (Linux only)
+      CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+      CIBW_MANYLINUX_I686_IMAGE: manylinux2014
+      CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
+      CIBW_MANYLINUX_PPC64LE_IMAGE: manylinux2014
+      CIBW_MANYLINUX_S390X_IMAGE: manylinux2014
+      # Install test dependencies
+      CIBW_TEST_REQUIRES: "pytest setuptools slimit3k ply"
+      # Run tests; deprecation warnings fail the build, see the test job
+      CIBW_TEST_COMMAND: >-
+        pytest -W error::DeprecationWarning -W error::PendingDeprecationWarning
+        -W "ignore:read_binary is deprecated:DeprecationWarning" {project}/tests
+      # Build settings
+      CIBW_BUILD_VERBOSITY: 1
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v3.1.4
+      # cibuildwheel 4 dropped Python 3.8 and cibuildwheel 3 cannot build
+      # Python 3.15, so the wheels are built in two steps.
+      - name: Build wheels for Python 3.8
+        uses: pypa/cibuildwheel@v3.4.1
         env:
-          # Build for Python 3.8-3.14 (including latest dev version)
-          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
-          # Skip 32-bit builds and musllinux i686 (PyPy not enabled by default in v3)
-          CIBW_SKIP: "*-win32 *-musllinux_i686"
-          # Use manylinux2014 for C extensions (Linux only)
-          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-          CIBW_MANYLINUX_I686_IMAGE: manylinux2014
-          CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
-          CIBW_MANYLINUX_PPC64LE_IMAGE: manylinux2014
-          CIBW_MANYLINUX_S390X_IMAGE: manylinux2014
-          # Install test dependencies
-          CIBW_TEST_REQUIRES: "pytest setuptools slimit3k ply"
-          # Run tests
-          CIBW_TEST_COMMAND: "pytest {project}/tests"
-          # Build settings
-          CIBW_BUILD_VERBOSITY: 1
+          CIBW_BUILD: "cp38-*"
 
-      - uses: actions/upload-artifact@v4
+      - name: Build wheels for Python 3.9-3.15
+        uses: pypa/cibuildwheel@v4.2.1
+        env:
+          CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-* cp315-*"
+
+      - uses: actions/upload-artifact@v7
         with:
           name: wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
@@ -79,10 +93,10 @@ jobs:
     needs: test
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -96,7 +110,7 @@ jobs:
           cd dist
           wheel tags --remove --python-tag py3 --abi-tag none --platform-tag any *.whl
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: pure-wheel
           path: dist/*.whl
@@ -107,10 +121,10 @@ jobs:
     needs: test
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -119,7 +133,7 @@ jobs:
           python -m pip install --upgrade pip build
           python -m build --sdist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -137,7 +151,7 @@ jobs:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
 
